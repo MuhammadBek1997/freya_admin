@@ -1,0 +1,15 @@
+@media screen and (max-width: 650px) {
+    .sidebar{
+        height: 6vh;
+    }
+    .sidebar-logo img{
+        width: 3vw;
+    }
+    .sidebar-logo h1 {
+        font-size: 1.8vw;
+    }
+
+    .sidebar-whitebox{
+        height: 4vh !important;
+    }
+}

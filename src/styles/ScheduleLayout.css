@@ -1,0 +1,569 @@
+/* Schedule styles */
+.sched-nav {
+  width: 100vw;
+  height: 30vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding-left: 18vw;
+  padding-top: 3vh;
+  box-shadow: 0.4vw 0.4vw 1vw rgba(0, 0, 0, 0.07);
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.51);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.sched-nav-top {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+}
+
+.sched-nav-top img {
+  width: 2.57vw;
+  height: 2.57vw;
+}
+
+.sched-nav-top h2 {
+  font-size: 2.6vw;
+  font-weight: 500;
+}
+
+.sched-nav-search {
+  height: 10vh;
+  display: flex;
+  align-items: center;
+  padding-left: 1vw;
+}
+
+.sched-nav-search img {
+  width: 2vw;
+  z-index: 3;
+  margin-right: -3vw;
+}
+
+.sched-nav-search input {
+  width: 80%;
+  height: 60%;
+  border: none;
+  outline: none;
+  border-radius: 2vw;
+  padding: 2vw;
+  padding-left: 4vw;
+  font-size: 1vw;
+  box-shadow: 0 0 1vw #00000010;
+}
+
+.sched-add-btn {
+  width: 10vw;
+  border: none;
+  border-radius: 5vw;
+  background-color: #9C2BFF;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3.5vw;
+  padding: 1.4vw 0;
+  margin-left: 2vw;
+  font-size: 1vw;
+  cursor: pointer;
+  box-shadow: 0 0 1vw #00000010;
+}
+
+.sched-add-btn img {
+  width: 1vw;
+}
+
+.sched-dayList {
+  width: 80vw;
+  height: 10vh;
+}
+
+.sched-dayList-cont {
+  min-width: 80vw;
+  height: 100%;
+  padding-right: 4vw;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  scroll-behavior: smooth;
+  overflow-x: auto;
+  scrollbar-width: none;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  user-select: none;
+}
+
+.sched-dayList-item {
+  max-width: 7vw;
+  min-width: 3.5vw;
+  font-size: 1vw;
+  padding: 0.7vw;
+  border-radius: 0.7vw;
+  border: none;
+  background-color: white;
+  box-shadow: 0 0 2vw #00000010;
+  cursor: pointer;
+  color: #9C2BFF;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5vw;
+  user-select: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sum-of-orders {
+  width: 1.4vw;
+  height: 1.4vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+}
+
+.sched-dayList-btn {
+  cursor: pointer;
+  position: fixed;
+  top: 20vh;
+  right: 1vw;
+  width: 4vw;
+  height: 4vw;
+  border-radius: 30vw;
+  border: none;
+  background-color: white;
+  box-shadow: 0.1vw 0.1vw 2vw #00000050;
+}
+
+
+.schedule-modal{
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 15;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #38383866;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.schedule-modal-cont{
+  width: 35%;
+  height: 90%;
+  background-color: #E9EDEE;
+  border-radius: 1vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vw;
+  padding-top: 1vw;
+  position: relative;
+}
+.schedule-modal-cont h4{
+  font-size: 1.2vw;
+  font-weight: 500;
+}
+.schedule-modal-form{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vw;
+  padding-left: 1vw;
+  padding-right: 1vw;
+}
+.schedule-modal-form label{
+  font-weight: 400;
+  font-size: 0.8vw;
+}
+.form-inputs{
+  width: 100%;
+  height: 6.5vh;
+  font-size: 1vw;
+  padding-left: 1vw;
+  border-radius: 0.5vw;
+  border: none;
+  outline: none;
+  background: #FFFFFF;
+}
+.form-inputs[type="date"]::-webkit-calendar-picker-indicator {
+  transform: scale(1.5);
+  margin-right: 1vw;
+  color: red;
+}
+.schedule-modal-addPersonal{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5vw;
+  padding-left: 1vw;
+  padding-right: 1vw;
+}
+.schedule-modal-addPersonal label{
+  font-weight: 400;
+  font-size: 0.8vw;
+}
+.schedule-modal-addPersonal button{
+  width: 4vw;
+  height: 4vw;
+  border-radius: 10vw;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 0.5vw;
+  background-color: #9C2BFF;
+  color: white;
+  cursor: pointer;
+  font-size: 0.6vw;
+  img{
+    width: 1vw;
+  }
+}
+
+.schedule-modal-addPersonal input{
+  width: 100%;
+  height: 6.5vh;
+  border: none;
+  border-radius: 0.5vw;
+  padding-left: 1vw;
+  outline: none;
+  font-size: 1vw;
+}
+.schedule-modal-paymentType{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vw;
+  padding-left: 1vw;
+  padding-right: 1vw;
+}
+.schedule-modal-paymentType label{
+  font-size: 0.8vw;
+}
+.schedule-modal-paymentType-cont{
+  width: 100%;
+  height: 6.5vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5vw;
+}
+.schedule-modal-paymentType-cont input{
+  height: 100%;
+  flex: 2;
+  border: none;
+  border-radius: 0.5vw;
+  padding-left: 0.7vw;
+  outline: none;
+  font-size: 1vw;
+}
+.schedule-modal-paymentType-cont button{
+  height: 100%;
+  flex: 1;
+  background: #9C2BFF0D;
+  border: 0.1vw solid #9C2BFF;
+  color: #9C2BFF;
+  border-radius: 0.5vw;
+  cursor: pointer;
+  font-size: 0.7vw;
+}
+.schedule-modal-btns{
+  width: 100%;
+  height: 4vw;
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 0.5vw 1vw;
+  box-shadow: -1vw 0 2vw #00000010;
+  border-bottom-left-radius: 0.5vw;
+  border-bottom-right-radius: 0.5vw;
+}
+.schedule-modal-btns button{
+  width: 48%;
+  height: 70%;
+  background: #FF0000;
+  border-radius: 0.5vw;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 1vw;
+}
+.schedule-modal-btns button:last-child{
+  background: #3DE400;
+}
+
+
+
+.select-employModal{
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 16;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.select-employModal-cont{
+  width: 35%;
+  height: 90%;
+  background-color: white;
+  border-radius: 1vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vw;
+  padding-top: 1vw;
+  position: relative;
+  
+}
+.select-employModal-top{
+  width: 100%;
+  height: 5%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding-left: 1vw;
+  gap: 6vw;
+}
+.select-employModal-top button{
+  width: 2vw;
+  height: 2vw;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.6vw;
+  img{
+    width: 2vw;
+    transform: rotateY(180deg);
+  }
+}
+.select-employModal-top h3{
+  font-size: 1.2vw;
+  font-weight: 500;
+}
+.select-employModal-body{
+  width: 100%;
+  height: 90%;
+  display: grid;
+  grid-template-columns: repeat(2 , auto);
+  justify-content: center;
+  align-items: center;
+  gap: 1vw;
+  overflow-y: auto;
+  padding-top: 1vw;
+}
+.select-employModal-body-item{
+  width: 15vw;
+  height: 16vh;
+  border-radius: 1vw;
+  padding: 0.5vw;
+  box-shadow: 0 0 1vw #00000020;
+}
+.select-employModal-body-item-top{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1vw;
+  margin-bottom: 0.7vw;
+}
+.select-employModal-body-item img{
+  width: 3vw;
+  border-radius: 10vw;
+}
+.select-employModal-body-item h4{
+  font-size: 1vw;
+}
+.select-employModal-body-item p{
+  font-size: 0.8vw;
+}
+.select-employModal-body-item-rating{
+  width: 100%;
+  height: 2vh;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.5vw;
+}
+.select-employModal-body-item-rating img{
+  width: 1vw;
+}
+.select-employModal-body-item-rating p{
+  font-size: 0.6vw;
+  margin-top: 0.3vw;
+}
+#select-employModal-body-item-btn{
+  width: 80%;
+  height: 4vh;
+  border: none;
+  background-color: #C3A3D1;
+  color: white;
+  border-radius: 0.5vw;
+  cursor: pointer;
+  margin: 0 auto;
+}
+
+
+
+
+.editSchedule-modal{
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 16;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #38383815;
+  backdrop-filter: blur(0.1vw);
+  -webkit-backdrop-filter: blur(0.1vw); 
+}
+.editSchedule-modal-cont{
+  width: 35%;
+  height: 90%;
+  background-color: #E9EDEE;
+  border-radius: 1vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vw;
+  padding-top: 1vw;
+  position: relative;
+}
+.editSchedule-modal-cont h2{
+  font-size: 1.1vw;
+  font-weight: 500;
+}
+
+
+
+
+
+
+
+.schedule-body{
+  padding-top: 35vh;
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: flex-start;
+  align-items: start;
+  gap: 2vw;
+}
+.schedule-list-item{
+  width: 40vw;
+  position: relative;
+}
+.schedule-list-item-btn{
+  border: none;
+  width: 2vw;
+  height: 2vw;
+  background-color: white;
+  border-radius: 0.3vw;
+  position: absolute;
+  right: 1vw;
+  top: 1vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+.schedule-list-item img{
+  width: 1vw;
+}
+.schedule-item-top{
+  background-color: #E8DFF5;
+  border-radius: 1vw;
+  padding: 1vw;
+}
+.schedule-order{
+  width: 80%;
+  height: 100%;
+}
+.schedule-order-type{
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+}
+.schedule-order-type h3{
+  font-size: 1.1vw;
+  font-weight: 500;
+}
+.order-title{
+  font-size: 0.8vw;
+  margin-top: 1vh;
+}
+.schedule-order-pricebox{
+  height: 3vh;
+  display: flex;
+  align-items: center;
+  gap: 1.5vw;
+  margin-top: 2vh;
+}
+.schedule-order-pricebox p{
+  font-size: 0.6vw;
+}
+.schedule-order-pricebox div{
+  padding: 0.5vw 1vw;
+  background-color: white;
+  border-radius: 2vw;
+  font-size: 0.8vw;
+}
+.schedule-order-pricebox span{
+  font-size: 0.9vw;
+}
+.schedule-item-masters{
+  width: 100%;
+  min-height: 10vh;
+  display: grid;
+  grid-template-columns: repeat(3 , auto);
+  justify-content: start;
+  align-items: center;
+  gap: 1vw;
+  padding: 0.5vw 0;
+}
+.schedule-master-card{
+  background-color: white;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 1vw;
+  padding: 0.5vw;
+  border-radius: 0.7vw;
+  box-shadow: 0 0 1vw #00000015;
+}
+.schedule-master-card img{
+  width: 2vw;
+  border-radius: 30vw;
+}
+.schedule-master-card p{
+  font-size: 0.7vw;
+}
+.masters-time{
+  width: 4vw;
+  background-color: #EEE0F1;
+  text-align: center;
+  padding: 0.2vw;
+  border-radius: 0.3vw;
+}
+.masters-time p{
+    background-image: linear-gradient(90deg,rgba(100, 0, 161, 1) 0%, rgba(179, 0, 77, 1) 40%);
+    color: transparent;
+    background-clip: text;
+    font-size: 0.5vw;
+}
