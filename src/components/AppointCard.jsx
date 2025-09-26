@@ -9,7 +9,6 @@ const AppointCard = ({id,is_confirmed,salon,service, customer_name,appointment_t
 
     const handleCardClick = () => {
         openRightSidebar({id,is_confirmed,salon,service, customer_name,appointment_time, appointment_date,time, date, master});
-        console.log(selectedElement);
         
     }
     

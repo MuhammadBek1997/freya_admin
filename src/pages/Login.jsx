@@ -2,9 +2,44 @@ import { useState } from 'react';
 import { UseGlobalContext } from '../Context';
 
 const Login = () => {
-  const { t, handleChange, language } = UseGlobalContext();
+  const { t, handleChange, language, loginAdmin, loginEmployee } = UseGlobalContext();
   const [showPassword, setShowPassword] = useState(false);
-  const [checkPsw , setCheckPsw] = useState(true)
+  const [checkPsw, setCheckPsw] = useState(true);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    
+    if (!username || !password) {
+      setErrorMessage('Username va password kiritish majburiy!');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      // Avval admin sifatida login qilishga harakat qilamiz
+      try {
+        await loginAdmin(username, password);
+      } catch (adminError) {
+        // Agar admin login muvaffaqiyatsiz bo'lsa, employee sifatida harakat qilamiz
+        try {
+          await loginEmployee(username, password);
+        } catch (employeeError) {
+          // Agar ikkalasi ham muvaffaqiyatsiz bo'lsa, xatolik ko'rsatamiz
+          throw new Error('Username yoki password noto\'g\'ri!');
+        }
+      }
+    } catch (error) {
+      setErrorMessage(error.message || 'Login xatolik yuz berdi!');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="login-page">
@@ -43,6 +78,21 @@ const Login = () => {
             <h3>
                 {t('loginBoxTop')}
             </h3>
+
+            {/* Error Message */}
+            {errorMessage && (
+              <div style={{ 
+                color: '#FF0000', 
+                marginBottom: '15px', 
+                padding: '10px', 
+                backgroundColor: '#ffe6e6', 
+                borderRadius: '5px',
+                border: '1px solid #FF0000'
+              }}>
+                {errorMessage}
+              </div>
+            )}
+            
           <div className="login-inputs">
             {/* Username */}
             <label
@@ -55,6 +105,8 @@ const Login = () => {
             <input 
                 type="text" 
                 placeholder={t('loginNamePlhldr')}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 style={{
                     border: checkPsw ? 'none' : '1px solid #FF0000',
                     borderColor: checkPsw ? 'black' : '#FF0000',
@@ -73,6 +125,8 @@ const Login = () => {
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder='******'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 style={{
                     border: checkPsw ? 'none' : '1px solid #FF0000',
                     borderColor: checkPsw ? 'black' : '#FF0000',
@@ -91,7 +145,17 @@ const Login = () => {
 
             <a href="/forgot">{t('loginPswForgot')}</a>
           </div>
-          <button className="login-btn" onClick={()=>setCheckPsw(false)}>{t('loginBtn')}</button>
+          <button 
+            className="login-btn" 
+            onClick={handleLogin}
+            disabled={loading}
+            style={{
+              opacity: loading ? 0.7 : 1,
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {loading ? 'Kirish...' : t('loginBtn')}
+          </button>
         </div>
 
         <div className="login-btm">

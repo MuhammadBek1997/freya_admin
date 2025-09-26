@@ -24,7 +24,130 @@ const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
 
+	// Authentication state
+	const [user, setUser] = useState(null);
+	const [isAuthenticated, setIsAuthenticated] = useState(false);
+	const [authLoading, setAuthLoading] = useState(true);
 
+	// API base URL
+	const API_BASE_URL = "https://freya-salon-backend-cc373ce6622a.herokuapp.com/api";
+
+	// Check if user is already logged in on app start
+	useEffect(() => {
+		const token = localStorage.getItem('authToken');
+		const userData = localStorage.getItem('userData');
+		
+		if (token && userData) {
+			try {
+				const parsedUser = JSON.parse(userData);
+				setUser(parsedUser);
+				setIsAuthenticated(true);
+			} catch (error) {
+				console.error('Error parsing user data:', error);
+				localStorage.removeItem('authToken');
+				localStorage.removeItem('userData');
+			}
+		}
+		setAuthLoading(false);
+	}, []);
+
+	// Admin login function
+	const loginAdmin = async (username, password) => {
+		try {
+			console.log('Login attempt:', { username, password, API_BASE_URL });
+			
+			const response = await fetch(`${API_BASE_URL}/auth/admin/login`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ username, password }),
+			});
+
+			console.log('Response status:', response.status);
+			console.log('Response ok:', response.ok);
+
+			const data = await response.json();
+			console.log('Response data:', data);
+
+			if (response.ok) {
+				const userData = {
+					id: data.user.id,
+					username: data.user.username,
+					email: data.user.email,
+					full_name: data.user.full_name,
+					role: 'admin',
+					salon_id: data.user.salon_id
+				};
+
+				localStorage.setItem('authToken', data.token);
+				localStorage.setItem('userData', JSON.stringify(userData));
+				
+				setUser(userData);
+				setIsAuthenticated(true);
+				
+				return userData;
+			} else {
+				console.error('Login failed with data:', data);
+				throw new Error(data.message || 'Admin login failed');
+			}
+		} catch (error) {
+			console.error('Admin login error:', error);
+			throw new Error(error.message || 'Network error occurred');
+		}
+	};
+
+	// Employee login function
+	const loginEmployee = async (username, password) => {
+		try {
+			const response = await fetch(`${API_BASE_URL}/auth/employee/login`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ username, password }),
+			});
+
+			const data = await response.json();
+
+			if (response.ok) {
+				const userData = {
+					id: data.user.id,
+					username: data.user.username || data.user.name,
+					email: data.user.email,
+					name: data.user.name,
+					role: 'employee',
+					salon_id: data.user.salon_id
+				};
+
+				localStorage.setItem('authToken', data.token);
+				localStorage.setItem('userData', JSON.stringify(userData));
+				
+				setUser(userData);
+				setIsAuthenticated(true);
+				
+				return userData;
+			} else {
+				throw new Error(data.message || 'Employee login failed');
+			}
+		} catch (error) {
+			console.error('Employee login error:', error);
+			throw new Error(error.message || 'Network error occurred');
+		}
+	};
+
+	// Logout function
+	const logout = () => {
+		localStorage.removeItem('authToken');
+		localStorage.removeItem('userData');
+		setUser(null);
+		setIsAuthenticated(false);
+	};
+
+	// Get auth token for API requests
+	const getAuthToken = () => {
+		return localStorage.getItem('authToken');
+	};
 
 	const handleConfirm = async (item) => {
 		let newItem = {
@@ -371,11 +494,11 @@ const moreDataAppoint = useMemo(() => {
 			mastersArr, setMastersArr, handleConfirm,
 			//Schedule state
 			addSched, setAddSched, schedArr,
-
-
 			// Profile page state
-
-			companyData,commentsArr
+			companyData,commentsArr,
+			// Authentication state va funksiyalari
+			user, isAuthenticated, authLoading,
+			loginAdmin, loginEmployee, logout, getAuthToken
 
 		}}>
 			{children}
