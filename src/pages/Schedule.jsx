@@ -25,19 +25,18 @@ const Schedule = () => {
   }
 
 
-  const weekdays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+  const weekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
   const groupedByDate = (schedules || []).reduce((acc, item) => {
-    const date = item.date;
-    const dayOfWeek = weekdays[new Date(item.date).getDay()];
+    const date = new Date(item.date);
+    const dayOfWeek = weekdays[date.getDay()]; // JavaScript getDay() 0=Sunday, 1=Monday, ...
 
-
-    // start_time va end_time ni normal formatga o‘tkazish
+    // start_time va end_time ni normal formatga o'tkazish
     const formatTime = (dateStr, timeStr) => {
       // vaqtni sana bilan birlashtiramiz: "2025-08-18T09:00:00.000Z"
       const fullDateTime = `${dateStr}T${timeStr}`;
       const d = new Date(fullDateTime);
-      if (isNaN(d)) return timeStr; // noto‘g‘ri bo‘lsa asl stringni qaytar
+      if (isNaN(d)) return timeStr; // noto'g'ri bo'lsa asl stringni qaytar
       return d.toISOString().substring(11, 16); // "HH:MM"
     };
 
@@ -48,17 +47,22 @@ const Schedule = () => {
       end_time: formatTime(item.date, item.end_time),
     };
 
-    if (!acc[date]) {
-      acc[date] = [newItem];
+    // Kunlar bo'yicha guruhlash (hafta kunlari bo'yicha)
+    if (!acc[dayOfWeek]) {
+      acc[dayOfWeek] = [newItem];
     } else {
-      acc[date].push(newItem);
+      acc[dayOfWeek].push(newItem);
     }
     return acc;
   }, {});
 
 
 
-  const dayListItems = Object.values(groupedByDate);
+  // Hafta kunlarini to'g'ri tartibda chiqarish (Dushanba - Yakshanba)
+  const orderedWeekdays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+  const dayListItems = orderedWeekdays
+    .map(day => groupedByDate[day])
+    .filter(daySchedules => daySchedules && daySchedules.length > 0);
   const [editModal, setEditModal] = useState(false)
 
 
