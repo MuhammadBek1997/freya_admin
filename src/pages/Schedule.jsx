@@ -17,7 +17,8 @@ const Schedule = () => {
     setAddSched,
     schedArr,
     mastersArr,
-    schedules
+    schedules,
+    employees
   } = UseGlobalContext()
   let currentDay = {
     day: new Date().getDate(),
@@ -28,7 +29,7 @@ const Schedule = () => {
 
   const weekdays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
-  const groupedByDate = schedArr.reduce((acc, item) => {
+  const groupedByDate = (schedules || []).reduce((acc, item) => {
     const date = item.date;
     const dayOfWeek = weekdays[new Date(item.date).getDay()];
 
@@ -171,7 +172,7 @@ const Schedule = () => {
                     <div className="schedule-order-type">
                       <img src="/images/scheduleOrderIcon.png" alt="orderStar" />
                       <h3>
-                        {item.schedule_name}
+                        {item.name}
                       </h3>
                     </div>
                     <p className='order-title'>
@@ -223,8 +224,8 @@ const Schedule = () => {
                 <div className="schedule-item-masters">
                   {
                     
-                    item.master.map((masterId) => {
-                      let master = mastersArr.find((i) => i.id == masterId)
+                    (item.employee_list || []).map((employeeId) => {
+                      let master = (employees || []).find((i) => i.id == employeeId) || { id: employeeId, name: 'Unknown Master' }
                       return (
                         <div className='schedule-master-card' key={master.id}>
                           <img src="/images/masterImage.png" alt="" />
