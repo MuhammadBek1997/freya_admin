@@ -224,7 +224,7 @@ const Schedule = () => {
                 <div className="schedule-item-masters">
                   {
                     
-                    (item.employee_list || []).map((employeeId) => {
+                    (Array.isArray(item.employee_list) ? item.employee_list : []).map((employeeId) => {
                       let master = (employees || []).find((i) => i.id == employeeId) || { id: employeeId, name: 'Unknown Master' }
                       return (
                         <div className='schedule-master-card' key={master.id}>
