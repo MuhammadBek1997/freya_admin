@@ -24,12 +24,20 @@ const Schedule = () => {
     employees,
     fetchEmployees,
     services,
-    fetchServices
+    fetchServices,
+    appointments,
+    appointmentsLoading,
+    appointmentsError
   } = UseGlobalContext()
   let currentDay = {
     day: new Date().getDate(),
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear()
+  }
+
+  // Har bir schedule uchun tegishli appointmentlarni topish funksiyasi
+  const getAppointmentsForSchedule = (scheduleId) => {
+    return (appointments || []).filter(appointment => appointment.schedule_id === scheduleId);
   }
 
 
@@ -230,6 +238,73 @@ const Schedule = () => {
                       )
                     })
                   }
+                </div>
+                
+                {/* Appointments section */}
+                <div className="schedule-appointments">
+                  <h4 style={{margin: '10px 0', color: '#666', fontSize: '14px'}}>
+                    Appointmentlar ({getAppointmentsForSchedule(item.id).length})
+                  </h4>
+                  {appointmentsLoading ? (
+                    <p style={{color: '#999', fontSize: '12px'}}>Yuklanmoqda...</p>
+                  ) : getAppointmentsForSchedule(item.id).length > 0 ? (
+                    <div className="appointments-list" style={{maxHeight: '200px', overflowY: 'auto'}}>
+                      {getAppointmentsForSchedule(item.id).map((appointment) => (
+                        <div key={appointment.id} className="appointment-item" style={{
+                          background: '#f8f9fa',
+                          border: '1px solid #e9ecef',
+                          borderRadius: '8px',
+                          padding: '10px',
+                          margin: '5px 0',
+                          fontSize: '12px'
+                        }}>
+                          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                            <div>
+                              <strong>{appointment.user_name}</strong>
+                              <p style={{margin: '2px 0', color: '#666'}}>
+                                📞 {appointment.phone_number}
+                              </p>
+                              <p style={{margin: '2px 0', color: '#666'}}>
+                                📅 {appointment.application_date} ⏰ {appointment.application_time}
+                              </p>
+                              {appointment.service_name && (
+                                <p style={{margin: '2px 0', color: '#666'}}>
+                                  🛍️ {appointment.service_name} - {appointment.service_price ? `${appointment.service_price / 1000}k UZS` : 'Narx ko\'rsatilmagan'}
+                                </p>
+                              )}
+                              {appointment.notes && (
+                                <p style={{margin: '2px 0', color: '#666', fontStyle: 'italic'}}>
+                                  📝 {appointment.notes}
+                                </p>
+                              )}
+                            </div>
+                            <div style={{textAlign: 'center'}}>
+                              <span style={{
+                                background: appointment.status === 'pending' ? '#ffc107' : 
+                                          appointment.status === 'accepted' ? '#28a745' :
+                                          appointment.status === 'cancelled' ? '#dc3545' :
+                                          appointment.status === 'done' ? '#17a2b8' : '#6c757d',
+                                color: 'white',
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                fontWeight: 'bold'
+                              }}>
+                                {appointment.status.toUpperCase()}
+                              </span>
+                              <p style={{margin: '4px 0 0 0', fontSize: '10px', color: '#999'}}>
+                                #{appointment.application_number}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{color: '#999', fontSize: '12px', fontStyle: 'italic'}}>
+                      Hozircha appointmentlar yo'q
+                    </p>
+                  )}
                 </div>
               </div>
             )
