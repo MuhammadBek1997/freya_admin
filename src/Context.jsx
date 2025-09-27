@@ -15,6 +15,11 @@ import {
 	statisticsUrl
 } from "./apiUrls"
 
+// API base URL configuration
+const API_BASE_URL = import.meta.env.DEV 
+  ? "http://localhost:5173/api"
+  : import.meta.env.VITE_API_BASE_URL;
+
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
@@ -44,8 +49,7 @@ export const AppProvider = ({ children }) => {
 	const [servicesLoading, setServicesLoading] = useState(false);
 	const [servicesError, setServicesError] = useState(null);
 
-	// API base URL
-	const API_BASE_URL = "https://freya-salon-backend-cc373ce6622a.herokuapp.com/api";
+
 
 	// Check if user is already logged in on app start
 	useEffect(() => {
