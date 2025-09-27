@@ -15,8 +15,6 @@ const Schedule = () => {
     scrollRight,
     addSched,
     setAddSched,
-    schedArr,
-    mastersArr,
     schedules,
     employees
   } = UseGlobalContext()
