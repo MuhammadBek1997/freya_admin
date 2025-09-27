@@ -44,6 +44,13 @@ const Schedule = () => {
     fetchGroupedSchedules();
   }, []);
 
+  // dayListItems yuklanganda birinchi kunni default tanlash
+  useEffect(() => {
+    if (dayListItems.length > 0 && selectDay.length === 0) {
+      setSelectDay(dayListItems[0]);
+    }
+  }, [dayListItems, selectDay.length, setSelectDay]);
+
 
 
   const containerRef = useRef(null)
@@ -146,7 +153,7 @@ const Schedule = () => {
       </nav>
       <div className='schedule-body'>
         {
-          (schedules || []).map((item) => {
+          (selectDay.length > 0 ? selectDay : []).map((item) => {
             return (
               <div key={item.id} className='schedule-list-item'>
                 <div className='schedule-item-top'>
