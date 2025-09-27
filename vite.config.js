@@ -8,9 +8,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://freya-salon-backend-cc373ce6622a.herokuapp.com',
+        target: 'http://localhost:3005',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       }
     }
   }
