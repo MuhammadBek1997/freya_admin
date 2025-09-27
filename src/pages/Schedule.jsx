@@ -163,7 +163,7 @@ const Schedule = () => {
       </nav>
       <div className='schedule-body'>
         {
-          schedules.map((item) => {
+          (schedules || []).map((item) => {
             return (
               <div key={item.id} className='schedule-list-item'>
                 <div className='schedule-item-top'>
