@@ -38,6 +38,11 @@ export const AppProvider = ({ children }) => {
 	const [schedulesLoading, setSchedulesLoading] = useState(false);
 	const [schedulesError, setSchedulesError] = useState(null);
 
+	// Grouped schedules state
+	const [groupedSchedules, setGroupedSchedules] = useState([]);
+	const [groupedSchedulesLoading, setGroupedSchedulesLoading] = useState(false);
+	const [groupedSchedulesError, setGroupedSchedulesError] = useState(null);
+
 	// Employees state
 	const [employees, setEmployees] = useState([]);
 	const [employeesLoading, setEmployeesLoading] = useState(false);
@@ -334,6 +339,47 @@ export const AppProvider = ({ children }) => {
 			throw error;
 		} finally {
 			setSchedulesLoading(false);
+		}
+	};
+
+	// Fetch grouped schedules - schedules grouped by weekdays from production server
+	const fetchGroupedSchedules = async () => {
+		setGroupedSchedulesLoading(true);
+		setGroupedSchedulesError(null);
+
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/schedules/grouped-by-date`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Grouped schedules fetched:', data);
+				
+				// Filter grouped schedules by salon_id if user has salon_id
+				let filteredGroupedSchedules = data.data || [];
+				if (user && user.salon_id) {
+					filteredGroupedSchedules = filteredGroupedSchedules.map(daySchedules => 
+						daySchedules.filter(schedule => schedule.salon_id === user.salon_id)
+					).filter(daySchedules => daySchedules.length > 0);
+				}
+				
+				setGroupedSchedules(filteredGroupedSchedules);
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch grouped schedules');
+			}
+		} catch (error) {
+			console.error('Error fetching grouped schedules:', error);
+			setGroupedSchedulesError(error.message);
+			setGroupedSchedules([]);
+		} finally {
+			setGroupedSchedulesLoading(false);
 		}
 	};
 
@@ -805,6 +851,8 @@ const moreDataAppoint = useMemo(() => {
 			appointments, appointmentsLoading, appointmentsError, fetchAppointments,
 			// Schedules state va funksiyalari
 			schedules, schedulesLoading, schedulesError, fetchSchedules, createSchedule,
+			// Grouped schedules state va funksiyalari
+			groupedSchedules, groupedSchedulesLoading, groupedSchedulesError, fetchGroupedSchedules,
 			// Employees state va funksiyalari
 			employees, employeesLoading, employeesError, fetchEmployees,
 			// Services state va funksiyalari

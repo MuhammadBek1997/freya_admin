@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { UseGlobalContext } from '../Context'
 import AddScheduleModal from '../components/AddScheduleModal';
 import EditScheduleModal from '../components/EditScheduleModal';
@@ -16,7 +16,15 @@ const Schedule = () => {
     addSched,
     setAddSched,
     schedules,
-    employees
+    fetchSchedules,
+    createSchedule,
+    groupedSchedules,
+    fetchGroupedSchedules,
+    groupedSchedulesLoading,
+    employees,
+    fetchEmployees,
+    services,
+    fetchServices
   } = UseGlobalContext()
   let currentDay = {
     day: new Date().getDate(),
@@ -27,43 +35,14 @@ const Schedule = () => {
 
   const weekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
-  const groupedByDate = (schedules || []).reduce((acc, item) => {
-    const date = new Date(item.date);
-    const dayOfWeek = weekdays[date.getDay()]; // JavaScript getDay() 0=Sunday, 1=Monday, ...
-
-    // start_time va end_time ni normal formatga o'tkazish
-    const formatTime = (dateStr, timeStr) => {
-      // vaqtni sana bilan birlashtiramiz: "2025-08-18T09:00:00.000Z"
-      const fullDateTime = `${dateStr}T${timeStr}`;
-      const d = new Date(fullDateTime);
-      if (isNaN(d)) return timeStr; // noto'g'ri bo'lsa asl stringni qaytar
-      return d.toISOString().substring(11, 16); // "HH:MM"
-    };
-
-    const newItem = {
-      ...item,
-      dayOfWeek,
-      start_time: formatTime(item.date, item.start_time),
-      end_time: formatTime(item.date, item.end_time),
-    };
-
-    // Kunlar bo'yicha guruhlash (hafta kunlari bo'yicha)
-    if (!acc[dayOfWeek]) {
-      acc[dayOfWeek] = [newItem];
-    } else {
-      acc[dayOfWeek].push(newItem);
-    }
-    return acc;
-  }, {});
-
-
-
-  // Hafta kunlarini to'g'ri tartibda chiqarish (Dushanba - Yakshanba)
-  const orderedWeekdays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-  const dayListItems = orderedWeekdays
-    .map(day => groupedByDate[day])
-    .filter(daySchedules => daySchedules && daySchedules.length > 0);
+  // API dan kelgan guruhlangan ma'lumotlarni ishlatamiz
+  const dayListItems = groupedSchedules || [];
   const [editModal, setEditModal] = useState(false)
+
+  // Component yuklanganda grouped schedules ni fetch qilish
+  useEffect(() => {
+    fetchGroupedSchedules();
+  }, []);
 
 
   console.log(dayListItems);
