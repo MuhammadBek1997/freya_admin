@@ -6,7 +6,7 @@ import ReadMoreReact from 'read-more-react';
 
 const Profile = () => {
 
-  const { t, language, handleChange, companyData, commentsArr } = UseGlobalContext()
+  const { t, language, handleChange, profArr, commentsArr } = UseGlobalContext()
 
 
   const formatSumm = (num) => {
@@ -30,7 +30,16 @@ const Profile = () => {
       .reverse()
       .reduce((acc, digit, i) => (i > 0 && (num.toString().length - (i - init)) % 3 === 0 ? ` ${digit}${acc}` : `${digit}${acc}`), '');
   }
-  let salonComments = commentsArr.filter(item => item.salon == companyData[0].id)
+  // Agar profArr bo'sh bo'lsa, loading ko'rsatamiz
+  if (!profArr || profArr.length === 0) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <p>Loading profile data...</p>
+      </div>
+    )
+  }
+
+  let salonComments = commentsArr.filter(item => item.salon == profArr[0].id)
 
   return (
     <section>
@@ -55,8 +64,8 @@ const Profile = () => {
         <div className='profile-nav-bottom'>
           <div className="profile-nav-left">
             <div className='company-image' style={{
-              background: companyData[0].icon ? `url(${companyData[0].icon})` : "/images/ForCompanyImage.png",
-              backgroundSize: companyData[0].icon ? "cover" : "30%",
+              background: profArr[0].icon ? `url(${profArr[0].icon})` : "/images/ForCompanyImage.png",
+              backgroundSize: profArr[0].icon ? "cover" : "30%",
               backgroundPosition: "center center"
             }}>
 
@@ -64,7 +73,7 @@ const Profile = () => {
             <div className='profile-nav-info'>
               <div className='profile-salon-name'>
                 <h2>
-                  {companyData[0].name}
+                  {profArr[0].name}
                 </h2>
                 <button>
                   <img src="/images/editPen.png" alt="" />
@@ -74,12 +83,12 @@ const Profile = () => {
               <div className='profile-salon-rating'>
                 <div
                   className="stars"
-                  style={{ '--rating': companyData[0].rating }}
-                  aria-label={`Rating: ${companyData[0].rating} out of 5 stars`}
+                  style={{ '--rating': profArr[0].rating }}
+                  aria-label={`Rating: ${profArr[0].rating} out of 5 stars`}
                 >
                 </div>
                 <p>
-                  {companyData[0].rating} ({salonComments.length} отзывов )
+                  {profArr[0].rating} ({salonComments.length} отзывов )
                 </p>
               </div>
               <div className='profile-salon-sale'>
@@ -123,12 +132,12 @@ const Profile = () => {
         <div className="profile-body-left">
           <div className="company-data">
             <div className='company-images'>
-              {companyData[0].company_images.length > 0
+              {profArr[0].company_images.length > 0
                 ?
                 <div id="indicators-carousel" className="relative w-full" data-carousel="slide" data-carousel-interval="15000">
                   {/* <!-- Carousel wrapper --> */}
                   <div className="relative overflow-hidden md:h-96" style={{ height: "50vh", borderRadius: "1vw" }}>
-                    {companyData[0].company_images.map((item, index) => {
+                    {profArr[0].company_images.map((item, index) => {
                       return (<div
                         key={index}
                         className="hidden duration-700 ease-in-out"
@@ -148,7 +157,7 @@ const Profile = () => {
                   <div
                     style={{ bottom: "1vw" }}
                     className="absolute z-30 flex gap-x-px -translate-x-1/2 left-1/2 space-x-3 rtl:space-x-reverse">
-                    {companyData[0].company_images.map((_, index) => {
+                    {profArr[0].company_images.map((_, index) => {
                       return (
                         <button
                           key={index}
@@ -181,23 +190,23 @@ const Profile = () => {
                 <img src="/images/NoCompImg.png" alt="" className='compNoImg' />
               }
             </div>
-            <div className={companyData[0].title == "" ? 'company-title-empty' : 'company-title-full'}>
+            <div className={profArr[0].title == "" ? 'company-title-empty' : 'company-title-full'}>
               <img src="/images/titleIcon.png" alt="" />
               <h3>
-                {companyData[0].title == "" ? "Титул" : companyData[0].title }
+                {profArr[0].title == "" ? "Титул" : profArr[0].title }
               </h3>
             </div>
             <div className='company-about'>
               <h3>
                 О конторе
               </h3>
-              <p className={companyData[0].description == "" ? 'empty' : 'info'}>
-                {companyData[0].description == "" 
+              <p className={profArr[0].description == "" ? 'empty' : 'info'}>
+                {profArr[0].description == "" 
                 ? 
                 'Пусто...' 
                 : 
                 <ReadMoreReact
-                  text={companyData[0].description}
+                  text={profArr[0].description}
                   min={120}
                   ideal={350}
                   max={770}
@@ -217,12 +226,12 @@ const Profile = () => {
               <h3>
                 Примечание
               </h3>
-              <p className={companyData[0].additionals.length == 0 ? 'empty' : 'info'}>
-                {companyData[0].additionals.length == 0
+              <p className={profArr[0].additionals.length == 0 ? 'empty' : 'info'}>
+                {profArr[0].additionals.length == 0
                 ? 
                 'Пусто...' 
                 : 
-                companyData[0].additionals.map((item,index)=>{
+                profArr[0].additionals.map((item,index)=>{
                   return(
                     <p key={index}>
                     ✨ {item}
@@ -238,7 +247,7 @@ const Profile = () => {
               </h3>
               <div className='company-number-list'>
                 {
-                  companyData[0].phone.map((item, index) => {
+                  profArr[0].phone.map((item, index) => {
                     return (
                       <div className='company-number-card' key={index}>
                         <img src="/images/callIcon.png" alt="" />
@@ -252,7 +261,7 @@ const Profile = () => {
               </div>
             </div>
             {
-              companyData[0].social_media.length > 0
+              profArr[0].social_media.length > 0
                 ?
                 <div className='company-social'>
                   <h3>
@@ -260,7 +269,7 @@ const Profile = () => {
                   </h3>
                   <div className='company-social-list'>
                     {
-                      companyData[0].social_media.map((item, index) => {
+                      profArr[0].social_media.map((item, index) => {
                         return (
                           <div className='company-social-card' key={index}>
                             <img src={`/images/${item.type}.png`} alt="" />
@@ -284,7 +293,7 @@ const Profile = () => {
             </h3>
             <div className="facilities-list">
               {
-                companyData[0].facilities.map((item, index) => {
+                profArr[0].facilities.map((item, index) => {
                   return (
                     <div key={index} className='facilities-list-item'>
                       <img src={item.value ? item.icon + "true.png" : item.icon + ".png"} alt="" />
@@ -380,7 +389,7 @@ const Profile = () => {
                 </div>
                 <div style={{ minHeight: "10vh", display: "flex", alignItems: "end" }}>
                   <h1>
-                    {formatSumm(companyData[0].paymentSystem.summ)}
+                    {formatSumm(profArr[0].paymentSystem.summ)}
                   </h1>
                   <p>
                     UZS
@@ -397,7 +406,7 @@ const Profile = () => {
                 <div className='payment-system-card-bottom'>
                   <p>
                     <span>
-                      {companyData[0].paymentSystem.card_number.split('').map((item, index) => {
+                      {profArr[0].paymentSystem.card_number.split('').map((item, index) => {
                         if (index <= 3) {
                           return item
                         }
@@ -407,7 +416,7 @@ const Profile = () => {
                       **** ****
                     </span>
                     <span>
-                      {companyData[0].paymentSystem.card_number.split('').map((item, index) => {
+                      {profArr[0].paymentSystem.card_number.split('').map((item, index) => {
                         if (index >= 12) {
                           return item
                         }
@@ -415,7 +424,7 @@ const Profile = () => {
                     </span>
                   </p>
                   <h3>
-                    {companyData[0].paymentSystem.card_type}
+                    {profArr[0].paymentSystem.card_type}
                   </h3>
                 </div>
               </div>
@@ -428,7 +437,7 @@ const Profile = () => {
               </h3>
             </div>
             <div className='company-location-map'>
-              <YandexMap lat={companyData[0].location.lat} long={companyData[0].location.long} />
+              <YandexMap lat={profArr[0].location.lat} long={profArr[0].location.long} />
             </div>
             <div className='company-location-bottom'>
               <div className='company-location-address'>
@@ -451,9 +460,9 @@ const Profile = () => {
             </h3>
             <div>
               {
-                companyData[0].top_clients.length > 0
+                profArr[0].top_clients.length > 0
                   ?
-                  companyData[0].top_clients.map((item, index) => {
+                  profArr[0].top_clients.map((item, index) => {
                     return (
                       <div className='company-clients-card' key={index}>
                         <img src="/images/customerImage.png" alt="" className='top-client-image' />

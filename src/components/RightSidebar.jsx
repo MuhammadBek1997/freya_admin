@@ -1,9 +1,8 @@
 import React from 'react'
 import { UseGlobalContext } from '../Context';
-import { comments } from '../data/commentsData';
 
 const RightSidebar = () => {
-    const { t, selectedElement, closeRightSidebar , setConfirmModal } = UseGlobalContext()
+    const { t, selectedElement, closeRightSidebar , setConfirmModal, commentsArr } = UseGlobalContext()
 
     // Agar selectedElement yo'q bo'lsa, sidebar yopiq bo'ladi
     if (!selectedElement) return null;
@@ -83,7 +82,7 @@ const RightSidebar = () => {
                         <h4>{t("Mijoz kommentlari")}</h4>
                     </div>
                     <div className='right-comments-btm'>
-                        {comments.filter(comment => comment.id === selectedElement.id).map((comment, index) => (
+                        {commentsArr.filter(comment => comment.id === selectedElement.id).map((comment, index) => (
                             <div key={index} className='comment-item'>
                                 <div className='comment-rating'>
                                     <img src="/images/Star1.png" alt={t("Star")} />

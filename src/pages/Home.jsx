@@ -12,7 +12,10 @@ const Home = () => {
         isRightSidebarOpen,
         openRightSidebar,
         selectedFilter,
-        setSelectedFilter
+        setSelectedFilter,
+        appointments,
+        appointmentsError,
+        appointmentsLoading
       } = UseGlobalContext()
 
   // Sahifa yuklanganda, localStorage'dan filterni olish
@@ -150,7 +153,32 @@ const Home = () => {
         </div>
       </nav>
       <div className="home-body">
-        {moreDataAppoint.length > 0 ? moreDataAppoint.map((item) => {
+        {appointmentsLoading ? (
+          <div style={{
+            width: "100%",
+            height: "60vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            flexDirection: "column",
+            gap: "1vw"
+          }}>
+            <div style={{
+              width: "3vw",
+              height: "3vw",
+              border: "3px solid #f3f3f3",
+              borderTop: "3px solid #9C2BFF",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite"
+            }}></div>
+            <p style={{
+              color: "#A8A8B3",
+              fontSize: "1vw"
+            }}>
+              {t("loading") || "Loading appointments..."}
+            </p>
+          </div>
+        ) : appointments.length > 0 ? appointments.map((item) => {
           
           return <AppointCard key={item.id} {...item} openRightSidebar={openRightSidebar} />
         })

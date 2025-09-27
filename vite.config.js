@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://freyabackend-n5gu1r7os-muhammads-projects-3a6ae627.vercel.app',
+        target: 'https://freya-salon-backend-cc373ce6622a.herokuapp.com',
         changeOrigin: true,
         secure: true,
       }

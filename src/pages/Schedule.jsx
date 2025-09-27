@@ -3,7 +3,6 @@ import { UseGlobalContext } from '../Context'
 import AddScheduleModal from '../components/AddScheduleModal';
 import EditScheduleModal from '../components/EditScheduleModal';
 import BookScheduleModal from '../components/BookScheduleModal';
-import { mastersData } from '../data/mastersData';
 
 const Schedule = () => {
   const {
@@ -224,7 +223,7 @@ const Schedule = () => {
                   {
                     
                     item.master.map((masterId) => {
-                      let master = mastersData.find((i) => i.id == masterId)
+                      let master = mastersArr.find((i) => i.id == masterId)
                       return (
                         <div className='schedule-master-card' key={master.id}>
                           <img src="/images/masterImage.png" alt="" />

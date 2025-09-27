@@ -1,10 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { dataAppoint } from "./data/data";
-import { mastersData } from "./data/mastersData";
-import { scheduleData } from "./data/scheduleData";
-import { companyData } from "./data/companyData";
-import { comments } from "./data/commentsData";
 import useFetch from "./hooks/useFetch";
 import {
 	superAdminUrl,
@@ -29,6 +24,26 @@ export const AppProvider = ({ children }) => {
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const [authLoading, setAuthLoading] = useState(true);
 
+	// Appointments state
+	const [appointments, setAppointments] = useState([]);
+	const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+	const [appointmentsError, setAppointmentsError] = useState(null);
+
+	// Schedules state
+	const [schedules, setSchedules] = useState([]);
+	const [schedulesLoading, setSchedulesLoading] = useState(false);
+	const [schedulesError, setSchedulesError] = useState(null);
+
+	// Employees state
+	const [employees, setEmployees] = useState([]);
+	const [employeesLoading, setEmployeesLoading] = useState(false);
+	const [employeesError, setEmployeesError] = useState(null);
+
+	// Services state
+	const [services, setServices] = useState([]);
+	const [servicesLoading, setServicesLoading] = useState(false);
+	const [servicesError, setServicesError] = useState(null);
+
 	// API base URL
 	const API_BASE_URL = "https://freya-salon-backend-cc373ce6622a.herokuapp.com/api";
 
@@ -50,6 +65,11 @@ export const AppProvider = ({ children }) => {
 		}
 		setAuthLoading(false);
 	}, []);
+
+
+	let {data:salons,loading:salonsLoading} = useFetch(API_BASE_URL+"/salons");
+	
+	
 
 	// Admin login function
 	const loginAdmin = async (username, password) => {
@@ -142,6 +162,10 @@ export const AppProvider = ({ children }) => {
 		localStorage.removeItem('userData');
 		setUser(null);
 		setIsAuthenticated(false);
+		// Clear all data when logging out
+		setAppointments([]);
+		setSchedules([]);
+		setEmployees([]);
 	};
 
 	// Get auth token for API requests
@@ -149,31 +173,277 @@ export const AppProvider = ({ children }) => {
 		return localStorage.getItem('authToken');
 	};
 
-	const handleConfirm = async (item) => {
-		let newItem = {
-			id: item.id,
-			customer_name: item.customer_name,
-			appointment_date: item.appointment_date,
-			appointment_time: item.appointment_time,
-			is_confirmed: false,
-			salon: item.salon,
-			service: item.service,
-			master: item.master
+	// Fetch appointments by salon ID
+	const fetchAppointments = async (salonId) => {
+		if (!salonId) {
+			console.error('Salon ID is required to fetch appointments');
+			return;
 		}
 
+		setAppointmentsLoading(true);
+		setAppointmentsError(null);
+
 		try {
-			const response = await fetch(appointUrl + `${item.id}`, {
-				method: "PATCH",
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/appointments/salon/${salonId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Appointments fetched:', data);
+				setAppointments(data.data || []);
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch appointments');
+			}
+		} catch (error) {
+			console.error('Error fetching appointments:', error);
+			setAppointmentsError(error.message);
+			setAppointments([]);
+		} finally {
+			setAppointmentsLoading(false);
+		}
+	};
+
+
+	// Fetch schedules - all schedules from production server
+	const fetchSchedules = async () => {
+		setSchedulesLoading(true);
+		setSchedulesError(null);
+
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/schedules`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Schedules fetched:', data);
+				
+				// Filter schedules by salon_id if user has salon_id
+				let filteredSchedules = data.data || [];
+				if (user && user.salon_id) {
+					filteredSchedules = filteredSchedules.filter(schedule => 
+						schedule.salon_id === user.salon_id
+					);
+				}
+				
+				setSchedules(filteredSchedules);
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch schedules');
+			}
+		} catch (error) {
+			console.error('Error fetching schedules:', error);
+			setSchedulesError(error.message);
+			setSchedules([]);
+		} finally {
+			setSchedulesLoading(false);
+		}
+	};
+
+	// Create new schedule
+	const createSchedule = async (scheduleData) => {
+		setSchedulesLoading(true);
+		setSchedulesError(null);
+
+		try {
+			const token = getAuthToken();
+			
+			// Add salon_id from current user if not provided
+			const dataToSend = {
+				...scheduleData,
+				salon_id: scheduleData.salon_id || user?.salon_id
+			};
+
+			const response = await fetch(`${API_BASE_URL}/schedules`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(dataToSend),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Schedule created:', data);
+				
+				// Add new schedule to existing schedules
+				setSchedules(prevSchedules => [...prevSchedules, data]);
+				
+				// Refresh schedules to get updated list
+				await fetchSchedules();
+				
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to create schedule');
+			}
+		} catch (error) {
+			console.error('Error creating schedule:', error);
+			setSchedulesError(error.message);
+			throw error;
+		} finally {
+			setSchedulesLoading(false);
+		}
+	};
+
+	// Create new service
+	const createService = async (serviceData) => {
+		setServicesLoading(true);
+		setServicesError(null);
+
+		try {
+			const token = getAuthToken();
+			
+			// Add salon_id from current user if not provided
+			const dataToSend = {
+				...serviceData,
+				salon_id: serviceData.salon_id || user?.salon_id
+			};
+
+			const response = await fetch(`${API_BASE_URL}/services`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(dataToSend),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Service created:', data);
+				
+				// Add new service to existing services
+				setServices(prevServices => [...prevServices, data]);
+				
+				// Refresh services to get updated list
+				await fetchServices();
+				
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to create service');
+			}
+		} catch (error) {
+			console.error('Error creating service:', error);
+			setServicesError(error.message);
+			throw error;
+		} finally {
+			setServicesLoading(false);
+		}
+	};
+
+	// Fetch employees - all employees from production server
+	const fetchEmployees = async () => {
+		if (!user || !user.salon_id) {
+			console.error('User salon_id is required to fetch employees');
+			return;
+		}
+
+		setEmployeesLoading(true);
+		setEmployeesError(null);
+
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/employees/salon/${user.salon_id}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Employees fetched:', data);
+				setEmployees(data.data || []);
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch employees');
+			}
+		} catch (error) {
+			console.error('Error fetching employees:', error);
+			setEmployeesError(error.message);
+			setEmployees([]);
+		} finally {
+			setEmployeesLoading(false);
+		}
+	};
+
+	// Fetch services - all services from production server
+	const fetchServices = async () => {
+		setServicesLoading(true);
+		setServicesError(null);
+
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/services`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Services fetched:', data);
+				setServices(data.data || []);
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch services');
+			}
+		} catch (error) {
+			console.error('Error fetching services:', error);
+			setServicesError(error.message);
+			setServices([]);
+		} finally {
+			setServicesLoading(false);
+		}
+	};
+
+	// Fetch all data when user logs in and has salon_id
+	useEffect(() => {
+		if (isAuthenticated && user && user.salon_id) {
+			fetchAppointments(user.salon_id);
+			fetchSchedules();
+			fetchEmployees();
+			fetchServices();
+		}
+	}, [isAuthenticated, user]);
+
+	const handleConfirm = async (item) => {
+		try {
+			const response = await fetch(`${appointUrl}/${item.id}/status`, {
+				method: "PUT",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(newItem),
+				body: JSON.stringify({ status: "confirmed" }),
 			});
 
 			if (!response.ok) {
-				throw new Error("Update failed!");
+				throw new Error("Status update failed!");
 			}
 
 			const result = await response.json();
-			console.log("✅ Updated:", result);
+			console.log("✅ Status updated:", result);
+
+			// Appointmentlarni qayta yuklash
+			if (user && user.salon_id) {
+				fetchAppointments(user.salon_id);
+			}
 
 		} catch (err) {
 			console.error("❌ Error:", err.message);
@@ -192,24 +462,24 @@ export const AppProvider = ({ children }) => {
 	const [isDragging, setIsDragging] = useState(false)
 	const [startX, setStartX] = useState(0)
 	const [scrollLeft, setScrollLeft] = useState(0)
-	const [selectDay, setSelectDay] = useState(scheduleData)
+	const [selectDay, setSelectDay] = useState([])
 
 	// Employees sahifasi uchun state
 	const [waitingEmp, setWaitingEmp] = useState(JSON.parse(localStorage.getItem("waitingEmp")) || [])
 
 	// Home sahifasi uchun state
 	const [selectedFilter, setSelectedFilter] = useState(null)
-	const [mastersArr, setMastersArr] = useState(mastersData)
+	const [mastersArr, setMastersArr] = useState([])
 
 	// Schedule qo'shish uchun
 	const [addSched, setAddSched] = useState(false)
-	const [schedArr, setSchedArr] = useState(scheduleData)
-	const [commentsArr , setCommentsArr] = useState(comments)
+	const [schedArr, setSchedArr] = useState([])
+	const [commentsArr , setCommentsArr] = useState([])
 
 	
 
 	// Profile uchun data
-	const [profArr , setProfArr] = useState(companyData)
+	const [profArr , setProfArr] = useState([])
 
 
 
@@ -258,11 +528,6 @@ export const AppProvider = ({ children }) => {
 
 	const [confirmModal, setConfirmModal] = useState(true)
 
-	// const confirmCustomer = (amount)=>{
-	// 	setConfirmModal(true)
-
-	// }
-
 	
 
 
@@ -294,10 +559,8 @@ export const AppProvider = ({ children }) => {
 
 
 
-
-
 const moreDataAppoint = useMemo(() => {
-  let filteredAppoints = [...dataAppoint];
+  let filteredAppoints = [...appointments];
 
   // Filter qo'shish
   if (selectedFilter) {
@@ -351,7 +614,7 @@ const moreDataAppoint = useMemo(() => {
       time: { hour: hourOfApp, minute: minuteOfApp },
     };
   });
-}, [selectedFilter]);
+}, [appointments, selectedFilter]);
 	
 
 
@@ -427,7 +690,7 @@ const moreDataAppoint = useMemo(() => {
 		const heightVH = (rect.height / window.innerHeight) * 100;
 		const widthVW = (rect.width / window.innerWidth) * 100;
 
-		whiteBox.style.top = `${topVH}vh`;
+		whiteBox.style.top = `${topVH - 2}vh`;
 		whiteBox.style.left = `${leftVW}vw`;
 		whiteBox.style.height = `${heightVH}vh`;
 		whiteBox.style.width = `${widthVW}vw`;
@@ -495,10 +758,18 @@ const moreDataAppoint = useMemo(() => {
 			//Schedule state
 			addSched, setAddSched, schedArr,
 			// Profile page state
-			companyData,commentsArr,
+			profArr, setProfArr, commentsArr, setCommentsArr,
 			// Authentication state va funksiyalari
-			user, isAuthenticated, authLoading,
-			loginAdmin, loginEmployee, logout, getAuthToken
+			user, isAuthenticated, authLoading, setUser, setIsAuthenticated,
+			loginAdmin, loginEmployee, logout, getAuthToken,
+			// Appointments state va funksiyalari
+			appointments, appointmentsLoading, appointmentsError, fetchAppointments,
+			// Schedules state va funksiyalari
+			schedules, schedulesLoading, schedulesError, fetchSchedules, createSchedule,
+			// Employees state va funksiyalari
+			employees, employeesLoading, employeesError, fetchEmployees,
+			// Services state va funksiyalari
+			services, servicesLoading, servicesError, fetchServices, createService
 
 		}}>
 			{children}

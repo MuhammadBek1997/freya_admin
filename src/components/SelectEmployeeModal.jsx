@@ -1,7 +1,8 @@
 import React from 'react'
-import { mastersData } from '../data/mastersData'
+import { UseGlobalContext } from '../Context'
 
 const SelectEmployeeModal = ({ setSelectEmploy }) => {
+  const { mastersArr } = UseGlobalContext()
 
 
 
@@ -18,7 +19,7 @@ const SelectEmployeeModal = ({ setSelectEmploy }) => {
         </div>
         <div className='select-employModal-body'>
           {
-            mastersData.map((item) => {
+            mastersArr.map((item) => {
               return (
                 <div className='select-employModal-body-item' key={item.id}>
                   <div className='select-employModal-body-item-top'>

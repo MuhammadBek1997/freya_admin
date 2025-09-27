@@ -1,6 +1,5 @@
 import React from 'react'
 import { UseGlobalContext } from '../Context';
-import { mastersData } from '../data/mastersData';
 
 const AppointCard = ({id,is_confirmed,salon,service, customer_name,appointment_time, appointment_date,time, date, master, openRightSidebar}) => {
   
@@ -12,7 +11,7 @@ const AppointCard = ({id,is_confirmed,salon,service, customer_name,appointment_t
         
     }
     
-    const selectedMaster = mastersData.find((item)=>item.id == master) 
+    const selectedMaster = mastersArr.find((item)=>item.id == master) 
     
 
     return (
