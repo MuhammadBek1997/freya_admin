@@ -62,6 +62,7 @@ const Schedule = () => {
   const [editModal, setEditModal] = useState(false)
 
 
+  console.log(dayListItems);
 
   const containerRef = useRef(null)
 
@@ -70,6 +71,7 @@ const Schedule = () => {
     setSelectDay(element)
   }
 
+  
 
   return (
     <section>
