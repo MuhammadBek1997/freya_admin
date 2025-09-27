@@ -16,7 +16,8 @@ const Schedule = () => {
     addSched,
     setAddSched,
     schedArr,
-    mastersArr
+    mastersArr,
+    schedules
   } = UseGlobalContext()
   let currentDay = {
     day: new Date().getDate(),
@@ -162,7 +163,7 @@ const Schedule = () => {
       </nav>
       <div className='schedule-body'>
         {
-          selectDay.map((item) => {
+          schedules.map((item) => {
             return (
               <div key={item.id} className='schedule-list-item'>
                 <div className='schedule-item-top'>

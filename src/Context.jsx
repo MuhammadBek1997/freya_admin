@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import useFetch from "./hooks/useFetch";
 import {
 	superAdminUrl,
 	adminUrl,
@@ -17,7 +16,7 @@ import {
 
 // API base URL configuration
 const API_BASE_URL = import.meta.env.DEV 
-  ? "http://localhost:5173/api"
+  ? "http://localhost:3000/api"
   : import.meta.env.VITE_API_BASE_URL;
 
 const AppContext = createContext();
@@ -71,7 +70,42 @@ export const AppProvider = ({ children }) => {
 	}, []);
 
 
-	let {data:salons,loading:salonsLoading} = useFetch(API_BASE_URL+"/salons");
+	// Salons state
+	const [salons, setSalons] = useState([]);
+	const [salonsLoading, setSalonsLoading] = useState(false);
+	const [salonsError, setSalonsError] = useState(null);
+
+	// Fetch salons with authentication
+	const fetchSalons = async () => {
+		setSalonsLoading(true);
+		setSalonsError(null);
+
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/salons`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Salons fetched:', data);
+				setSalons(data.data || []);
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch salons');
+			}
+		} catch (error) {
+			console.error('Error fetching salons:', error);
+			setSalonsError(error.message);
+			setSalons([]);
+		} finally {
+			setSalonsLoading(false);
+		}
+	};
 	
 	
 
@@ -426,6 +460,7 @@ export const AppProvider = ({ children }) => {
 			fetchSchedules();
 			fetchEmployees();
 			fetchServices();
+			fetchSalons();
 		}
 	}, [isAuthenticated, user]);
 
@@ -773,7 +808,9 @@ const moreDataAppoint = useMemo(() => {
 			// Employees state va funksiyalari
 			employees, employeesLoading, employeesError, fetchEmployees,
 			// Services state va funksiyalari
-			services, servicesLoading, servicesError, fetchServices, createService
+			services, servicesLoading, servicesError, fetchServices, createService,
+			// Salons state va funksiyalari
+			salons, salonsLoading, salonsError, fetchSalons
 
 		}}>
 			{children}
