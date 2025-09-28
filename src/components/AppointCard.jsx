@@ -12,12 +12,33 @@ const AppointCard = ({
     service_name,
     service_price,
     status,
-    time,
-    date,
     openRightSidebar
 }) => {
   
     const {selectedElement} = UseGlobalContext()
+
+    // Parse date and time from strings
+    const parseDate = (dateString) => {
+        if (!dateString) return { day: '', month: '', year: '' };
+        const date = new Date(dateString);
+        return {
+            day: date.getDate(),
+            month: date.getMonth() + 1,
+            year: date.getFullYear()
+        };
+    };
+
+    const parseTime = (timeString) => {
+        if (!timeString) return { hour: '', minute: '' };
+        const [hour, minute] = timeString.split(':');
+        return {
+            hour: parseInt(hour),
+            minute: parseInt(minute)
+        };
+    };
+
+    const date = parseDate(application_date);
+    const time = parseTime(application_time);
 
     const handleCardClick = () => {
         openRightSidebar({
@@ -30,9 +51,7 @@ const AppointCard = ({
             employee_name,
             service_name,
             service_price,
-            status,
-            time,
-            date
+            status
         });
     }
 
@@ -53,10 +72,10 @@ const AppointCard = ({
                     {phone_number}
                 </a>
                 <p className='appointDate'>
-                    {date.day}.{date.month<10 ? 0+String(date.month) : date.month}.{date.year}
+                    {application_date ? new Date(application_date).toLocaleDateString('ru-RU') : 'N/A'}
                 </p>
                 <p className='appointTime'>
-                    {time.hour}:{time.minute < 10 ? "0" + time.minute : time.minute}
+                    {application_time || 'N/A'}
                 </p>
             </div>
             <div className='appoint-card-master' >

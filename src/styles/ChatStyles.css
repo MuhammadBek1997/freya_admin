@@ -14,11 +14,6 @@
   --header-bg: #9ba7f4;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
 body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
@@ -63,7 +58,7 @@ header{
   flex-shrink: 0;
 }
 
-.profile-card {
+.chat-profile-card {
   background-color: #8d2afd;
   text-align: center;
   display: flex;
@@ -74,7 +69,7 @@ header{
   border-bottom-right-radius: 20px;
 }
 
-.avatar-container {
+.chat-avatar-container {
   position: relative;
   display: flex;
   align-items: start;
@@ -119,19 +114,19 @@ header{
   border-radius: 50%;
 }
 
-.profile-info {
+.chat-profile-info {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 20px;
 }
 
-.profile-name {
+.chat-profile-name {
   font-size: 20px;
   font-weight: 300;
 }
 
-.profile-role {
+.chat-profile-role {
   display: inline-block;
   background-color: #00ca8399;
   padding: 4px 10px;
@@ -169,7 +164,7 @@ header{
   font-weight: 200;
 }
 
-.stats {
+.chat-stats {
   display: flex;
   justify-content: space-around;
   align-items: end;
@@ -177,17 +172,17 @@ header{
   gap: 50px;
 }
 
-.stat-item {
+.chat-stat-item {
   text-align: center;
 }
 
-.stats-number {
+.chat-stats-number {
   font-size: 40px;
   font-weight: 600;
   display: block;
 }
 
-.stats-label {
+.chat-stats-label {
   font-size: 14px;
   font-weight: 400;
   opacity: 0.8;
@@ -223,7 +218,7 @@ header{
   background-color: #ffffff;
 }
 
-.avatar-wrapper {
+.chat-avatar-wrapper {
   position: relative;
   margin-right: 12px;
 }

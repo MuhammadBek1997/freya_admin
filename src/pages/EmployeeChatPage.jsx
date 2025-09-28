@@ -11,26 +11,26 @@ const EmployeeChatPage = () => {
           <img src="Avatar.svg" alt="User" className="profile-avatar" />
         </div>
 
-        <div className="profile-card">
-          <span className="profile-info">
-            <h2 className="profile-name">Анастасия</h2>
-            <span className="profile-role">Тренер</span>
+        <div className="chat-profile-card">
+          <span className="chat-profile-info">
+            <h2 className="chat-profile-name">Анастасия</h2>
+            <span className="chat-profile-role">Тренер</span>
           </span>
           <button className="profile-btn">
             <img className="profile-btn-icon" src="btnicon.svg" alt="" />
             <p>Мой профиль →</p>
           </button>
-          <div className="stats">
-            <div className="stat-item">
-              <span className="stats-label">Чаты</span>
-              <span className="stats-number">18</span>
+          <div className="chat-stats">
+            <div className="chat-stat-item">
+              <span className="chat-stats-label">Чаты</span>
+              <span className="chat-stats-number">18</span>
             </div>
             <span>
               <img src="chatline.svg" alt="" />
             </span>
-            <div className="stat-item">
-              <span className="stats-label">Новые</span>
-              <span className="stats-number">9</span>
+            <div className="chat-stat-item">
+              <span className="chat-stats-label">Новые</span>
+              <span className="chat-stats-number">9</span>
             </div>
           </div>
         </div>
@@ -39,7 +39,7 @@ const EmployeeChatPage = () => {
           <h3 className="chat-section-title">Непрочитанные (3)</h3>
 
           <div className="chat-item unread">
-            <div className="avatar-wrapper">
+            <div className="chat-avatar-wrapper">
               <img
                 className="chat-avatar"
                 src="Непрочитонные_img1.svg"
@@ -63,7 +63,7 @@ const EmployeeChatPage = () => {
           </div>
 
           <div className="chat-item unread">
-            <div className="avatar-wrapper">
+            <div className="chat-avatar-wrapper">
               <img className="chat-avatar" src="chatIcon2.svg" alt="" />
               <span className="unread-dot"></span>
             </div>
@@ -83,7 +83,7 @@ const EmployeeChatPage = () => {
           </div>
 
           <div className="chat-item unread">
-            <div className="avatar-wrapper">
+            <div className="chat-avatar-wrapper">
               <img className="chat-avatar" src="chatIcon3.svg" alt="" />
               <span className="unread-dot"></span>
             </div>
@@ -103,7 +103,7 @@ const EmployeeChatPage = () => {
           <h3 className="chat-section-title">Прочитанные (6)</h3>
 
           <div className="chat-item unread">
-            <div className="avatar-wrapper">
+            <div className="chat-avatar-wrapper">
               <img className="chat-avatar" src="Anastita.svg" alt="" />
               <span className="unread-dot"></span>
             </div>
@@ -125,7 +125,7 @@ const EmployeeChatPage = () => {
           </div>
 
           <div className="chat-item unread">
-            <div className="avatar-wrapper">
+            <div className="chat-avatar-wrapper">
               <img className="chat-avatar" src="Alisa.svg" alt="" />
               <span className="unread-dot"></span>
             </div>
@@ -147,7 +147,7 @@ const EmployeeChatPage = () => {
           </div>
 
           <div className="chat-item unread">
-            <div className="avatar-wrapper">
+            <div className="chat-avatar-wrapper">
               <img className="chat-avatar" src="natasha.svg" alt="" />
               <span className="unread-dot"></span>
             </div>
