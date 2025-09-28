@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { UseGlobalContext } from '../Context'
 import YandexMap from '../components/YandexMap'
 import ReadMoreReact from 'read-more-react';
@@ -10,6 +10,8 @@ const Profile = () => {
     t, language, handleChange, profArr, commentsArr,
     adminSalonLoading, adminSalonError, fetchAdminSalon 
   } = UseGlobalContext()
+
+  const [changeMode,setChangeMode] = useState(false)
 
   // Komponent yuklanganda admin salon ma'lumotlarini olish
   useEffect(() => {
@@ -115,6 +117,7 @@ const Profile = () => {
 
   let salonComments = commentsArr.filter(item => item.salon == profArr[0]?.id)
 
+  if(!changeMode){
   return (
     <section>
       <nav className='profile-nav'>
@@ -592,6 +595,7 @@ const Profile = () => {
       </div>
     </section>
   )
+  }
 }
 
 export default Profile
