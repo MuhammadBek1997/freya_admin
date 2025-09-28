@@ -51,5 +51,20 @@
     "Star":"Звезда",
     "Verified":"Подтверждено",
     "Пришла":"Пришла",
-    "Отклонить":"Отклонить"
+    "Отклонить":"Отклонить",
+    "profileTitle": "Профиль заведение",
+    "profileEdit": "Редактировать",
+    "profileReviews": "отзывов",
+    "profileClientsMonth": "Клиентов за месяц",
+    "profileWorkTime": "Рабочее время",
+    "profileWorkDays": "Понедельник - Суббота",
+    "profileAbout": "О конторе",
+    "profileEmpty": "Пусто...",
+    "profileReadMore": "Читать больше",
+    "profileNote": "Примечание",
+    "profilePhone": "Номер телефона",
+    "profileSocial": "Социальные сети",
+    "profileFacilities": "Удобства",
+    "profileTitle2": "Титул",
+    "profileLogout": "Выйти"
 }

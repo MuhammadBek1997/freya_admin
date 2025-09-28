@@ -12,8 +12,8 @@ import Login from './pages/Login'
 import Home from './pages/Home'
 import Schedule from './pages/Schedule'
 import Employees from './pages/Employees'
-import Profile from './pages/Profile'
 import EmployeeChatPage from './pages/EmployeeChatPage'
+import Profile from './pages/Profile'
 import { UseGlobalContext } from './Context'
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -58,6 +58,7 @@ function App() {
           <Route path='/' element={<Home/>} />
           <Route path='/schedule' element={<Schedule/>} />
           <Route path='/employees' element={<Employees/>} />
+          <Route path='/chat' element={<EmployeeChatPage/>} />
           <Route path='/profile' element={<Profile/>} />
           <Route path='/employee-chat' element={
             <ProtectedRoute requiredRole="employee">

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { UseGlobalContext } from '../Context'
 import YandexMap from '../components/YandexMap'
 import ReadMoreReact from 'read-more-react';
@@ -6,10 +6,45 @@ import ReadMoreReact from 'read-more-react';
 
 const Profile = () => {
 
-  const { t, language, handleChange, profArr, commentsArr } = UseGlobalContext()
+  const { 
+    t, language, handleChange, profArr, commentsArr,
+    adminSalonLoading, adminSalonError, fetchAdminSalon 
+  } = UseGlobalContext()
 
+  // Komponent yuklanganda admin salon ma'lumotlarini olish
+  useEffect(() => {
+    const loadAdminSalon = async () => {
+      try {
+        await fetchAdminSalon();
+      } catch (error) {
+        console.error('Failed to load admin salon:', error);
+      }
+    };
+
+    // Agar profArr bo'sh bo'lsa, ma'lumotlarni yuklash
+    if (!profArr || profArr.length === 0) {
+      loadAdminSalon();
+    }
+  }, []);
+
+  // Tilga qarab salon ma'lumotlarini olish funksiyasi
+  const getSalonData = (salon, field) => {
+    if (!salon) return '';
+    
+    switch (language) {
+      case 'uz':
+        return salon[`${field}_uz`] || salon[field] || '';
+      case 'en':
+        return salon[`${field}_en`] || salon[field] || '';
+      case 'ru':
+        return salon[`${field}_ru`] || salon[field] || '';
+      default:
+        return salon[field] || '';
+    }
+  };
 
   const formatSumm = (num) => {
+    if (!num || num === 0) return '0';
     let init = 5
     if (num >= 10000000000) {
       init = 9
@@ -30,16 +65,55 @@ const Profile = () => {
       .reverse()
       .reduce((acc, digit, i) => (i > 0 && (num.toString().length - (i - init)) % 3 === 0 ? ` ${digit}${acc}` : `${digit}${acc}`), '');
   }
-  // Agar profArr bo'sh bo'lsa, loading ko'rsatamiz
-  if (!profArr || profArr.length === 0) {
+  
+  // Loading va error holatlarini ko'rsatish
+  if (adminSalonLoading || (!profArr || profArr.length === 0 || !profArr[0])) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <p>Loading profile data...</p>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px',
+        color: '#666'
+      }}>
+        {t('loading')}...
       </div>
-    )
+    );
   }
 
-  let salonComments = commentsArr.filter(item => item.salon == profArr[0].id)
+  // Error holatini ko'rsatish
+  if (adminSalonError) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px',
+        color: '#d32f2f'
+      }}>
+        <p>Xatolik yuz berdi: {adminSalonError}</p>
+        <button 
+          onClick={() => fetchAdminSalon()}
+          style={{
+            marginTop: '10px',
+            padding: '10px 20px',
+            backgroundColor: '#1976d2',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}
+        >
+          Qayta urinish
+        </button>
+      </div>
+    );
+  }
+
+  let salonComments = commentsArr.filter(item => item.salon == profArr[0]?.id)
 
   return (
     <section>
@@ -48,7 +122,7 @@ const Profile = () => {
           <div className='profile-nav-logo'>
             <img src="/images/profileIcon.png" alt="" />
             <h2>
-              Профиль заведение
+              {t('profileTitle')}
             </h2>
           </div>
           <div className='profile-nav-lang'>
@@ -64,7 +138,7 @@ const Profile = () => {
             localStorage.removeItem('token')
             window.location.href = '/login'
           }}>
-            Выйти
+            {t('profileLogout')}
           </button>
         </div>
         <div className='profile-nav-bottom'>
@@ -79,11 +153,11 @@ const Profile = () => {
             <div className='profile-nav-info'>
               <div className='profile-salon-name'>
                 <h2>
-                  {profArr[0].name}
+                  {getSalonData(profArr[0], 'salon_name') || profArr[0].name}
                 </h2>
                 <button>
                   <img src="/images/editPen.png" alt="" />
-                  Редактировать
+                  {t('profileEdit')}
                 </button>
               </div>
               <div className='profile-salon-rating'>
@@ -94,7 +168,7 @@ const Profile = () => {
                 >
                 </div>
                 <p>
-                  {profArr[0].rating} ({salonComments.length} отзывов )
+                  {profArr[0].rating} ({salonComments.length} {t('profileReviews')} )
                 </p>
               </div>
               <div className='profile-salon-sale'>
@@ -107,7 +181,7 @@ const Profile = () => {
               <div>
                 <img src="/images/profileAv.png" alt="" />
                 <p>
-                  Клиентов за месяц
+                  {t('profileClientsMonth')}
                 </p>
               </div>
               <h4>
@@ -127,7 +201,7 @@ const Profile = () => {
               <div>
                 <img src="/images/workDateIcon.png" alt="" />
                 <h3>
-                  Понедельник - Суббота
+                  {t('profileWorkDays')}
                 </h3>
               </div>
             </div>
@@ -138,12 +212,12 @@ const Profile = () => {
         <div className="profile-body-left">
           <div className="company-data">
             <div className='company-images'>
-              {profArr[0].company_images.length > 0
+              {profArr[0]?.company_images?.length > 0
                 ?
                 <div id="indicators-carousel" className="relative w-full" data-carousel="slide" data-carousel-interval="15000">
                   {/* <!-- Carousel wrapper --> */}
                   <div className="relative overflow-hidden md:h-96" style={{ height: "50vh", borderRadius: "1vw" }}>
-                    {profArr[0].company_images.map((item, index) => {
+                    {profArr[0]?.company_images?.map((item, index) => {
                       return (<div
                         key={index}
                         className="hidden duration-700 ease-in-out"
@@ -163,7 +237,7 @@ const Profile = () => {
                   <div
                     style={{ bottom: "1vw" }}
                     className="absolute z-30 flex gap-x-px -translate-x-1/2 left-1/2 space-x-3 rtl:space-x-reverse">
-                    {profArr[0].company_images.map((_, index) => {
+                    {profArr[0]?.company_images?.map((_, index) => {
                       return (
                         <button
                           key={index}
@@ -196,23 +270,23 @@ const Profile = () => {
                 <img src="/images/NoCompImg.png" alt="" className='compNoImg' />
               }
             </div>
-            <div className={profArr[0].title == "" ? 'company-title-empty' : 'company-title-full'}>
+            <div className={getSalonData(profArr[0], 'salon_title') == "" ? 'company-title-empty' : 'company-title-full'}>
               <img src="/images/titleIcon.png" alt="" />
               <h3>
-                {profArr[0].title == "" ? "Титул" : profArr[0].title }
+                {getSalonData(profArr[0], 'salon_title') == "" ? t('profileTitle2') : getSalonData(profArr[0], 'salon_title') }
               </h3>
             </div>
             <div className='company-about'>
               <h3>
-                О конторе
+                {t('profileAbout')}
               </h3>
-              <p className={profArr[0].description == "" ? 'empty' : 'info'}>
-                {profArr[0].description == "" 
+              <p className={getSalonData(profArr[0], 'salon_description') == "" ? 'empty' : 'info'}>
+                {getSalonData(profArr[0], 'salon_description') == "" 
                 ? 
-                'Пусто...' 
+                t('profileEmpty')
                 : 
                 <ReadMoreReact
-                  text={profArr[0].description}
+                  text={getSalonData(profArr[0], 'salon_description')}
                   min={120}
                   ideal={350}
                   max={770}
@@ -222,7 +296,7 @@ const Profile = () => {
                     fontSize: "1.1vw",
                     textDecoration:"underline"
                   }}>
-                    Читать больше
+                    {t('profileReadMore')}
                   </span>}
                   />}
                 
@@ -230,14 +304,14 @@ const Profile = () => {
             </div>
             <div className='company-add'>
               <h3>
-                Примечание
+                {t('profileNote')}
               </h3>
-              <p className={profArr[0].additionals.length == 0 ? 'empty' : 'info'}>
-                {profArr[0].additionals.length == 0
+              <p className={profArr[0]?.additionals?.length == 0 ? 'empty' : 'info'}>
+                {profArr[0]?.additionals?.length == 0
                 ? 
-                'Пусто...' 
+                t('profileEmpty')
                 : 
-                profArr[0].additionals.map((item,index)=>{
+                profArr[0]?.additionals?.map((item,index)=>{
                   return(
                     <p key={index}>
                     ✨ {item}
@@ -249,33 +323,41 @@ const Profile = () => {
             </div>
             <div className='company-number'>
               <h3>
-                Номер телефона
+                {t('profilePhone')}
               </h3>
               <div className='company-number-list'>
                 {
-                  profArr[0].phone.map((item, index) => {
-                    return (
-                      <div className='company-number-card' key={index}>
-                        <img src="/images/callIcon.png" alt="" />
-                        <a href="">
-                          {item}
-                        </a>
-                      </div>
-                    )
-                  })
+                  profArr[0]?.salon_phone && (
+                    <div className='company-number-card'>
+                      <img src="/images/callIcon.png" alt="" />
+                      <a href={`tel:${profArr[0].salon_phone}`}>
+                        {profArr[0].salon_phone}
+                      </a>
+                    </div>
+                  )
+                }
+                {
+                  profArr[0]?.salon_add_phone && (
+                    <div className='company-number-card'>
+                      <img src="/images/callIcon.png" alt="" />
+                      <a href={`tel:${profArr[0].salon_add_phone}`}>
+                        {profArr[0].salon_add_phone}
+                      </a>
+                    </div>
+                  )
                 }
               </div>
             </div>
             {
-              profArr[0].social_media.length > 0
+              profArr[0]?.social_media?.length > 0
                 ?
                 <div className='company-social'>
                   <h3>
-                    Социальные сети
+                    {t('profileSocial')}
                   </h3>
                   <div className='company-social-list'>
                     {
-                      profArr[0].social_media.map((item, index) => {
+                      profArr[0]?.social_media?.map((item, index) => {
                         return (
                           <div className='company-social-card' key={index}>
                             <img src={`/images/${item.type}.png`} alt="" />
@@ -295,11 +377,11 @@ const Profile = () => {
           </div>
           <div className="company-facilities">
             <h3>
-              Удобства
+              {t('profileFacilities')}
             </h3>
             <div className="facilities-list">
               {
-                profArr[0].facilities.map((item, index) => {
+                profArr[0]?.facilities?.map((item, index) => {
                   return (
                     <div key={index} className='facilities-list-item'>
                       <img src={item.value ? item.icon + "true.png" : item.icon + ".png"} alt="" />
@@ -395,7 +477,7 @@ const Profile = () => {
                 </div>
                 <div style={{ minHeight: "10vh", display: "flex", alignItems: "end" }}>
                   <h1>
-                    {formatSumm(profArr[0].paymentSystem.summ)}
+                    {formatSumm(profArr[0]?.paymentSystem?.summ)}
                   </h1>
                   <p>
                     UZS
@@ -412,7 +494,7 @@ const Profile = () => {
                 <div className='payment-system-card-bottom'>
                   <p>
                     <span>
-                      {profArr[0].paymentSystem.card_number.split('').map((item, index) => {
+                      {profArr[0]?.paymentSystem?.card_number?.split('').map((item, index) => {
                         if (index <= 3) {
                           return item
                         }
@@ -422,7 +504,7 @@ const Profile = () => {
                       **** ****
                     </span>
                     <span>
-                      {profArr[0].paymentSystem.card_number.split('').map((item, index) => {
+                      {profArr[0]?.paymentSystem?.card_number?.split('').map((item, index) => {
                         if (index >= 12) {
                           return item
                         }
@@ -430,7 +512,7 @@ const Profile = () => {
                     </span>
                   </p>
                   <h3>
-                    {profArr[0].paymentSystem.card_type}
+                    {profArr[0]?.paymentSystem?.card_type}
                   </h3>
                 </div>
               </div>
@@ -443,7 +525,7 @@ const Profile = () => {
               </h3>
             </div>
             <div className='company-location-map'>
-              <YandexMap lat={profArr[0].location.lat} long={profArr[0].location.long} />
+              <YandexMap lat={profArr[0]?.location?.lat} long={profArr[0]?.location?.long} />
             </div>
             <div className='company-location-bottom'>
               <div className='company-location-address'>
@@ -466,9 +548,9 @@ const Profile = () => {
             </h3>
             <div>
               {
-                profArr[0].top_clients.length > 0
+                profArr[0]?.top_clients?.length > 0
                   ?
-                  profArr[0].top_clients.map((item, index) => {
+                  profArr[0]?.top_clients?.map((item, index) => {
                     return (
                       <div className='company-clients-card' key={index}>
                         <img src="/images/customerImage.png" alt="" className='top-client-image' />

@@ -51,5 +51,20 @@
     "Star": "Star",
     "Verified": "Verified",
     "Пришла": "Arrived",
-    "Отклонить": "Decline"
+    "Отклонить": "Decline",
+    "profileTitle": "Profile establishment",
+    "profileEdit": "Edit",
+    "profileReviews": "reviews",
+    "profileClientsMonth": "Clients per month",
+    "profileWorkTime": "Working hours",
+    "profileWorkDays": "Monday - Saturday",
+    "profileAbout": "About establishment",
+    "profileEmpty": "Empty...",
+    "profileReadMore": "Read more",
+    "profileNote": "Note",
+    "profilePhone": "Phone number",
+    "profileSocial": "Social networks",
+    "profileFacilities": "Facilities",
+    "profileTitle2": "Title",
+    "profileLogout": "Logout"
 }

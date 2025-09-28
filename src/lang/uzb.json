@@ -51,5 +51,20 @@
     "Star": "Yulduz",
     "Verified": "Tasdiqlangan",
     "Пришла": "Keldi",
-    "Отклонить": "Rad etish"
+    "Отклонить": "Rad etish",
+    "profileTitle": "Profil muassasa",
+    "profileEdit": "Tahrirlash",
+    "profileReviews": "sharhlar",
+    "profileClientsMonth": "Oylik mijozlar",
+    "profileWorkTime": "Ish vaqti",
+    "profileWorkDays": "Dushanba - Shanba",
+    "profileAbout": "Muassasa haqida",
+    "profileEmpty": "Bo'sh...",
+    "profileReadMore": "Ko'proq o'qish",
+    "profileNote": "Izoh",
+    "profilePhone": "Telefon raqami",
+    "profileSocial": "Ijtimoiy tarmoqlar",
+    "profileFacilities": "Qulayliklar",
+    "profileTitle2": "Sarlavha",
+    "profileLogout": "Chiqish"
 }

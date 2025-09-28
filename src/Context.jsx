@@ -565,6 +565,42 @@ export const AppProvider = ({ children }) => {
 
 	// Profile uchun data
 	const [profArr , setProfArr] = useState([])
+	const [adminSalonLoading, setAdminSalonLoading] = useState(false)
+	const [adminSalonError, setAdminSalonError] = useState(null)
+
+	// Admin salon ma'lumotlarini olish
+	const fetchAdminSalon = async () => {
+		setAdminSalonLoading(true);
+		setAdminSalonError(null);
+
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/admin/my-salon`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Admin salon fetched:', data);
+				setProfArr([data.data]); // profArr array formatida saqlanadi
+				return data.data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch admin salon');
+			}
+		} catch (error) {
+			console.error('Error fetching admin salon:', error);
+			setAdminSalonError(error.message);
+			setProfArr([]);
+			throw error;
+		} finally {
+			setAdminSalonLoading(false);
+		}
+	};
 
 
 
@@ -847,6 +883,7 @@ const moreDataAppoint = useMemo(() => {
 			addSched, setAddSched, schedArr,
 			// Profile page state
 			profArr, setProfArr, commentsArr, setCommentsArr,
+			adminSalonLoading, adminSalonError, fetchAdminSalon,
 			// Authentication state va funksiyalari
 			user, isAuthenticated, authLoading, setUser, setIsAuthenticated,
 			loginAdmin, loginEmployee, logout, getAuthToken,
