@@ -5,9 +5,9 @@ const EmployeeChatPage = () => {
     <div>
        <div className="chat-container">
       {/* LEFT SIDEBAR */}
-      <aside className="sidebar">
-        <div className="sidebar-top">
-          <img className="sidebarLogo" src="sidebarLogo.svg" alt="Logo" />
+      <aside className="chatSidebar">
+        <div className="chatSidebar-top">
+          <img className="chatSidebarLogo" src="sidebarLogo.svg" alt="Logo" />
           <img src="Avatar.svg" alt="User" className="profile-avatar" />
         </div>
 

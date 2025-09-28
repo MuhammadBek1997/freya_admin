@@ -52,8 +52,8 @@ header{
   overflow: hidden;
 }
 
-/* SIDEBAR STYLES */
-.sidebar {
+/* chatSIDEBAR STYLES */
+.chatSidebar {
   width: 431px;
   background-color: #9c2bff;
   color: var(--text-light);
@@ -81,19 +81,19 @@ header{
   margin-bottom: 10px;
 }
 
-.sidebar-logo-wrapper {
+.chatSidebar-logo-wrapper {
   padding: 30px 0 0 20px;
   background-color: #8d2afd;
 }
 
-.sidebar-top {
+.chatSidebar-top {
   display: flex;
   gap: 15px;
   padding: 20px;
   background-color: #8d2afd;
 }
 
-.sidebarLogo {
+.chatSidebarLogo {
   width: 42px;
   height: 42px;
 }
@@ -522,7 +522,7 @@ header{
 
 /* RESPONSIVE DESIGN */
 @media (max-width: 1024px) {
-  .sidebar {
+  .chatSidebar {
     width: 280px;
   }
 }
@@ -532,7 +532,7 @@ header{
     flex-direction: column;
   }
 
-  .sidebar {
+  .chatSidebar {
     width: 100%;
     height: auto;
     max-height: 40vh;
