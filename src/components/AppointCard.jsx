@@ -53,7 +53,9 @@ const AppointCard = ({
             employee_name,
             service_name,
             service_price,
-            status
+            status,
+            time,
+            date
         });
     }
 

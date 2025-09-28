@@ -61,14 +61,27 @@ const RightSidebar = () => {
                     <div className='appTime-left'>
                         <div >
                             <p>
-                                {selectedElement.time.hour} : {selectedElement.time.minute < 10 ? "0" + selectedElement.time.minute : selectedElement.time.minute}
+                                {selectedElement.time && selectedElement.time.hour !== undefined 
+                                    ? `${selectedElement.time.hour} : ${selectedElement.time.minute < 10 ? "0" + selectedElement.time.minute : selectedElement.time.minute}`
+                                    : selectedElement.application_time || 'N/A'
+                                }
                             </p>
                         </div>
                     </div>
                     <div className='appTime-right'>
                         <div>
                             <p>
-                                {selectedElement.time.hour + 1} : {selectedElement.time.minute < 10 ? "0" + selectedElement.time.minute : selectedElement.time.minute}
+                                {selectedElement.time && selectedElement.time.hour !== undefined 
+                                    ? `${selectedElement.time.hour + 1} : ${selectedElement.time.minute < 10 ? "0" + selectedElement.time.minute : selectedElement.time.minute}`
+                                    : selectedElement.application_time ? 
+                                        (() => {
+                                            const timeParts = selectedElement.application_time.split(':');
+                                            const hour = parseInt(timeParts[0], 10) + 1;
+                                            const minute = parseInt(timeParts[1], 10);
+                                            return `${hour} : ${minute < 10 ? "0" + minute : minute}`;
+                                        })()
+                                        : 'N/A'
+                                }
                             </p>
                         </div>
                     </div>
