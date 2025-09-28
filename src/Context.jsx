@@ -16,7 +16,7 @@ import {
 
 // API base URL configuration
 const API_BASE_URL = import.meta.env.DEV 
-  ? "http://localhost:3008/api"
+  ? "https://freya-salon-backend-cc373ce6622a.herokuapp.com/api"
   : import.meta.env.VITE_API_BASE_URL;
 
 const AppContext = createContext();

@@ -60,6 +60,12 @@ const Profile = () => {
             </select>
             <img src="/images/Arrow.png" alt="Arrow" className='arrow' />
           </div>
+          <button onClick={() => {
+            localStorage.removeItem('token')
+            window.location.href = '/login'
+          }}>
+            Выйти
+          </button>
         </div>
         <div className='profile-nav-bottom'>
           <div className="profile-nav-left">
