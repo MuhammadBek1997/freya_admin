@@ -66,5 +66,7 @@
     "profileSocial": "Ijtimoiy tarmoqlar",
     "profileFacilities": "Qulayliklar",
     "profileTitle2": "Sarlavha",
-    "profileLogout": "Chiqish"
+    "profileLogout": "Chiqish",
+    "profileAboutPlaceholder": "Muassasa haqida ma'lumotlarni kiriting...",
+    "profileNotePlaceholder": "Izohni kiriting..."
 }

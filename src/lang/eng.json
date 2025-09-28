@@ -66,5 +66,7 @@
     "profileSocial": "Social networks",
     "profileFacilities": "Facilities",
     "profileTitle2": "Title",
-    "profileLogout": "Logout"
+    "profileLogout": "Logout",
+    "profileAboutPlaceholder": "Enter information about your establishment...",
+    "profileNotePlaceholder": "Enter a note..."
 }

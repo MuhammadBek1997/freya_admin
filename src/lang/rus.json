@@ -66,5 +66,7 @@
     "profileSocial": "Социальные сети",
     "profileFacilities": "Удобства",
     "profileTitle2": "Титул",
-    "profileLogout": "Выйти"
+    "profileLogout": "Выйти",
+    "profileAboutPlaceholder": "Введите информацию о вашем заведении...",
+    "profileNotePlaceholder": "Введите примечание..."
 }

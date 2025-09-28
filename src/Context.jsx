@@ -116,7 +116,7 @@ export const AppProvider = ({ children }) => {
 	const updateSalon = async (salonId, updateData) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/salons/${salonId}`, {
+			const response = await fetch(`${API_BASE_URL}/admin/salons/${salonId}`, {
 				method: 'PUT',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -144,6 +144,94 @@ export const AppProvider = ({ children }) => {
 			}
 		} catch (error) {
 			console.error('Error updating salon:', error);
+			throw error;
+		}
+	};
+
+	// Helper function to convert file to base64
+	const fileToBase64 = (file) => {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.readAsDataURL(file);
+			reader.onload = () => resolve(reader.result);
+			reader.onerror = error => reject(error);
+		});
+	};
+
+	// Upload salon photos function
+	const uploadSalonPhotos = async (salonId, files) => {
+		try {
+			const token = getAuthToken();
+			
+			// Convert files to base64
+			const base64Photos = await Promise.all(
+				files.map(file => fileToBase64(file))
+			);
+
+			const response = await fetch(`${API_BASE_URL}/admin/salons/${salonId}/photos`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					photos: base64Photos
+				}),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Salon photos uploaded:', data);
+				
+				// Update profArr with new photos
+				if (profArr && profArr.length > 0) {
+					const updatedProfArr = profArr.map(salon => 
+						salon.id === salonId ? { ...salon, salon_photos: data.data.salon_photos } : salon
+					);
+					setProfArr(updatedProfArr);
+				}
+				
+				return data.data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to upload salon photos');
+			}
+		} catch (error) {
+			console.error('Error uploading salon photos:', error);
+			throw error;
+		}
+	};
+
+	// Delete salon photo function
+	const deleteSalonPhoto = async (salonId, photoIndex) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/admin/salons/${salonId}/photos/${photoIndex}`, {
+				method: 'DELETE',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Salon photo deleted:', data);
+				
+				// Update profArr by removing deleted photo
+				if (profArr && profArr.length > 0) {
+					const updatedProfArr = profArr.map(salon => 
+						salon.id === salonId ? { ...salon, salon_photos: data.data.salon_photos } : salon
+					);
+					setProfArr(updatedProfArr);
+				}
+				
+				return data.data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to delete salon photo');
+			}
+		} catch (error) {
+			console.error('Error deleting salon photo:', error);
 			throw error;
 		}
 	};
@@ -933,11 +1021,13 @@ const moreDataAppoint = useMemo(() => {
 			// Services state va funksiyalari
 			services, servicesLoading, servicesError, fetchServices, createService,
 			// Salons state va funksiyalari
-			salons, salonsLoading, salonsError, fetchSalons, updateSalon
+	salons, salonsLoading, salonsError, fetchSalons, updateSalon,
+	// Salon rasmlarini yuklash va o'chirish funksiyalari
+	uploadSalonPhotos, deleteSalonPhoto
 
-		}}>
-			{children}
-		</AppContext.Provider>
+}}>
+	{children}
+</AppContext.Provider>
 	)
 }
 
