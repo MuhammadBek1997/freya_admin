@@ -61,6 +61,20 @@ const AddScheduleModal = () => {
         setShowSuggestions(false)
     }
 
+    const handleEmployeeSelect = (selectedEmployeeIds) => {
+        setFormData(prev => ({
+            ...prev,
+            master_list: selectedEmployeeIds
+        }))
+    }
+
+    const removeEmployee = (employeeId) => {
+        setFormData(prev => ({
+            ...prev,
+            master_list: prev.master_list.filter(id => id !== employeeId)
+        }))
+    }
+
     const handleSaveSchedule = async () => {
         try {
             // Validate required fields
@@ -216,7 +230,48 @@ const AddScheduleModal = () => {
                         добавить
                     </button>
                     {selectEmploy && (
-                        <SelectEmployeeModal setSelectEmploy={setSelectEmploy}/>
+                        <SelectEmployeeModal 
+                            setSelectEmploy={setSelectEmploy}
+                            onEmployeeSelect={handleEmployeeSelect}
+                        />
+                    )}
+                    
+                    {/* Selected employees display */}
+                    {formData.master_list.length > 0 && (
+                        <div style={{ marginTop: '10px' }}>
+                            <p style={{ fontSize: '0.8vw', marginBottom: '5px' }}>Выбранные сотрудники:</p>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                                {formData.master_list.map((employeeId, index) => (
+                                    <span 
+                                        key={employeeId}
+                                        style={{
+                                            backgroundColor: '#9C2BFF',
+                                            color: 'white',
+                                            padding: '4px 8px',
+                                            borderRadius: '12px',
+                                            fontSize: '0.7vw',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px'
+                                        }}
+                                    >
+                                        Сотрудник {index + 1}
+                                        <button
+                                            onClick={() => removeEmployee(employeeId)}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'white',
+                                                cursor: 'pointer',
+                                                fontSize: '0.8vw'
+                                            }}
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
                     )}
                     
                     <label htmlFor="">
