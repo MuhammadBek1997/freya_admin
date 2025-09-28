@@ -111,7 +111,42 @@ export const AppProvider = ({ children }) => {
 			setSalonsLoading(false);
 		}
 	};
-	
+
+	// Update salon function
+	const updateSalon = async (salonId, updateData) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/salons/${salonId}`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(updateData),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Salon updated:', data);
+				
+				// Update profArr if it exists
+				if (profArr && profArr.length > 0) {
+					const updatedProfArr = profArr.map(salon => 
+						salon.id === salonId ? { ...salon, ...updateData } : salon
+					);
+					setProfArr(updatedProfArr);
+				}
+				
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to update salon');
+			}
+		} catch (error) {
+			console.error('Error updating salon:', error);
+			throw error;
+		}
+	};
 	
 
 	// Admin login function
@@ -898,7 +933,7 @@ const moreDataAppoint = useMemo(() => {
 			// Services state va funksiyalari
 			services, servicesLoading, servicesError, fetchServices, createService,
 			// Salons state va funksiyalari
-			salons, salonsLoading, salonsError, fetchSalons
+			salons, salonsLoading, salonsError, fetchSalons, updateSalon
 
 		}}>
 			{children}

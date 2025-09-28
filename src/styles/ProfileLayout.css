@@ -623,3 +623,60 @@
   color: #0060CE;
   text-decoration: underline;
 }
+
+/* Edit rejimi uchun stillar */
+.edit-description-container {
+  width: 100%;
+}
+
+.language-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.language-tabs button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: #f8f9fa;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.language-tabs button:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.language-tabs button.active {
+  background: #5f27cd;
+  color: white;
+  border-color: #5f27cd;
+}
+
+.edit-additionals-container {
+  width: 100%;
+}
+
+.additionals-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.additional-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.additional-item input {
+  flex: 1;
+}
+
+.additional-item button {
+  flex-shrink: 0;
+}

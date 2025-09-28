@@ -8,10 +8,12 @@ const Profile = () => {
 
   const { 
     t, language, handleChange, profArr, commentsArr,
-    adminSalonLoading, adminSalonError, fetchAdminSalon 
+    adminSalonLoading, adminSalonError, fetchAdminSalon, updateSalon 
   } = UseGlobalContext()
 
   const [changeMode,setChangeMode] = useState(false)
+  const [editDescription, setEditDescription] = useState('')
+  const [editAdditionals, setEditAdditionals] = useState('')
 
   // Komponent yuklanganda admin salon ma'lumotlarini olish
   useEffect(() => {
@@ -29,6 +31,17 @@ const Profile = () => {
     }
   }, []);
 
+  // Edit mode ga kirganda current ma'lumotlarni yuklash
+  useEffect(() => {
+    if (changeMode && profArr && profArr.length > 0) {
+      const currentDescription = getSalonData(profArr[0], 'salon_description');
+      const currentAdditionals = profArr[0]?.salon_additionals || [];
+      
+      setEditDescription(currentDescription);
+      setEditAdditionals(Array.isArray(currentAdditionals) ? currentAdditionals.join('\n') : '');
+    }
+  }, [changeMode, profArr, language]);
+
   // Tilga qarab salon ma'lumotlarini olish funksiyasi
   const getSalonData = (salon, field) => {
     if (!salon) return '';
@@ -42,6 +55,47 @@ const Profile = () => {
         return salon[`${field}_ru`] || salon[field] || '';
       default:
         return salon[field] || '';
+    }
+  };
+
+  // Saqlash funksiyasi
+  const handleSave = async () => {
+    if (!profArr || profArr.length === 0) return;
+    
+    try {
+      const salonId = profArr[0].id;
+      const updateData = {};
+      
+      // Til bo'yicha ma'lumotlarni yangilash
+      const fieldSuffix = language === 'uz' ? '_uz' : language === 'en' ? '_en' : '_ru';
+      
+      // Description yangilash
+      if (editDescription !== '') {
+        updateData[`salon_description${fieldSuffix}`] = editDescription;
+      }
+      
+      // Additionals yangilash
+      if (editAdditionals !== '') {
+        // Additionals ni array ga aylantirish (har bir qator alohida element)
+        const additionalsArray = editAdditionals.split('\n').filter(item => item.trim() !== '');
+        updateData[`salon_additionals${fieldSuffix}`] = additionalsArray;
+      }
+      
+      // Agar yangilanishi kerak bo'lgan ma'lumotlar bo'lsa
+      if (Object.keys(updateData).length > 0) {
+        await updateSalon(salonId, updateData);
+        
+        // Edit mode dan chiqish
+        setChangeMode(false);
+        
+        // Edit state larni tozalash
+        setEditDescription('');
+        setEditAdditionals('');
+        
+        console.log('Salon ma\'lumotlari muvaffaqiyatli yangilandi');
+      }
+    } catch (error) {
+      console.error('Salon yangilashda xatolik:', error);
     }
   };
 
@@ -158,10 +212,26 @@ const Profile = () => {
                 <h2>
                   {getSalonData(profArr[0], 'salon_name') || profArr[0].name}
                 </h2>
-                <button>
-                  <img src="/images/editPen.png" alt="" />
-                  {t('profileEdit')}
-                </button>
+                {changeMode ? (
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={handleSave} style={{ backgroundColor: '#4CAF50', color: 'white' }}>
+                      <img src="/images/editPen.png" alt="" />
+                      {t('profileSave')}
+                    </button>
+                    <button onClick={() => {
+                      setChangeMode(false)
+                      setEditDescription('')
+                      setEditAdditionals('')
+                    }} style={{ backgroundColor: '#f44336', color: 'white' }}>
+                      Bekor qilish
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => setChangeMode(true)}>
+                    <img src="/images/editPen.png" alt="" />
+                    {t('profileEdit')}
+                  </button>
+                )}
               </div>
               <div className='profile-salon-rating'>
                 <div
@@ -298,45 +368,536 @@ const Profile = () => {
                 {t('profileAbout')}
               </h3>
               <div className={getSalonData(profArr[0], 'salon_description') == "" ? 'empty' : 'info'}>
-                {getSalonData(profArr[0], 'salon_description') == "" 
-                ? 
-                t('profileEmpty')
-                : 
-                <ReadMoreReact
-                  text={getSalonData(profArr[0], 'salon_description')}
-                  min={120}
-                  ideal={350}
-                  max={770}
-                  readMoreText={<span style={{
-                    cursor: "pointer",
-                    color: "#0060CE",
-                    fontSize: "1.1vw",
-                    textDecoration:"underline"
-                  }}>
-                    {t('profileReadMore')}
-                  </span>}
-                  />}
-                
+                {changeMode ? (
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder={t('profileAboutPlaceholder')}
+                    rows={6}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'inherit',
+                      resize: 'vertical'
+                    }}
+                  />
+                ) : (
+                  getSalonData(profArr[0], 'salon_description') == "" 
+                  ? 
+                  t('profileEmpty')
+                  : 
+                  <ReadMoreReact
+                    text={getSalonData(profArr[0], 'salon_description')}
+                    min={120}
+                    ideal={350}
+                    max={770}
+                    readMoreText={<span style={{
+                      cursor: "pointer",
+                      color: "#0060CE",
+                      fontSize: "1.1vw",
+                      textDecoration:"underline"
+                    }}>
+                      {t('profileReadMore')}
+                    </span>}
+                    />
+                )}
               </div>
             </div>
             <div className='company-add'>
               <h3>
                 {t('profileNote')}
               </h3>
-              <p className={profArr[0]?.salon_additionals?.length == 0 ? 'empty' : 'info'}>
-                {profArr[0]?.salon_additionals?.length == 0
-                ? 
-                t('profileEmpty')
-                : 
-                profArr[0]?.salon_additionals?.map((item,index)=>{
-                  return(
-                    <p key={index}>
-                    ✨ {item}
-                    </p>
+              <div className={profArr[0]?.salon_additionals?.length == 0 ? 'empty' : 'info'}>
+                {changeMode ? (
+                  <textarea
+                    value={editAdditionals}
+                    onChange={(e) => setEditAdditionals(e.target.value)}
+                    placeholder={t('profileNotePlaceholder')}
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'inherit',
+                      resize: 'vertical'
+                    }}
+                  />
+                ) : (
+                  profArr[0]?.salon_additionals?.length == 0
+                  ? 
+                  t('profileEmpty')
+                  : 
+                  profArr[0]?.salon_additionals?.map((item,index)=>{
+                    return(
+                      <p key={index}>
+                      ✨ {item}
+                      </p>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+            <div className='company-number'>
+              <h3>
+                {t('profilePhone')}
+              </h3>
+              <div className='company-number-list'>
+                {
+                  profArr[0]?.salon_phone && (
+                    <div className='company-number-card'>
+                      <img src="/images/callIcon.png" alt="" />
+                      <a href={`tel:${profArr[0].salon_phone}`}>
+                        {profArr[0].salon_phone}
+                      </a>
+                    </div>
+                  )
+                }
+                {
+                  profArr[0]?.salon_add_phone && (
+                    <div className='company-number-card'>
+                      <img src="/images/callIcon.png" alt="" />
+                      <a href={`tel:${profArr[0].salon_add_phone}`}>
+                        {profArr[0].salon_add_phone}
+                      </a>
+                    </div>
+                  )
+                }
+              </div>
+            </div>
+            {
+              profArr[0]?.social_media?.length > 0
+                ?
+                <div className='company-social'>
+                  <h3>
+                    {t('profileSocial')}
+                  </h3>
+                  <div className='company-social-list'>
+                    {
+                      profArr[0]?.social_media?.map((item, index) => {
+                        return (
+                          <div className='company-social-card' key={index}>
+                            <img src={`/images/${item.type}.png`} alt="" />
+                            <a href={item.link}>
+                              {item.type}
+                            </a>
+                            <img src="/images/arrowLeft.png" alt="" />
+                          </div>
+                        )
+                      })
+                    }
+                  </div>
+                </div>
+                :
+                null
+            }
+          </div>
+          <div className="company-facilities">
+            <h3>
+              {t('profileFacilities')}
+            </h3>
+            <div className="facilities-list">
+              {
+                profArr[0]?.salon_comfort?.map((item, index) => {
+                  return (
+                    <div key={index} className='facilities-list-item'>
+                      <img src={item.isActive ? `/images/${item.name}true.png` : `/images/${item.name}.png`} alt="" />
+                      <p style={{
+                        color: item.isActive ? "#2C2C2C" : "#2C2C2C80",
+                        textDecoration: item.isActive ? "none" : "line-through"
+                      }}>
+                        {t(item.name)}
+                      </p>
+                    </div>
                   )
                 })
-                }
-              </p>
+              }
+            </div>
+          </div>
+          <div className="company-comments">
+            <h3>
+              Комментарии ({salonComments.length})
+            </h3>
+            {
+              salonComments.length == 0
+                ?
+                <div style={{
+                  padding: "10vh",
+                  textAlign: "center"
+                }}>
+                  <img src="/images/noComments.png" alt="" style={{
+                    margin: "0 auto"
+                  }} />
+                  <h2 style={{
+                    color: "#A8A8B3"
+                  }}>
+                    Комментарии пока что нет
+                  </h2>
+                </div>
+                :
+                <div>
+                  {
+                    salonComments.map((item, index) => {
+                      return (
+                        <div key={index} className='comment-card'>
+                          <div className='comment-author'>
+                            <img src={'/images/customerImage.png'} alt="" />
+                            <h3>
+                              {item.customer_name}
+                            </h3>
+                          </div>
+                          <p>
+                            {item.comment}
+                          </p>
+                          <div className='comment-bottom'>
+                            <div style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5vw"
+                            }}>
+                              <div
+                                className="stars"
+                                style={{ '--rating': item.rating }}
+                                aria-label={`Rating: ${item.rating} out of 5 stars`}
+                              >
+                              </div>
+                              <p style={{ fontSize: "0.8vw", paddingTop: "0.1vw" }}>
+                                ({item.rating})
+                              </p>
+                            </div>
+                            <div className='comment-date'>
+                              {
+                                item.date
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })
+                  }
+                </div>
+            }
+          </div>
+        </div>
+        <div className="profile-body-right">
+          <div className="payment-system">
+            <h3>
+              Система монетизации
+            </h3>
+            <div className='payment-system-bottom'>
+              <div className='payment-system-summ'>
+                <div className='payment-system-summ-top'>
+                  <img src="/images/paymentTop.png" alt="" />
+                  <h4>
+                    Было оплачено
+                  </h4>
+                </div>
+                <div style={{ minHeight: "10vh", display: "flex", alignItems: "end" }}>
+                  <h1>
+                    {formatSumm(profArr[0]?.paymentSystem?.summ)}
+                  </h1>
+                  <p>
+                    UZS
+                  </p>
+                </div>
+              </div>
+              <div className='payment-system-card'>
+                <div className='payment-system-card-top'>
+                  <img src="/images/paymentCard.png" alt="" />
+                  <h4>
+                    Привязанная карта
+                  </h4>
+                </div>
+                <div className='payment-system-card-bottom'>
+                  <p>
+                    <span>
+                      {profArr[0]?.paymentSystem?.card_number?.split('').map((item, index) => {
+                        if (index <= 3) {
+                          return item
+                        }
+                      })}
+                    </span>
+                    <span>
+                      **** ****
+                    </span>
+                    <span>
+                      {profArr[0]?.paymentSystem?.card_number?.split('').map((item, index) => {
+                        if (index >= 12) {
+                          return item
+                        }
+                      })}
+                    </span>
+                  </p>
+                  <h3>
+                    {profArr[0]?.paymentSystem?.card_type}
+                  </h3>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="company-location">
+            <div className='company-location-top'>
+              <h3>
+                Местоположение
+              </h3>
+            </div>
+            <div className='company-location-map'>
+              <YandexMap lat={profArr[0]?.location?.lat} long={profArr[0]?.location?.long} />
+            </div>
+            <div className='company-location-bottom'>
+              <div className='company-location-address'>
+                <img src="/images/markerMap.png" alt="" />
+                <p>
+                  ул. Мустакиллик, 12, Ташкент
+                </p>
+              </div>
+              <div className='company-location-navigate'>
+                <img src="/images/navigateMap.png" alt="" />
+                <p>
+                  ст. метро: Мустакиллик майдони
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="company-clients">
+            <h3>
+              Постоянные клиенты
+            </h3>
+            <div>
+              {
+                profArr[0]?.top_clients?.length > 0
+                  ?
+                  profArr[0]?.top_clients?.map((item, index) => {
+                    return (
+                      <div className='company-clients-card' key={index}>
+                        <img src="/images/customerImage.png" alt="" className='top-client-image' />
+                        <div className='company-clients-card-info'>
+                          <img src="/images/profileTopClient.png" alt="" />
+                          <p>
+                            {item.name}
+                          </p>
+                          <img src="/images/callingBlackIcon.png" alt="" />
+                          <a href="">
+                            {item.phone}
+                          </a>
+                          <img src="/images/visitsIcon.png" alt="" />
+                          <p>
+                            {item.visits} посещений
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })
+                  :
+                  <div>
+                    <img
+                      src="/images/noClientsImg.png"
+                      style={{
+                        margin: "10vh auto 2vh auto",
+                        width: "7vw"
+                      }}
+                      alt=""
+                    />
+                    <p style={{ color: "#A8A8B3", textAlign: "center", fontSize: "1vw" }}>
+                      Постоянных клиентов пока что нет
+                    </p>
+                  </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+  }else{
+    return (
+    <section>
+      <nav className='profile-nav' style={{height:"10vh"}}>
+        <div className='profile-nav-top' style={{height:"10vh"}}>
+          <div className='profile-nav-logo'>
+            <img src="/images/editProfile.png" alt="" />
+            <h2>
+              Редактировать Профиль
+            </h2>
+          </div>
+          <div className="profile-nav-buttons">
+            <button onClick={() => {
+              setChangeMode(false)
+              setEditDescription('')
+              setEditAdditionals('')
+            }}>
+              Отмена
+            </button>
+            <button onClick={handleSave}>
+              Сохранить
+            </button>
+          </div>
+        </div>
+      </nav>
+      <div className='profile-body' style={{paddingTop:"12vh"}}>
+        <div className="profile-body-left">
+          <div className="company-data">
+            <div className='company-images'>
+              {profArr[0]?.salon_photos?.length > 0
+                ?
+                <div id="indicators-carousel" className="relative w-full" data-carousel="slide" data-carousel-interval="15000">
+                  {/* <!-- Carousel wrapper --> */}
+                  <div className="relative overflow-hidden md:h-96" style={{ height: "50vh", borderRadius: "1vw" }}>
+                    {profArr[0]?.salon_photos?.map((item, index) => {
+                      return (<div
+                        key={index}
+                        className="hidden duration-700 ease-in-out"
+                        data-carousel-item
+                      >
+                        <img
+                          src={item}
+                          className="absolute block"
+                          alt="..."
+                          style={{ borderRadius: "1vw" }}
+                          id='carousel-img'
+                        />
+                      </div>)
+                    })}
+                  </div>
+                  {/* <!-- Slider indicators --> */}
+                  <div
+                    style={{ bottom: "1vw" }}
+                    className="absolute z-30 flex gap-x-px -translate-x-1/2 left-1/2 space-x-3 rtl:space-x-reverse">
+                    {profArr[0]?.salon_photos?.map((_, index) => {
+                      return (
+                        <button
+                          key={index}
+                          type="button"
+                          className="rounded-full"
+                          aria-current={index === 0 ? "true" : "false"}
+                          aria-label={`Slide ${index + 1}`}
+                          data-carousel-slide-to={index}
+                        ></button>
+                      );
+                    })}
+                  </div>
+                  {/* <!-- Slider controls --> */}
+                  <button
+                    type="button"
+                    className="absolute top-0 start-0 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
+                    data-carousel-prev
+                    style={{ width: "4vw" }}
+                  >
+                    <span
+                      className="inline-flex items-center z-30 justify-center rounded-full bg-white group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none"
+                      style={{ width: "3vw", height: "3vw" }}
+                    >
+                      <img src="/images/arrowRight.png" alt="" style={{ width: "1.5vw" }} />
+                      <span className="sr-only">Previous</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="absolute top-0 end-0 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
+                    data-carousel-next
+                    style={{ width: "4vw" }}
+                  >
+                    <span
+                      className="inline-flex items-center z-30 justify-center rounded-full bg-white group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none"
+                      style={{ width: "3vw", height: "3vw" }}
+                    >
+                      <img src="/images/arrowLeft.png" alt="" style={{ width: "1.5vw" }} />
+                      <span className="sr-only">Next</span>
+                    </span>
+                  </button>
+                </div>
+                :
+                <img src="/images/NoCompImg.png" alt="" className='compNoImg' />
+              }
+            </div>
+            <div className={getSalonData(profArr[0], 'salon_title') == "" ? 'company-title-empty' : 'company-title-full'}>
+              <img src="/images/titleIcon.png" alt="" />
+              <h3>
+                {getSalonData(profArr[0], 'salon_title') == "" ? t('profileTitle2') : getSalonData(profArr[0], 'salon_title') }
+              </h3>
+            </div>
+            <div className='company-about'>
+              <h3>
+                {t('profileAbout')}
+              </h3>
+              <div className={getSalonData(profArr[0], 'salon_description') == "" ? 'empty' : 'info'}>
+                {changeMode ? (
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder={t('profileAboutPlaceholder')}
+                    rows={6}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'inherit',
+                      resize: 'vertical'
+                    }}
+                  />
+                ) : (
+                  getSalonData(profArr[0], 'salon_description') == "" 
+                  ? 
+                  t('profileEmpty')
+                  : 
+                  <ReadMoreReact
+                    text={getSalonData(profArr[0], 'salon_description')}
+                    min={120}
+                    ideal={350}
+                    max={770}
+                    readMoreText={<span style={{
+                      cursor: "pointer",
+                      color: "#0060CE",
+                      fontSize: "1.1vw",
+                      textDecoration:"underline"
+                    }}>
+                      {t('profileReadMore')}
+                    </span>}
+                    />
+                )}
+              </div>
+            </div>
+            <div className='company-add'>
+              <h3>
+                {t('profileNote')}
+              </h3>
+              <div className={profArr[0]?.salon_additionals?.length == 0 ? 'empty' : 'info'}>
+                {changeMode ? (
+                  <textarea
+                    value={editAdditionals}
+                    onChange={(e) => setEditAdditionals(e.target.value)}
+                    placeholder={t('profileNotePlaceholder')}
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'inherit',
+                      resize: 'vertical'
+                    }}
+                  />
+                ) : (
+                  profArr[0]?.salon_additionals?.length == 0
+                  ? 
+                  t('profileEmpty')
+                  : 
+                  profArr[0]?.salon_additionals?.map((item,index)=>{
+                    return(
+                      <p key={index}>
+                      ✨ {item}
+                      </p>
+                    )
+                  })
+                )}
+              </div>
             </div>
             <div className='company-number'>
               <h3>
