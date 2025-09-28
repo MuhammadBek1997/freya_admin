@@ -3,10 +3,20 @@ import React, { useEffect, useRef } from 'react';
 // Yandex Maps API skriptini dinamik yuklash
 const loadYandexMapScript = () => {
     return new Promise((resolve, reject) => {
-        if (window.ymaps) {
+        // Agar API allaqachon yuklangan bo'lsa
+        if (window.ymaps && window.ymaps.ready) {
             resolve(window.ymaps);
             return;
         }
+        
+        // Agar script allaqachon mavjud bo'lsa
+        const existingScript = document.querySelector('script[src*="api-maps.yandex.ru"]');
+        if (existingScript) {
+            existingScript.onload = () => resolve(window.ymaps);
+            existingScript.onerror = reject;
+            return;
+        }
+        
         const script = document.createElement('script');
         script.src = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=d2eb60ec-8a2a-4032-a07d-2f155cb11f8a';
         script.async = true;
@@ -37,8 +47,15 @@ const YandexMap = ({ lat, long }) => {
                             yandexMapDisablePoiInteractivity: true, // Interaktiv nuqtalar o‘chiriladi
                         });
 
-                        // Probka qatlamini o‘chirish
-                        mapInstance.current.layers.get(0).getMapType().layers.remove('yandex#traffic');
+                        // Probka qatlamini xavfsiz usulda o'chirish
+                        try {
+                            const trafficLayer = mapInstance.current.layers.get('yandex#traffic');
+                            if (trafficLayer) {
+                                mapInstance.current.layers.remove(trafficLayer);
+                            }
+                        } catch (error) {
+                            console.log('Traffic layer removal skipped:', error.message);
+                        }
                     }
 
                     // Eski marker bo‘lsa, uni o‘chirish
