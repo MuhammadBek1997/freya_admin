@@ -147,7 +147,7 @@ const Profile = () => {
         <div className='profile-nav-bottom'>
           <div className="profile-nav-left">
             <div className='company-image' style={{
-              background: profArr[0].icon ? `url(${profArr[0].icon})` : "/images/ForCompanyImage.png",
+          background: profArr[0].icon ? `url(${profArr[0].icon})` : "/images/ForCompanyImage.png",
               backgroundSize: profArr[0].icon ? "cover" : "30%",
               backgroundPosition: "center center"
             }}>
@@ -215,12 +215,12 @@ const Profile = () => {
         <div className="profile-body-left">
           <div className="company-data">
             <div className='company-images'>
-              {profArr[0]?.company_images?.length > 0
+              {profArr[0]?.salon_photos?.length > 0
                 ?
                 <div id="indicators-carousel" className="relative w-full" data-carousel="slide" data-carousel-interval="15000">
                   {/* <!-- Carousel wrapper --> */}
                   <div className="relative overflow-hidden md:h-96" style={{ height: "50vh", borderRadius: "1vw" }}>
-                    {profArr[0]?.company_images?.map((item, index) => {
+                    {profArr[0]?.salon_photos?.map((item, index) => {
                       return (<div
                         key={index}
                         className="hidden duration-700 ease-in-out"
@@ -240,7 +240,7 @@ const Profile = () => {
                   <div
                     style={{ bottom: "1vw" }}
                     className="absolute z-30 flex gap-x-px -translate-x-1/2 left-1/2 space-x-3 rtl:space-x-reverse">
-                    {profArr[0]?.company_images?.map((_, index) => {
+                    {profArr[0]?.salon_photos?.map((_, index) => {
                       return (
                         <button
                           key={index}
@@ -254,6 +254,20 @@ const Profile = () => {
                     })}
                   </div>
                   {/* <!-- Slider controls --> */}
+                  <button
+                    type="button"
+                    className="absolute top-0 start-0 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
+                    data-carousel-prev
+                    style={{ width: "4vw" }}
+                  >
+                    <span
+                      className="inline-flex items-center z-30 justify-center rounded-full bg-white group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none"
+                      style={{ width: "3vw", height: "3vw" }}
+                    >
+                      <img src="/images/arrowRight.png" alt="" style={{ width: "1.5vw" }} />
+                      <span className="sr-only">Previous</span>
+                    </span>
+                  </button>
                   <button
                     type="button"
                     className="absolute top-0 end-0 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
@@ -309,12 +323,12 @@ const Profile = () => {
               <h3>
                 {t('profileNote')}
               </h3>
-              <p className={profArr[0]?.additionals?.length == 0 ? 'empty' : 'info'}>
-                {profArr[0]?.additionals?.length == 0
+              <p className={profArr[0]?.salon_additionals?.length == 0 ? 'empty' : 'info'}>
+                {profArr[0]?.salon_additionals?.length == 0
                 ? 
                 t('profileEmpty')
                 : 
-                profArr[0]?.additionals?.map((item,index)=>{
+                profArr[0]?.salon_additionals?.map((item,index)=>{
                   return(
                     <p key={index}>
                     ✨ {item}
@@ -384,13 +398,13 @@ const Profile = () => {
             </h3>
             <div className="facilities-list">
               {
-                profArr[0]?.facilities?.map((item, index) => {
+                profArr[0]?.salon_comfort?.map((item, index) => {
                   return (
                     <div key={index} className='facilities-list-item'>
-                      <img src={item.value ? item.icon + "true.png" : item.icon + ".png"} alt="" />
+                      <img src={item.isActive ? `/images/${item.name}true.png` : `/images/${item.name}.png`} alt="" />
                       <p style={{
-                        color: item.value ? "#2C2C2C" : "#2C2C2C80",
-                        textDecoration: item.value ? "none" : "line-through"
+                        color: item.isActive ? "#2C2C2C" : "#2C2C2C80",
+                        textDecoration: item.isActive ? "none" : "line-through"
                       }}>
                         {t(item.name)}
                       </p>
