@@ -16,7 +16,7 @@ import {
 
 // API base URL configuration
 const API_BASE_URL = import.meta.env.DEV 
-  ? "http://localhost:3005/api"
+  ? "http://localhost:3007/api"
   : import.meta.env.VITE_API_BASE_URL;
 
 const AppContext = createContext();
@@ -216,7 +216,7 @@ export const AppProvider = ({ children }) => {
 		return localStorage.getItem('authToken');
 	};
 
-	// Fetch appointments by salon ID
+	// Fetch appointments by salon ID using the new filter endpoint
 	const fetchAppointments = async (salonId) => {
 		if (!salonId) {
 			console.error('Salon ID is required to fetch appointments');
@@ -228,7 +228,7 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/appointments/salon/${salonId}`, {
+			const response = await fetch(`${API_BASE_URL}/appointments/filter/salon/${salonId}`, {
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -238,14 +238,14 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Appointments fetched:', data);
+				console.log('Salon appointments fetched:', data);
 				setAppointments(data.data || []);
 			} else {
 				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to fetch appointments');
+				throw new Error(errorData.message || 'Failed to fetch salon appointments');
 			}
 		} catch (error) {
-			console.error('Error fetching appointments:', error);
+			console.error('Error fetching salon appointments:', error);
 			setAppointmentsError(error.message);
 			setAppointments([]);
 		} finally {
@@ -652,7 +652,10 @@ const moreDataAppoint = useMemo(() => {
     const today = new Date();
     if (selectedFilter === 1) {
       const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
-      filteredAppoints = filteredAppoints.filter(item => item.appointment_date === todayStr);
+      filteredAppoints = filteredAppoints.filter(item => {
+        const appDate = new Date(item.application_date);
+        return appDate.toISOString().split('T')[0] === todayStr;
+      });
     } else if (selectedFilter === 2) {
       const firstDayOfWeek = new Date(today);
       const dayOfWeek = today.getDay();
@@ -661,21 +664,21 @@ const moreDataAppoint = useMemo(() => {
       const lastDayOfWeek = new Date(firstDayOfWeek);
       lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6);
       filteredAppoints = filteredAppoints.filter(item => {
-        const appDate = new Date(item.appointment_date);
+        const appDate = new Date(item.application_date);
         return appDate >= firstDayOfWeek && appDate <= lastDayOfWeek;
       });
     } else if (selectedFilter === 3) {
       const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
       filteredAppoints = filteredAppoints.filter(item => {
-        const appDate = new Date(item.appointment_date);
+        const appDate = new Date(item.application_date);
         return appDate >= firstDayOfMonth && appDate <= lastDayOfMonth;
       });
     } else if (selectedFilter === 4) {
       const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
       const lastDayOfYear = new Date(today.getFullYear(), 11, 31);
       filteredAppoints = filteredAppoints.filter(item => {
-        const appDate = new Date(item.appointment_date);
+        const appDate = new Date(item.application_date);
         return appDate >= firstDayOfYear && appDate <= lastDayOfYear;
       });
     }
@@ -683,13 +686,13 @@ const moreDataAppoint = useMemo(() => {
 
   // Ma'lumotlarni transformatsiya qilish
   return filteredAppoints.map((item) => {
-    const date = new Date(item.appointment_date); // Faqat sana uchun
+    const date = new Date(item.application_date); // Faqat sana uchun
     const dayOfApp = date.getDate();
     const monthOfApp = date.getMonth(); // 0-11 oraliqda qaytaradi
     const yearOfApp = date.getFullYear();
 
-    // appointment_time dan faqat soat va minutni olish
-    const timeParts = item.appointment_time.split(':');
+    // application_time dan faqat soat va minutni olish
+    const timeParts = item.application_time.split(':');
     const hourOfApp = parseInt(timeParts[0], 10); // Soatni olish
     const minuteOfApp = parseInt(timeParts[1], 10); // Minutni olish
 

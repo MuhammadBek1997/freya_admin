@@ -1,18 +1,40 @@
 import React from 'react'
 import { UseGlobalContext } from '../Context';
 
-const AppointCard = ({id,is_confirmed,salon,service, customer_name,appointment_time, appointment_date,time, date, master, openRightSidebar}) => {
+const AppointCard = ({
+    id,
+    application_number,
+    user_name,
+    phone_number,
+    application_date,
+    application_time,
+    employee_name,
+    service_name,
+    service_price,
+    status,
+    time,
+    date,
+    openRightSidebar
+}) => {
   
-    const {selectedElement,mastersArr} = UseGlobalContext()
-
+    const {selectedElement} = UseGlobalContext()
 
     const handleCardClick = () => {
-        openRightSidebar({id,is_confirmed,salon,service, customer_name,appointment_time, appointment_date,time, date, master});
-        
+        openRightSidebar({
+            id,
+            application_number,
+            user_name,
+            phone_number,
+            application_date,
+            application_time,
+            employee_name,
+            service_name,
+            service_price,
+            status,
+            time,
+            date
+        });
     }
-    
-    const selectedMaster = mastersArr.find((item)=>item.id == master) 
-    
 
     return (
         <div onClick={()=>handleCardClick()} className='appoint-card' >
@@ -22,13 +44,13 @@ const AppointCard = ({id,is_confirmed,salon,service, customer_name,appointment_t
         }}>
                 <img src="/images/customerImage.png" alt="" />
                 <p className='customerName'>
-                    {customer_name}
+                    {user_name}
                 </p>
                 <p className='appointNumber'>
-                    WS33012487
+                    {application_number}
                 </p>
                 <a className='customerNumber'>
-                    +998901231223
+                    {phone_number}
                 </a>
                 <p className='appointDate'>
                     {date.day}.{date.month<10 ? 0+String(date.month) : date.month}.{date.year}
@@ -42,11 +64,11 @@ const AppointCard = ({id,is_confirmed,salon,service, customer_name,appointment_t
                 <div className='appoint-card-master-text'>
                     <div className='appoint-card-masterName'>
                         <p>
-                            {selectedMaster.name.split(" ").at(0)}
+                            {employee_name ? employee_name.split(" ").at(0) : 'N/A'}
                         </p>
                         <div className='appoint-card-masterJob'>
                             <p>
-                                {selectedMaster.spec}
+                                {service_name}
                             </p>
                         </div>
                     </div>
