@@ -14,6 +14,7 @@ const Profile = () => {
   const [changeMode,setChangeMode] = useState(false)
   const [editDescription, setEditDescription] = useState('')
   const [editAdditionals, setEditAdditionals] = useState('')
+  const [editComfort, setEditComfort] = useState([])
 
   // Komponent yuklanganda admin salon ma'lumotlarini olish
   useEffect(() => {
@@ -36,9 +37,11 @@ const Profile = () => {
     if (changeMode && profArr && profArr.length > 0) {
       const currentDescription = getSalonData(profArr[0], 'salon_description');
       const currentAdditionals = profArr[0]?.salon_additionals || [];
+      const currentComfort = profArr[0]?.salon_comfort || [];
       
       setEditDescription(currentDescription);
       setEditAdditionals(Array.isArray(currentAdditionals) ? currentAdditionals.join('\n') : '');
+      setEditComfort([...currentComfort]); // Deep copy qilish
     }
   }, [changeMode, profArr, language]);
 
@@ -56,6 +59,18 @@ const Profile = () => {
       default:
         return salon[field] || '';
     }
+  };
+
+  // Comfort item ni toggle qilish funksiyasi
+  const toggleComfortItem = (index) => {
+    if (!changeMode) return; // Faqat edit mode da ishlaydi
+    
+    const updatedComfort = [...editComfort];
+    updatedComfort[index] = {
+      ...updatedComfort[index],
+      isActive: !updatedComfort[index].isActive
+    };
+    setEditComfort(updatedComfort);
   };
 
   // Saqlash funksiyasi
@@ -81,6 +96,11 @@ const Profile = () => {
         updateData[`salon_additionals${fieldSuffix}`] = additionalsArray;
       }
       
+      // Comfort yangilash
+      if (editComfort.length > 0) {
+        updateData['salon_comfort'] = editComfort;
+      }
+      
       // Agar yangilanishi kerak bo'lgan ma'lumotlar bo'lsa
       if (Object.keys(updateData).length > 0) {
         await updateSalon(salonId, updateData);
@@ -91,6 +111,7 @@ const Profile = () => {
         // Edit state larni tozalash
         setEditDescription('');
         setEditAdditionals('');
+        setEditComfort([]);
         
         console.log('Salon ma\'lumotlari muvaffaqiyatli yangilandi');
       }
@@ -222,6 +243,7 @@ const Profile = () => {
                       setChangeMode(false)
                       setEditDescription('')
                       setEditAdditionals('')
+                      setEditComfort([])
                     }} style={{ backgroundColor: '#f44336', color: 'white' }}>
                       Bekor qilish
                     </button>
@@ -729,6 +751,7 @@ const Profile = () => {
               setChangeMode(false)
               setEditDescription('')
               setEditAdditionals('')
+              setEditComfort([])
             }}>
               Отмена
             </button>
@@ -959,9 +982,9 @@ const Profile = () => {
             </h3>
             <div className="facilities-list">
               {
-                profArr[0]?.salon_comfort?.map((item, index) => {
+                editComfort?.map((item, index) => {
                   return (
-                    <div key={index} className='facilities-list-item'>
+                    <div key={index} className='facilities-list-item' onClick={() => toggleComfortItem(index)} style={{ cursor: 'pointer' }}>
                       <img src={item.isActive ? `/images/${item.name}true.png` : `/images/${item.name}.png`} alt="" />
                       <p style={{
                         color: item.isActive ? "#2C2C2C" : "#2C2C2C80",
