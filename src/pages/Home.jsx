@@ -178,7 +178,7 @@ const Home = () => {
               {t("loading") || "Loading appointments..."}
             </p>
           </div>
-        ) : appointments.length > 0 ? appointments.map((item) => {
+        ) : moreDataAppoint.length > 0 ? moreDataAppoint.map((item) => {
           
           return <AppointCard key={item.id} {...item} openRightSidebar={openRightSidebar} />
         })

@@ -17,6 +17,8 @@ const AppointCard = ({
   
     const {selectedElement} = UseGlobalContext()
 
+    
+
     // Parse date and time from strings
     const parseDate = (dateString) => {
         if (!dateString) return { day: '', month: '', year: '' };
