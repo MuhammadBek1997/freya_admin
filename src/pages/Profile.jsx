@@ -26,7 +26,6 @@ const Profile = () => {
   const [canScrollRight, setCanScrollRight] = useState(false)
   const [companyImages, setCompanyImages] = useState([])
   const [pendingImages, setPendingImages] = useState([])
-  const [currentSlide, setCurrentSlide] = useState(0)
 
   // Komponent yuklanganda admin salon ma'lumotlarini olish
   useEffect(() => {
@@ -70,53 +69,6 @@ const Profile = () => {
       setCompanyImages(Array.isArray(images) ? images : []);
     }
   }, [profArr]);
-
-  // Flowbite carousel initsializatsiyasi
-  useEffect(() => {
-    const initCarousel = () => {
-      // Flowbite carousel initsializatsiyasi
-      if (window.Flowbite && (companyImages.length > 0 || pendingImages.length > 0)) {
-        // Carousel elementini topish
-        const carouselElement = document.getElementById('indicators-carousel');
-        if (carouselElement) {
-          // Eski carousel instance ni tozalash
-          if (carouselElement._carousel) {
-            carouselElement._carousel.destroy();
-          }
-          
-          // Yangi carousel yaratish
-          window.Flowbite.initCarousels();
-        }
-      }
-    };
-
-    // Kichik kechikish bilan initsializatsiya qilish (DOM yangilanishini kutish)
-    const timer = setTimeout(initCarousel, 100);
-    
-    return () => clearTimeout(timer);
-  }, [companyImages, pendingImages]);
-
-  // Carousel navigation funksiyalari
-  const totalSlides = companyImages.length + pendingImages.length;
-  
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % totalSlides);
-  };
-  
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
-  };
-  
-  const goToSlide = (index) => {
-    setCurrentSlide(index);
-  };
-
-  // currentSlide ni reset qilish agar rasmlar o'zgarsa
-  useEffect(() => {
-    if (currentSlide >= totalSlides && totalSlides > 0) {
-      setCurrentSlide(0);
-    }
-  }, [totalSlides, currentSlide]);
 
   // Tilga qarab salon ma'lumotlarini olish funksiyasi
   const getSalonData = (salon, field) => {
@@ -527,7 +479,7 @@ const Profile = () => {
                     {companyImages?.map((item, index) => {
                       return (<div
                         key={`existing-${index}`}
-                        className={`${index === currentSlide ? 'block' : 'hidden'} duration-700 ease-in-out`}
+                        className={`${index === 0 ? 'block' : 'hidden'} duration-700 ease-in-out`}
                         data-carousel-item
                       >
                         <img
@@ -544,7 +496,7 @@ const Profile = () => {
                       const totalIndex = companyImages.length + index;
                       return (<div
                         key={`pending-${index}`}
-                        className={`${totalIndex === currentSlide ? 'block' : 'hidden'} duration-700 ease-in-out`}
+                        className={`${totalIndex === 0 ? 'block' : 'hidden'} duration-700 ease-in-out`}
                         data-carousel-item
                       >
                         <img
@@ -566,10 +518,9 @@ const Profile = () => {
                         <button
                           key={index}
                           type="button"
-                          className={`w-3 h-3 rounded-full ${index === currentSlide ? 'bg-white' : 'bg-white/50'} hover:bg-white transition-all duration-300`}
-                          aria-current={index === currentSlide ? "true" : "false"}
+                          className="rounded-full"
+                          aria-current={index === 0 ? "true" : "false"}
                           aria-label={`Slide ${index + 1}`}
-                          onClick={() => goToSlide(index)}
                           data-carousel-slide-to={index}
                         ></button>
                       );
@@ -579,7 +530,6 @@ const Profile = () => {
                   <button
                     type="button"
                     className="absolute top-0 start-0 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
-                    onClick={prevSlide}
                     data-carousel-prev
                     style={{ width: "4vw" }}
                   >
@@ -587,14 +537,13 @@ const Profile = () => {
                       className="inline-flex items-center z-30 justify-center rounded-full bg-white group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none"
                       style={{ width: "3vw", height: "3vw" }}
                     >
-                      <img src="/images/leftArrow.png" alt="" style={{ width: "1.5vw", transform: "rotate(180deg)" }} />
+                      <img src="/images/arrowRight.png" alt="" style={{ width: "1.5vw" }} />
                       <span className="sr-only">Previous</span>
                     </span>
                   </button>
                   <button
                     type="button"
                     className="absolute top-0 end-0 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
-                    onClick={nextSlide}
                     data-carousel-next
                     style={{ width: "4vw" }}
                   >
@@ -602,7 +551,7 @@ const Profile = () => {
                       className="inline-flex items-center z-30 justify-center rounded-full bg-white group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none"
                       style={{ width: "3vw", height: "3vw" }}
                     >
-                      <img src="/images/leftArrow.png" alt="" style={{ width: "1.5vw" }} />
+                      <img src="/images/arrowLeft.png" alt="" style={{ width: "1.5vw" }} />
                       <span className="sr-only">Next</span>
                     </span>
                   </button>
