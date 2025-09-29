@@ -29,6 +29,21 @@ const Profile = () => {
   
   // Carousel uchun state
   const [currentSlide, setCurrentSlide] = useState(0)
+  
+  // Kontaktlar uchun state
+  const [editContacts, setEditContacts] = useState({
+    phone1: '',
+    phone2: '',
+    instagram: ''
+  })
+  
+  // To'lov tizimi uchun state
+  const [editPayment, setEditPayment] = useState({
+    card_number: '',
+    card_holder: '',
+    card_type: 'HUMO'
+  })
+  const [showAddCard, setShowAddCard] = useState(false)
 
   // Komponent yuklanganda admin salon ma'lumotlarini olish
   useEffect(() => {
@@ -986,80 +1001,6 @@ const Profile = () => {
       <div className='profile-body' style={{paddingTop:"12vh"}}>
         <div className="profile-body-left">
           <div className="company-data" style={{minHeight:"70vh"}}>
-            <div className='company-images'>
-              {
-              // profArr[0]?.salon_photos?.length > 0
-              //   ?
-              //   <div id="indicators-carousel" className="relative w-full" data-carousel="slide" data-carousel-interval="15000">
-              //     {/* <!-- Carousel wrapper --> */}
-              //     <div className="relative overflow-hidden md:h-96" style={{ height: "50vh", borderRadius: "1vw" }}>
-              //       {profArr[0]?.salon_photos?.map((item, index) => {
-              //         return (<div
-              //           key={index}
-              //           className="hidden duration-700 ease-in-out"
-              //           data-carousel-item
-              //         >
-              //           <img
-              //             src={item}
-              //             className="absolute block"
-              //             alt="..."
-              //             style={{ borderRadius: "1vw" }}
-              //             id='carousel-img'
-              //           />
-              //         </div>)
-              //       })}
-              //     </div>
-              //     {/* <!-- Slider indicators --> */}
-              //     <div
-              //       style={{ bottom: "1vw" }}
-              //       className="absolute z-30 flex gap-x-px -translate-x-1/2 left-1/2 space-x-3 rtl:space-x-reverse">
-              //       {profArr[0]?.salon_photos?.map((_, index) => {
-              //         return (
-              //           <button
-              //             key={index}
-              //             type="button"
-              //             className="rounded-full"
-              //             aria-current={index === 0 ? "true" : "false"}
-              //             aria-label={`Slide ${index + 1}`}
-              //             data-carousel-slide-to={index}
-              //           ></button>
-              //         );
-              //       })}
-              //     </div>
-              //     {/* <!-- Slider controls --> */}
-              //     <button
-              //       type="button"
-              //       className="absolute top-0 start-0 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
-              //       data-carousel-prev
-              //       style={{ width: "4vw" }}
-              //     >
-              //       <span
-              //         className="inline-flex items-center z-30 justify-center rounded-full bg-white group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none"
-              //         style={{ width: "3vw", height: "3vw" }}
-              //       >
-              //         <img src="/images/arrowRight.png" alt="" style={{ width: "1.5vw" }} />
-              //         <span className="sr-only">Previous</span>
-              //       </span>
-              //     </button>
-              //     <button
-              //       type="button"
-              //       className="absolute top-0 end-0 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
-              //       data-carousel-next
-              //       style={{ width: "4vw" }}
-              //     >
-              //       <span
-              //         className="inline-flex items-center z-30 justify-center rounded-full bg-white group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none"
-              //         style={{ width: "3vw", height: "3vw" }}
-              //       >
-              //         <img src="/images/arrowLeft.png" alt="" style={{ width: "1.5vw" }} />
-              //         <span className="sr-only">Next</span>
-              //       </span>
-              //     </button>
-              //   </div>
-              //   :
-              //   <img src="/images/NoCompImg.png" alt="" className='compNoImg' />
-              }
-            </div>
             <div className={getSalonData(profArr[0], 'salon_title') == "" ? 'company-title-empty' : 'company-title-full'}>
               {/* <img src="/images/titleIcon.png" alt="" /> */}
               <h3>
@@ -1324,60 +1265,444 @@ const Profile = () => {
               }
             </div>
           </div>
-          <div className="payment-system">
-            <h3>
-              Система монетизации
-            </h3>
-            <div className='payment-system-bottom'>
-              <div className='payment-system-summ'>
-                <div className='payment-system-summ-top'>
-                  <img src="/images/paymentTop.png" alt="" />
-                  <h4>
-                    Было оплачено
-                  </h4>
-                </div>
-                <div style={{ minHeight: "10vh", display: "flex", alignItems: "end" }}>
-                  <h1>
-                    {formatSumm(profArr[0]?.paymentSystem?.summ)}
-                  </h1>
-                  <p>
-                    UZS
-                  </p>
-                </div>
+          <div className='company-contacts' style={{
+            backgroundColor: '#F8F9FA',
+            borderRadius: '16px',
+            padding: '24px',
+            marginBottom: '24px'
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '16px',
+              marginBottom: '20px'
+            }}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Номер телефона
+                </label>
+                {changeMode ? (
+                  <input 
+                    type="text" 
+                    value={editContacts.phone1}
+                    onChange={(e) => setEditContacts(prev => ({...prev, phone1: e.target.value}))}
+                    placeholder="+998901234567"
+                    style={{
+                      width: '100%',
+                      padding: '14px 16px',
+                      border: '1px solid #D1D5DB',
+                      borderRadius: '12px',
+                      fontSize: '16px',
+                      fontFamily: 'inherit',
+                      backgroundColor: 'white',
+                      outline: 'none',
+                      transition: 'border-color 0.2s'
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    padding: '14px 16px',
+                    backgroundColor: 'white',
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    color: '#111827',
+                    border: '1px solid #E5E7EB',
+                    minHeight: '52px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    +998901234567
+                  </div>
+                )}
               </div>
-              <div className='payment-system-card'>
-                <div className='payment-system-card-top'>
-                  <img src="/images/paymentCard.png" alt="" />
-                  <h4>
-                    Привязанная карта
-                  </h4>
-                </div>
-                <div className='payment-system-card-bottom'>
-                  <p>
-                    <span>
-                      {profArr[0]?.paymentSystem?.card_number?.split('').map((item, index) => {
-                        if (index <= 3) {
-                          return item
-                        }
-                      })}
-                    </span>
-                    <span>
-                      **** ****
-                    </span>
-                    <span>
-                      {profArr[0]?.paymentSystem?.card_number?.split('').map((item, index) => {
-                        if (index >= 12) {
-                          return item
-                        }
-                      })}
-                    </span>
-                  </p>
-                  <h3>
-                    {profArr[0]?.paymentSystem?.card_type}
-                  </h3>
-                </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  2-Номер телефона (необязательно)
+                </label>
+                {changeMode ? (
+                  <input 
+                    type="text" 
+                    value={editContacts.phone2}
+                    onChange={(e) => setEditContacts(prev => ({...prev, phone2: e.target.value}))}
+                    placeholder="+998901234567"
+                    style={{
+                      width: '100%',
+                      padding: '14px 16px',
+                      border: '1px solid #D1D5DB',
+                      borderRadius: '12px',
+                      fontSize: '16px',
+                      fontFamily: 'inherit',
+                      backgroundColor: 'white',
+                      outline: 'none',
+                      transition: 'border-color 0.2s'
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    padding: '14px 16px',
+                    backgroundColor: 'white',
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    color: '#111827',
+                    border: '1px solid #E5E7EB',
+                    minHeight: '52px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    +998901234567
+                  </div>
+                )}
               </div>
             </div>
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                Ссылка на Instagram
+              </label>
+              {changeMode ? (
+                <input 
+                  type="text" 
+                  value={editContacts.instagram}
+                  onChange={(e) => setEditContacts(prev => ({...prev, instagram: e.target.value}))}
+                  placeholder="https://instagram.com/user"
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    border: '1px solid #D1D5DB',
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    fontFamily: 'inherit',
+                    backgroundColor: 'white',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+              ) : (
+                <div style={{
+                  padding: '14px 16px',
+                  backgroundColor: 'white',
+                  borderRadius: '12px',
+                  fontSize: '16px',
+                  color: '#111827',
+                  border: '1px solid #E5E7EB',
+                  minHeight: '52px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  https://instagram.com/user
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="payment-system">
+            <div style={{
+              backgroundColor: '#F8F9FA',
+              borderRadius: '12px',
+              padding: '24px',
+              marginBottom: '24px'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '20px'
+              }}>
+                <img src="/images/paymentCard.png" alt="" style={{
+                  width: '24px',
+                  height: '24px',
+                  marginRight: '12px'
+                }} />
+                <h4 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: 0
+                }}>
+                  {t('profilePaymentCard') || 'Привязанная карта'}
+                </h4>
+              </div>
+              
+              {profArr[0]?.paymentSystem?.card_number ? (
+                <div style={{
+                  backgroundColor: 'white',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  border: '1px solid #E5E7EB',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '12px'
+                  }}>
+                    <div style={{
+                      fontSize: '18px',
+                      fontWeight: '600',
+                      color: '#111827',
+                      letterSpacing: '2px'
+                    }}>
+                      {profArr[0]?.paymentSystem?.card_number?.slice(0, 4)} **** **** {profArr[0]?.paymentSystem?.card_number?.slice(-4)}
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#6B7280',
+                      backgroundColor: '#F3F4F6',
+                      padding: '4px 12px',
+                      borderRadius: '20px'
+                    }}>
+                      {profArr[0]?.paymentSystem?.card_type || 'HUMO'}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#6B7280'
+                  }}>
+                    {profArr[0]?.paymentSystem?.card_holder || 'Card Holder'}
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  backgroundColor: 'white',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  border: '2px dashed #D1D5DB',
+                  textAlign: 'center',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#6B7280',
+                    marginBottom: '12px'
+                  }}>
+                    {t('profileNoCard') || 'Карта не привязана'}
+                  </div>
+                </div>
+              )}
+              
+              {changeMode && (
+                <button
+                  onClick={() => setShowAddCard(true)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 24px',
+                    backgroundColor: '#8B5CF6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#7C3AED'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#8B5CF6'}
+                >
+                  {profArr[0]?.paymentSystem?.card_number ? 
+                    (t('profileChangeCard') || 'Изменить') : 
+                    (t('profileAddCard') || 'Добавить карту')
+                  }
+                </button>
+              )}
+            </div>
+            
+            {/* Karta qo'shish modali */}
+            {showAddCard && (
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000
+              }}>
+                <div style={{
+                  backgroundColor: 'white',
+                  borderRadius: '16px',
+                  padding: '32px',
+                  width: '90%',
+                  maxWidth: '500px',
+                  maxHeight: '90vh',
+                  overflow: 'auto'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '24px'
+                  }}>
+                    <h3 style={{
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      color: '#111827',
+                      margin: 0
+                    }}>
+                      {t('profileAddNewCard') || 'Добавить новую карту'}
+                    </h3>
+                    <button
+                      onClick={() => setShowAddCard(false)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '24px',
+                        cursor: 'pointer',
+                        color: '#6B7280'
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      {t('profileCardNumber') || 'Номер карты'}
+                    </label>
+                    <input
+                      type="text"
+                      value={editPayment.card_number}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 16);
+                        setEditPayment(prev => ({...prev, card_number: value}));
+                      }}
+                      placeholder="1234 5678 9123 4567"
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '8px',
+                        fontSize: '16px',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      {t('profileCardHolder') || 'Владелец карты'}
+                    </label>
+                    <input
+                      type="text"
+                      value={editPayment.card_holder}
+                      onChange={(e) => setEditPayment(prev => ({...prev, card_holder: e.target.value}))}
+                      placeholder="JOHN DOE"
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '8px',
+                        fontSize: '16px',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '24px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      {t('profileCardType') || 'Тип карты'}
+                    </label>
+                    <select
+                      value={editPayment.card_type}
+                      onChange={(e) => setEditPayment(prev => ({...prev, card_type: e.target.value}))}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '8px',
+                        fontSize: '16px',
+                        fontFamily: 'inherit',
+                        backgroundColor: 'white'
+                      }}
+                    >
+                      <option value="HUMO">HUMO</option>
+                      <option value="UZCARD">UZCARD</option>
+                      <option value="VISA">VISA</option>
+                      <option value="MASTERCARD">MASTERCARD</option>
+                    </select>
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    gap: '12px'
+                  }}>
+                    <button
+                      onClick={() => setShowAddCard(false)}
+                      style={{
+                        flex: 1,
+                        padding: '12px 24px',
+                        backgroundColor: '#F3F4F6',
+                        color: '#374151',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {t('profileCancel') || 'Отмена'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        // Karta saqlash logikasi
+                        console.log('Saving card:', editPayment);
+                        setShowAddCard(false);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '12px 24px',
+                        backgroundColor: '#8B5CF6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {t('profileSave') || 'Сохранить'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <div className="company-location">
             <div className='company-location-top'>
