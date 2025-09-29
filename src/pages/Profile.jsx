@@ -550,7 +550,7 @@ const Profile = () => {
                 {t('profileTitle')}
               </h2>
             </div>
-            <div className='profile-nav-lang' style={{ marginRight: "-45vw", width: "20vw", gap: "0.3vw" }}>
+            <div className='profile-nav-lang' style={{ marginRight: "-40vw", width: "20vw", gap: "0.3vw" }}>
               <img src="/images/globusGray.png" alt="" className='globus' />
               <select value={language} onChange={handleChange}>
                 <option value="ru">RU</option>
@@ -562,6 +562,15 @@ const Profile = () => {
             <button onClick={() => {
               logout()
               window.location.href = '/login'
+            }}
+            style={{
+              padding: '0.2vw 3vw',
+              backgroundColor: '#FF0000',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5vw',
+              cursor: 'pointer'
+
             }}>
               {t('profileLogout')}
             </button>
