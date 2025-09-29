@@ -26,6 +26,9 @@ const Profile = () => {
   const [canScrollRight, setCanScrollRight] = useState(false)
   const [companyImages, setCompanyImages] = useState([])
   const [pendingImages, setPendingImages] = useState([])
+  
+  // Carousel uchun state
+  const [currentSlide, setCurrentSlide] = useState(0)
 
   // Komponent yuklanganda admin salon ma'lumotlarini olish
   useEffect(() => {
@@ -109,6 +112,28 @@ const Profile = () => {
     }
   };
 
+  // Carousel navigation funksiyalari
+  const nextSlide = () => {
+    const totalImages = companyImages.length + pendingImages.length;
+    if (totalImages > 0) {
+      setCurrentSlide((prev) => (prev + 1) % totalImages);
+    }
+  };
+
+  const prevSlide = () => {
+    const totalImages = companyImages.length + pendingImages.length;
+    if (totalImages > 0) {
+      setCurrentSlide((prev) => (prev - 1 + totalImages) % totalImages);
+    }
+  };
+
+  const goToSlide = (index) => {
+    const totalImages = companyImages.length + pendingImages.length;
+    if (index >= 0 && index < totalImages) {
+      setCurrentSlide(index);
+    }
+  };
+
   // Rasm yuklash funksiyasi (faqat preview uchun)
   const handleImageUpload = (event) => {
     const files = Array.from(event.target.files);
@@ -130,45 +155,49 @@ const Profile = () => {
   };
 
   // Rasmni o'chirish funksiyasi
-  const handleDeleteImage = async (index, isPending = false) => {
+  const handleDeleteImage = async (index) => {
     if (!window.confirm('Rasmni o\'chirishni xohlaysizmi?')) {
       return;
     }
 
-    if (isPending) {
+    const totalExistingImages = companyImages.length;
+    
+    if (index < totalExistingImages) {
+      // Mavjud rasmni serverdan o'chirish
+      if (!profArr || profArr.length === 0) {
+        alert('Salon ma\'lumotlari yuklanmagan');
+        return;
+      }
+
+      const salonId = profArr[0].id;
+
+      try {
+        // Serverdan o'chirish (index ni yuborish)
+        const result = await deleteSalonPhoto(salonId, index);
+        console.log('Photo deleted successfully:', result);
+        
+        // Local state ni yangilash (server javobidan)
+        if (result.salon_photos) {
+          setCompanyImages(result.salon_photos);
+        }
+        
+        alert('Rasm muvaffaqiyatli o\'chirildi!');
+      } catch (error) {
+        console.error('Error deleting photo:', error);
+        alert('Rasmni o\'chirishda xatolik yuz berdi: ' + error.message);
+      }
+    } else {
       // Pending rasmni o'chirish (faqat local state dan)
+      const pendingIndex = index - totalExistingImages;
       setPendingImages(prev => {
         const newPendingImages = [...prev];
         // URL ni tozalash (memory leak oldini olish uchun)
-        URL.revokeObjectURL(newPendingImages[index - companyImages.length].preview);
-        newPendingImages.splice(index - companyImages.length, 1);
+        if (newPendingImages[pendingIndex]) {
+          URL.revokeObjectURL(newPendingImages[pendingIndex].preview);
+          newPendingImages.splice(pendingIndex, 1);
+        }
         return newPendingImages;
       });
-      return;
-    }
-
-    // Mavjud rasmni serverdan o'chirish
-    if (!profArr || profArr.length === 0) {
-      alert('Salon ma\'lumotlari yuklanmagan');
-      return;
-    }
-
-    const salonId = profArr[0].id;
-
-    try {
-      // Serverdan o'chirish (index ni yuborish)
-      const result = await deleteSalonPhoto(salonId, index);
-      console.log('Photo deleted successfully:', result);
-      
-      // Local state ni yangilash (server javobidan)
-      if (result.salon_photos) {
-        setCompanyImages(result.salon_photos);
-      }
-      
-      alert('Rasm muvaffaqiyatli o\'chirildi!');
-    } catch (error) {
-      console.error('Error deleting photo:', error);
-      alert('Rasmni o\'chirishda xatolik yuz berdi: ' + error.message);
     }
   };
 
@@ -190,6 +219,14 @@ const Profile = () => {
       return () => imageList.removeEventListener('scroll', checkScrollButtons);
     }
   }, []);
+
+  // Carousel currentSlide ni reset qilish
+  useEffect(() => {
+    const totalImages = companyImages.length + pendingImages.length;
+    if (currentSlide >= totalImages && totalImages > 0) {
+      setCurrentSlide(0);
+    }
+  }, [companyImages, pendingImages, currentSlide]);
 
   // Comfort item ni toggle qilish funksiyasi
   const toggleComfortItem = (index) => {
@@ -472,89 +509,74 @@ const Profile = () => {
             <div className='company-images'>
               {(companyImages?.length > 0 || pendingImages?.length > 0)
                 ?
-                <div id="indicators-carousel" className="relative w-full" data-carousel="slide" data-carousel-interval="15000">
-                  {/* <!-- Carousel wrapper --> */}
-                  <div className="relative overflow-hidden md:h-96" style={{ height: "50vh", borderRadius: "1vw" }}>
-                    {/* Mavjud rasmlar */}
-                    {companyImages?.map((item, index) => {
-                      return (<div
-                        key={`existing-${index}`}
-                        className={`${index === 0 ? 'block' : 'hidden'} duration-700 ease-in-out`}
-                        data-carousel-item
-                      >
-                        <img
-                          src={item}
-                          className="absolute block w-full h-full object-cover"
-                          alt="..."
-                          style={{ borderRadius: "1vw" }}
-                          id='carousel-img'
-                        />
-                      </div>)
-                    })}
-                    {/* Pending rasmlar */}
-                    {pendingImages?.map((item, index) => {
-                      const totalIndex = companyImages.length + index;
-                      return (<div
-                        key={`pending-${index}`}
-                        className={`${totalIndex === 0 ? 'block' : 'hidden'} duration-700 ease-in-out`}
-                        data-carousel-item
-                      >
-                        <img
-                          src={item.preview}
-                          className="absolute block w-full h-full object-cover"
-                          alt="..."
-                          style={{ borderRadius: "1vw" }}
-                          id='carousel-img'
-                        />
-                      </div>)
-                    })}
-                  </div>
-                  {/* <!-- Slider indicators --> */}
-                  <div
-                    style={{ bottom: "1vw" }}
-                    className="absolute z-30 flex gap-x-px -translate-x-1/2 left-1/2 space-x-3 rtl:space-x-reverse">
-                    {[...companyImages, ...pendingImages]?.map((_, index) => {
+                <div className="relative w-full">
+                  {/* Carousel wrapper */}
+                  <div className="relative overflow-hidden" style={{ height: "50vh", borderRadius: "1vw" }}>
+                    {/* Current image display */}
+                    {(() => {
+                      const allImages = [...companyImages, ...pendingImages];
+                      if (allImages.length === 0) return null;
+                      
+                      const currentImage = allImages[currentSlide];
+                      const isExisting = currentSlide < companyImages.length;
+                      
                       return (
+                        <div className="w-full h-full">
+                          <img
+                            src={isExisting ? currentImage : currentImage.preview}
+                            className="w-full h-full object-cover"
+                            alt={`Slide ${currentSlide + 1}`}
+                            style={{ borderRadius: "1vw" }}
+                          />
+                          {/* Delete button for edit mode */}
+                          {changeMode && (
+                            <button
+                              onClick={() => handleDeleteImage(currentSlide)}
+                              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 z-10 transition-colors"
+                              title="Delete image"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  
+                  {/* Navigation arrows */}
+                  {[...companyImages, ...pendingImages].length > 1 && (
+                    <>
+                      
+                      
+                      <button
+                        onClick={nextSlide}
+                        className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
+                      >
+                        <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Indicators */}
+                  {[...companyImages, ...pendingImages].length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                      {[...companyImages, ...pendingImages].map((_, index) => (
                         <button
                           key={index}
-                          type="button"
-                          className="rounded-full"
-                          aria-current={index === 0 ? "true" : "false"}
-                          aria-label={`Slide ${index + 1}`}
-                          data-carousel-slide-to={index}
-                        ></button>
-                      );
-                    })}
-                  </div>
-                  {/* <!-- Slider controls --> */}
-                  <button
-                    type="button"
-                    className="absolute top-0 start-0 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
-                    data-carousel-prev
-                    style={{ width: "4vw" }}
-                  >
-                    <span
-                      className="inline-flex items-center z-30 justify-center rounded-full bg-white group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none"
-                      style={{ width: "3vw", height: "3vw" }}
-                    >
-                      <img src="/images/arrowRight.png" alt="" style={{ width: "1.5vw" }} />
-                      <span className="sr-only">Previous</span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="absolute top-0 end-0 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
-                    data-carousel-next
-                    style={{ width: "4vw" }}
-                  >
-                    <span
-                      className="inline-flex items-center z-30 justify-center rounded-full bg-white group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none"
-                      style={{ width: "3vw", height: "3vw" }}
-                    >
-                      <img src="/images/arrowLeft.png" alt="" style={{ width: "1.5vw" }} />
-                      <span className="sr-only">Next</span>
-                    </span>
-                  </button>
+                          onClick={() => goToSlide(index)}
+                          className={`w-3 h-3 rounded-full transition-all ${
+                            index === currentSlide 
+                              ? 'bg-white' 
+                              : 'bg-white/50 hover:bg-white/75'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
                 :
                 <img src="/images/NoCompImg.png" alt="" className='compNoImg' />
