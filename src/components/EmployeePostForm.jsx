@@ -19,7 +19,7 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
 
     const fetchPostLimits = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             const response = await axios.get(`/api/payments/employee/limits`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -43,7 +43,7 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
         setError('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             const response = await axios.post(`/api/employees/${employeeId}/posts`, formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -66,7 +66,7 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
 
     const handleBuyPosts = async (postCount = 4) => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             const response = await axios.post('/api/payments/employee/posts', 
                 { postCount }, 
                 { headers: { Authorization: `Bearer ${token}` } }

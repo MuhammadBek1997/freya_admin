@@ -13,7 +13,7 @@ const PremiumSubscription = ({ onClose }) => {
 
     const fetchSubscriptionStatus = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             const response = await axios.get('/api/payments/user/subscription', {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -28,7 +28,7 @@ const PremiumSubscription = ({ onClose }) => {
         setError('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             const response = await axios.post('/api/payments/user/premium', 
                 { duration }, 
                 { headers: { Authorization: `Bearer ${token}` } }

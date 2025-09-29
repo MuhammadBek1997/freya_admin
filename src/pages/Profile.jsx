@@ -9,7 +9,7 @@ const Profile = () => {
   const {
     t, language, handleChange, profArr, commentsArr,
     adminSalonLoading, adminSalonError, fetchAdminSalon, updateSalon,
-    uploadSalonPhotos, deleteSalonPhoto
+    uploadSalonPhotos, deleteSalonPhoto, logout
   } = UseGlobalContext()
 
   const [changeMode, setChangeMode] = useState(false)
@@ -560,7 +560,7 @@ const Profile = () => {
               <img src="/images/Arrow.png" alt="Arrow" className='arrow' />
             </div>
             <button onClick={() => {
-              localStorage.removeItem('token')
+              logout()
               window.location.href = '/login'
             }}>
               {t('profileLogout')}
