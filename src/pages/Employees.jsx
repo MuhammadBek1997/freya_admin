@@ -4,12 +4,14 @@ import EmployeeCard from '../components/EmployeeCard';
 import EditEmployeeBar from '../components/EditEmployeeBar';
 import AboutEmployeeBar from '../components/AboutEmployeeBar';
 import EmployWaitingCard from '../components/EmployWaitingCard';
+import AddEmployeeModal from '../components/AddEmployeeModal';
 
 const Employees = () => {
   const { t, waitingEmp, setWaitingEmp, mastersArr, setMastersArr, handleAddWaitingEmp, handleRemoveWaitingEmp, isCheckedItem, setIsCheckedItem } = UseGlobalContext();
   const [openCardId, setOpenCardId] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState({ menu: null, cardId: null });
-  const [showWait, setShowWait] = useState(false)
+  const [showWait, setShowWait] = useState(false);
+  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   // Function to toggle the menu for a specific card
   const handleToggleMenu = (id) => {
     setOpenCardId((prevId) => (prevId === id ? null : id));
@@ -133,7 +135,7 @@ const Employees = () => {
                   <img src="/images/employSendWait.png" alt="" />
                   {t('employSendWait')}
                 </button>
-                <button className="employ-filter-add">
+                <button className="employ-filter-add" onClick={() => setShowAddEmployeeModal(true)}>
                   <img src="/images/+.png" alt="" />
                   {t('employAddBtn')}
                 </button>
@@ -181,6 +183,17 @@ const Employees = () => {
         {isMenuOpen.menu === 'edit' && <EditEmployeeBar employee={selectedEmployee} onClose={handleCloseSidebar} />}
         {isMenuOpen.menu === 'see' && <AboutEmployeeBar employee={selectedEmployee} onClose={handleCloseSidebar} />}
       </div>
+      
+      {/* Add Employee Modal */}
+      {showAddEmployeeModal && (
+        <AddEmployeeModal 
+          onClose={() => setShowAddEmployeeModal(false)}
+          onEmployeeAdded={() => {
+            setShowAddEmployeeModal(false);
+            // Refresh employees list if needed
+          }}
+        />
+      )}
     </section>
   );
 };

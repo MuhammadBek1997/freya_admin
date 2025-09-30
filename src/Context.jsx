@@ -16,7 +16,7 @@ import {
 
 // API base URL configuration
 const API_BASE_URL = import.meta.env.DEV 
-  ? "https://freya-salon-backend-cc373ce6622a.herokuapp.com/api"
+  ? "http://localhost:3009/api"
   : import.meta.env.VITE_API_BASE_URL;
 
 const AppContext = createContext();
@@ -590,6 +590,53 @@ export const AppProvider = ({ children }) => {
 		}
 	};
 
+	// Create new employee
+	const createEmployee = async (employeeData) => {
+		setEmployeesLoading(true);
+		setEmployeesError(null);
+
+		try {
+			const token = getAuthToken();
+			
+			// Add salon_id from current user if not provided
+			const dataToSend = {
+				...employeeData,
+				salon_id: employeeData.salon_id || user?.salon_id
+			};
+
+			const response = await fetch(`${API_BASE_URL}/employees`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(dataToSend),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Employee created:', data);
+				
+				// Add new employee to existing employees
+				setEmployees(prevEmployees => [...prevEmployees, data]);
+				
+				// Refresh employees to get updated list
+				await fetchEmployees();
+				
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to create employee');
+			}
+		} catch (error) {
+			console.error('Error creating employee:', error);
+			setEmployeesError(error.message);
+			throw error;
+		} finally {
+			setEmployeesLoading(false);
+		}
+	};
+
 	// Fetch services - all services from production server
 	const fetchServices = async () => {
 		setServicesLoading(true);
@@ -1017,7 +1064,7 @@ const moreDataAppoint = useMemo(() => {
 			// Grouped schedules state va funksiyalari
 			groupedSchedules, groupedSchedulesLoading, groupedSchedulesError, fetchGroupedSchedules,
 			// Employees state va funksiyalari
-			employees, employeesLoading, employeesError, fetchEmployees,
+			employees, employeesLoading, employeesError, fetchEmployees, createEmployee,
 			// Services state va funksiyalari
 			services, servicesLoading, servicesError, fetchServices, createService,
 			// Salons state va funksiyalari
