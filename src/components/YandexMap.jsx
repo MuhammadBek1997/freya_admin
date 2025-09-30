@@ -31,6 +31,21 @@ const YandexMap = ({ lat, long }) => {
     const mapInstance = useRef(null); // Xarita obyektini saqlash
     const placemarkInstance = useRef(null); // Marker obyektini saqlash
 
+    // Default koordinatalar (Toshkent markazi)
+    const defaultLat = 41.2995;
+    const defaultLong = 69.2401;
+    
+    // Koordinatalarni tekshirish va default qiymatlar berish
+    const validLat = (lat && !isNaN(lat) && lat !== null && lat !== undefined) ? parseFloat(lat) : defaultLat;
+    const validLong = (long && !isNaN(long) && long !== null && long !== undefined) ? parseFloat(long) : defaultLong;
+
+    console.log('YandexMap coordinates:', { 
+        original: { lat, long }, 
+        valid: { validLat, validLong },
+        isLatValid: !isNaN(validLat),
+        isLongValid: !isNaN(validLong)
+    });
+
     useEffect(() => {
         loadYandexMapScript()
             .then((ymaps) => {
@@ -38,13 +53,13 @@ const YandexMap = ({ lat, long }) => {
                     // Xarita faqat bir marta yaratiladi
                     if (!mapInstance.current) {
                         mapInstance.current = new ymaps.Map(mapRef.current, {
-                            center: [lat, long], // O‘zgaruvchan koordinatalar
+                            center: [validLat, validLong], // Tekshirilgan koordinatalar
                             zoom: 12, // Masshtab
                             controls: [], // Standart boshqaruv elementlarini olib tashlash
                         }, {
-                            // Probka va boshqa qatlamlarni o‘chirish
+                            // Probka va boshqa qatlamlarni o'chirish
                             suppressMapOpenBlock: true,
-                            yandexMapDisablePoiInteractivity: true, // Interaktiv nuqtalar o‘chiriladi
+                            yandexMapDisablePoiInteractivity: true, // Interaktiv nuqtalar o'chiriladi
                         });
 
                         // Probka qatlamini xavfsiz usulda o'chirish
@@ -66,7 +81,7 @@ const YandexMap = ({ lat, long }) => {
 
                     // Yangi marker yaratish (maxsus rasm bilan)
                     placemarkInstance.current = new ymaps.Placemark(
-                        [lat, long],
+                        [validLat, validLong],
                         {
                             hintContent: 'Joy',
                             balloonContent: 'Belgilangan joy',
@@ -80,8 +95,8 @@ const YandexMap = ({ lat, long }) => {
                     );
                     mapInstance.current.geoObjects.add(placemarkInstance.current);
 
-                    // Xarita markazini yangi koordinatalarga o‘zgartirish
-                    mapInstance.current.setCenter([lat, long], 12, { duration: 300 });
+                    // Xarita markazini yangi koordinatalarga o'zgartirish
+                    mapInstance.current.setCenter([validLat, validLong], 12, { duration: 300 });
                 });
             })
             .catch((error) => {
@@ -99,7 +114,7 @@ const YandexMap = ({ lat, long }) => {
                 mapInstance.current = null;
             }
         };
-    }, [lat, long]); // lat va long o‘zgarganda useEffect qayta ishlaydi
+    }, [validLat, validLong]); // validLat va validLong o'zgarganda useEffect qayta ishlaydi
 
     return (
         <div className='yandex-map-cont'>

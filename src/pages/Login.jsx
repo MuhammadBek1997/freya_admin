@@ -2,6 +2,16 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UseGlobalContext } from '../Context';
 
+// Import images
+import girlWithiPod from '/images/girlWithiPod.png';
+import Rectangle155 from '/images/Rectangle155.png';
+import girlWithBook from '/images/girlWithBook.png';
+import boyWithCoffee from '/images/boyWithCoffee.png';
+import globus from '/images/globus.png';
+import logoLight from '/images/logoLight.jpg';
+import showPsw from '/images/showPsw.png';
+import hidePsw from '/images/hidePsw.png';
+
 const Login = () => {
   const { t, handleChange, language, loginAdmin, loginEmployee } = UseGlobalContext();
   const navigate = useNavigate();
@@ -100,22 +110,22 @@ const Login = () => {
       <div className="login-left">
         <h1>{t('loginHead')}</h1>
         <div className="illustrations">
-          <img src="/images/girlWithiPod.png" alt="Illustration 1" />
-          <img src="/images/Rectangle155.png" alt="Illustration 2" />
+          <img src={girlWithiPod} alt="Illustration 1" />
+          <img src={Rectangle155} alt="Illustration 2" />
         </div>
         
         <div className="bottomIllustrations">
-          <img src="/images/girlWithBook.png" alt="Illustration 1" />
-          <img src="/images/boyWithCoffee.png" alt="Illustration 2" />
+          <img src={girlWithBook} alt="Illustration 1" />
+          <img src={boyWithCoffee} alt="Illustration 2" />
         </div>
       </div>
 
       {/* right side */}
       <div className="login-right">
         <div className="login-top">
-          <img src="/images/logoLight.jpg" alt="Logo" className="logo" />
+          <img src={logoLight} alt="Logo" className="logo" />
           <div>
-            <img src="/images/globus.png" alt="" className='globus'/>
+            <img src={globus} alt="" className='globus'/>
           <select value={language} onChange={handleChange}>
             <option value="ru">RU</option>
             <option value="uz">UZ</option>
@@ -192,7 +202,7 @@ const Login = () => {
                 className="toggle-password"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <img src='/images/hidePsw.png'/> : <img src='/images/showPsw.png'/>}
+                {showPassword ? <img src={hidePsw}/> : <img src={showPsw}/>}
               </button>
             </div>
 

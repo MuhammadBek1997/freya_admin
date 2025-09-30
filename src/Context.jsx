@@ -14,12 +14,8 @@ import {
 	statisticsUrl
 } from "./apiUrls"
 
-// API base URL configuration - use the same BASE_URL from apiUrls.js
-const BASE_URL = import.meta.env.DEV 
-  ? "/api"
-  : import.meta.env.VITE_API_BASE_URL;
-
-const API_BASE_URL = BASE_URL;
+// API base URL configuration - always use production URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://freya-salon-backend-cc373ce6622a.herokuapp.com/api";
 
 const AppContext = createContext();
 
@@ -279,8 +275,21 @@ export const AppProvider = ({ children }) => {
 
 			console.log('Response status:', response.status);
 			console.log('Response ok:', response.ok);
+			console.log('Response headers:', response.headers.get('content-type'));
 
-			const data = await response.json();
+			// Check if response has content before parsing JSON
+			const responseText = await response.text();
+			console.log('Response text:', responseText);
+
+			let data;
+			try {
+				data = responseText ? JSON.parse(responseText) : {};
+			} catch (jsonError) {
+				console.error('JSON parse error:', jsonError);
+				console.error('Response text that failed to parse:', responseText);
+				throw new Error('Server response is not valid JSON');
+			}
+
 			console.log('Response data:', data);
 
 			if (response.ok) {
