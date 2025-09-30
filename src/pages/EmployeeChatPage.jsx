@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import '../styles/ChatStyles.css'
 import { UseGlobalContext } from '../Context';
 
@@ -17,15 +17,24 @@ const EmployeeChatPage = () => {
     messagesError,
     fetchMessages,
     sendMessage,
-    getUnreadCount
+    getUnreadCount,
+    markConversationAsRead
   } = UseGlobalContext();
 
   const [newMessage, setNewMessage] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
   const [selectedUser, setSelectedUser] = useState(null);
+  const chatBodyRef = useRef(null);
 
   // Employee login qilganda user obyektini console'da ko'rsatish
   console.log('Employee user object:', user);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (chatBodyRef.current && messages.length > 0) {
+      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   // Component yuklanganda conversations va unread count ni olish
   useEffect(() => {
@@ -46,9 +55,18 @@ const EmployeeChatPage = () => {
   };
 
   // Conversation tanlash
-  const handleSelectConversation = async (userId, userName) => {
-    setSelectedUser({ id: userId, name: userName });
+  const handleSelectConversation = async (userId, userName, userAvatar) => {
+    setSelectedUser({ id: userId, name: userName, avatar: userAvatar });
     await fetchMessages(userId);
+    
+    // Suhbatni tanlanganda barcha xabarlarni o'qilgan deb belgilash
+    try {
+      await markConversationAsRead(userId);
+      // Unread count ni yangilash
+      await loadUnreadCount();
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+    }
   };
 
   // Xabar yuborish
@@ -87,12 +105,6 @@ const EmployeeChatPage = () => {
     window.currentUser = user;
     window.conversations = conversations;
     window.messages = messages;
-    console.log('🧪 Test functions added to window object:');
-    console.log('🧪 - window.testEmployeeLogin1() - Test employee1_1/employee123');
-    console.log('🧪 - window.testEmployeeLogin2() - Test employee123/employee123');
-    console.log('🧪 - window.currentUser - Current user object');
-    console.log('🧪 - window.conversations - Current conversations');
-    console.log('🧪 - window.messages - Current messages');
   }
 
   // Agar employee login qilmagan bo'lsa
@@ -168,23 +180,23 @@ const EmployeeChatPage = () => {
               <h3 className="chat-section-title">Suhbatlar ({conversations.length})</h3>
               {conversations.map((conversation, index) => (
                 <div 
-                  key={conversation.id || index} 
-                  className={`chat-item ${selectedUser?.id === conversation.user_id ? 'selected' : ''}`}
-                  onClick={() => handleSelectConversation(conversation.user_id, conversation.user_name)}
+                  key={conversation.other_user_id || index} 
+                  className={`chat-item ${selectedUser?.id === conversation.other_user_id ? 'selected' : ''}`}
+                  onClick={() => handleSelectConversation(conversation.other_user_id, conversation.other_user_name, conversation.other_user_avatar)}
                   style={{ cursor: 'pointer' }}
                 >
                   <div className="chat-avatar-wrapper">
                     <img
                       className="chat-avatar"
-                      src="chatIcon.svg"
-                      alt=""
+                      src={conversation.other_user_avatar || "ChatAvatar.svg"}
+                      alt={conversation.other_user_name || "User"}
                     />
                     {conversation.unread_count > 0 && <span className="unread-dot"></span>}
                   </div>
                   <div className="chat-info">
                     <span className="chat-info-logo">
-                      <img className="chat-info-logo-img" src="chatIcon.svg" alt="" />
-                      <p className="chat-name">{conversation.user_name || `User ${conversation.user_id}`}</p>
+                      <img className="chat-info-logo-img" src={conversation.other_user_avatar || "ChatAvatar.svg"} alt={conversation.other_user_name || "User"} />
+                      <p className="chat-name">{conversation.other_user_name || `User ${conversation.other_user_id}`}</p>
                     </span>
                     <p className="chat-msg">
                       {conversation.last_message || 'Xabar yo\'q'}
@@ -219,8 +231,8 @@ const EmployeeChatPage = () => {
               <div className="chat-partner-info">
                 <div className="avatar-container">
                   <img
-                    src="ChatAvatar.svg"
-                    alt="Chat"
+                    src={selectedUser.avatar || "ChatAvatar.svg"}
+                    alt={selectedUser.name || "User"}
                     className="chat-header-avatar"
                   />
                 </div>
@@ -228,13 +240,13 @@ const EmployeeChatPage = () => {
                   <span className="chat-header-name">{selectedUser.name}</span>
                   <span className="online-status-wrapper">
                     <span className="online-status"></span>
-                    <span className="chat-header-status">в сети</span>
+                    <span className="chat-header-status">онлайн</span>
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="chat-body">
+            <div className="chat-body" ref={chatBodyRef}>
               {messagesLoading ? (
                 <div style={{ padding: '20px', textAlign: 'center' }}>
                   <p>Xabarlar yuklanmoqda...</p>
@@ -249,25 +261,64 @@ const EmployeeChatPage = () => {
                 </div>
               ) : (
                 <>
-                  <div className="chat-date">Bugun</div>
-                  {messages.map((message, index) => (
-                    <div 
-                      key={message.id || index} 
-                      className={`message ${message.sender_id === user.id ? 'sent' : 'received'}`}
-                    >
-                      <div className={message.sender_id === user.id ? 'message-content-sent' : 'message-content'}>
-                        <p className={message.sender_id === user.id ? 'message-send-text' : 'message-receive-text'}>
-                          {message.message_text}
-                        </p>
-                        <span className={message.sender_id === user.id ? 'message-time-sent' : 'message-time'}>
-                          {new Date(message.created_at).toLocaleTimeString('uz-UZ', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                  {(() => {
+                    // Xabarlarni sanalar bo'yicha guruhlash
+                    const groupedMessages = {};
+                    messages.forEach(message => {
+                      const messageDate = new Date(message.created_at);
+                      const dateKey = messageDate.toDateString();
+                      if (!groupedMessages[dateKey]) {
+                        groupedMessages[dateKey] = [];
+                      }
+                      groupedMessages[dateKey].push(message);
+                    });
+
+                    // Sanalarni formatlash funksiyasi
+                    const formatDate = (dateString) => {
+                      const date = new Date(dateString);
+                      const today = new Date();
+                      const yesterday = new Date(today);
+                      yesterday.setDate(yesterday.getDate() - 1);
+
+                      if (date.toDateString() === today.toDateString()) {
+                        return 'Bugun';
+                      } else if (date.toDateString() === yesterday.toDateString()) {
+                        return 'Kecha';
+                      } else {
+                        return date.toLocaleDateString('uz-UZ', { 
+                          day: 'numeric', 
+                          month: 'long',
+                          year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+                        });
+                      }
+                    };
+
+                    return Object.entries(groupedMessages)
+                      .sort(([a], [b]) => new Date(a) - new Date(b))
+                      .map(([dateKey, dayMessages]) => (
+                        <div key={dateKey}>
+                          <div className="chat-date">{formatDate(dateKey)}</div>
+                          {dayMessages.map((message, index) => (
+                            <div 
+                              key={message.id || index} 
+                              className={`message ${message.sender_id === user.id ? 'send' : 'receive'}`}
+                            >
+                              <div className={message.sender_id === user.id ? 'message-content-sent' : 'message-content'}>
+                                <p className={message.sender_id === user.id ? 'message-send-text' : 'message-receive-text'}>
+                                  {message.message_text}
+                                </p>
+                                <span className={message.sender_id === user.id ? 'message-time-sent' : 'message-time'}>
+                                  {new Date(message.created_at).toLocaleTimeString('uz-UZ', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ));
+                  })()}
                 </>
               )}
             </div>

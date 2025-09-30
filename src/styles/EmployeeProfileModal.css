@@ -1,0 +1,180 @@
+.employee-profile-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(60, 0, 120, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.employee-profile-modal {
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(60, 0, 120, 0.18);
+  width: 370px;
+  max-width: 95vw;
+  padding: 0 0 32px 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.employee-profile-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: #fff;
+  border: none;
+  font-size: 2rem;
+  color: #a259ff;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.employee-profile-modal-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+.employee-profile-modal-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-bottom: 6px;
+}
+
+.employee-profile-modal-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #a259ff;
+  letter-spacing: 1px;
+}
+
+.employee-profile-modal-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.employee-profile-modal-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #a259ff;
+  margin-bottom: 8px;
+}
+
+.employee-profile-modal-name-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.employee-profile-modal-name {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #2d2d2d;
+}
+
+.employee-profile-modal-role {
+  font-size: 0.9rem;
+  color: #4ad991;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.employee-profile-modal-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.employee-profile-modal-stars {
+  color: #ffc700;
+  font-size: 1.1rem;
+}
+
+.employee-profile-modal-rating-count {
+  color: #888;
+  font-size: 0.95rem;
+}
+
+.employee-profile-modal-photo-btn {
+  background: #a259ff;
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 10px 28px;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.employee-profile-modal-photo-btn:hover {
+  background: #7c2ae8;
+}
+
+.employee-profile-modal-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 18px;
+  margin-top: 8px;
+  padding: 0 24px;
+}
+
+.employee-profile-modal-action {
+  display: flex;
+  align-items: center;
+  background: #f7f5fb;
+  border: none;
+  border-radius: 16px;
+  padding: 14px 18px;
+  font-size: 1.05rem;
+  color: #a259ff;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 2px 8px rgba(162, 89, 255, 0.04);
+}
+.employee-profile-modal-action:hover {
+  background: #ede3ff;
+}
+.employee-profile-modal-action-icon {
+  font-size: 1.2rem;
+  margin-right: 12px;
+}
+
+.employee-profile-modal-logout {
+  width: 90%;
+  margin: 0 auto;
+  background: #ff3b30;
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 14px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.08);
+}
+.employee-profile-modal-logout:hover {
+  background: #d32f2f;
+}

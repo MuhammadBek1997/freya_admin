@@ -769,6 +769,47 @@ export const AppProvider = ({ children }) => {
 		}
 	};
 
+	// Mark all messages in conversation as read
+	const markConversationAsRead = async (userId) => {
+		if (!user || user.role !== 'employee') {
+			console.error('Only employees can mark conversation as read');
+			return;
+		}
+
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/messages/conversation/${userId}/mark-read`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Conversation marked as read:', data);
+				
+				// Update conversations to reflect the change
+				setConversations(prevConversations => 
+					prevConversations.map(conv => 
+						conv.other_user_id === userId 
+							? { ...conv, unread_count: 0 }
+							: conv
+					)
+				);
+				
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to mark conversation as read');
+			}
+		} catch (error) {
+			console.error('Error marking conversation as read:', error);
+			throw error;
+		}
+	};
+
 	// Fetch employees - all employees from production server
 	const fetchEmployees = async () => {
 		if (!user || !user.salon_id) {
@@ -1286,7 +1327,7 @@ const moreDataAppoint = useMemo(() => {
 			// Chat state va funksiyalari
 			conversations, conversationsLoading, conversationsError, fetchConversations,
 			currentConversation, setCurrentConversation,
-			messages, messagesLoading, messagesError, fetchMessages, sendMessage, getUnreadCount, markMessagesAsRead,
+			messages, messagesLoading, messagesError, fetchMessages, sendMessage, getUnreadCount, markMessagesAsRead, markConversationAsRead,
 			// Salons state va funksiyalari
 	salons, salonsLoading, salonsError, fetchSalons, updateSalon,
 	// Salon rasmlarini yuklash va o'chirish funksiyalari

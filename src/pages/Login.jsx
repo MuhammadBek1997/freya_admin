@@ -59,27 +59,31 @@ const Login = () => {
     setErrorMessage('');
 
     try {
-      // Avval admin sifatida login qilishga harakat qilamiz
-      console.log('🔍 LOGIN FORM DEBUG: Trying admin login first...');
-      try {
-        const adminUser = await loginAdmin(username, password);
-        console.log('✅ LOGIN FORM DEBUG: Admin login successful:', adminUser);
-        // Admin login muvaffaqiyatli bo'lsa, home page'ga yo'naltirish
-        navigate('/');
-      } catch (adminError) {
-        console.log('❌ LOGIN FORM DEBUG: Admin login failed:', adminError.message);
-        // Agar admin login muvaffaqiyatsiz bo'lsa, employee sifatida harakat qilamiz
-        console.log('🔍 LOGIN FORM DEBUG: Trying employee login...');
+      // Employee username'larini aniqlash (employee bilan boshlanadi yoki employee1_1 kabi)
+      const isEmployeeUsername = username.toLowerCase().includes('employee');
+      
+      if (isEmployeeUsername) {
+        // Agar employee username bo'lsa, faqat employee endpoint orqali login qilish
+        console.log('🔍 LOGIN FORM DEBUG: Detected employee username, trying employee login only...');
         try {
           const employeeUser = await loginEmployee(username, password);
           console.log('✅ LOGIN FORM DEBUG: Employee login successful:', employeeUser);
           console.log('🔍 LOGIN FORM DEBUG: Navigating to /employee-chat');
-          // Employee login muvaffaqiyatli bo'lsa, employee-chat page'ga yo'naltirish
           navigate('/employee-chat');
         } catch (employeeError) {
           console.log('❌ LOGIN FORM DEBUG: Employee login failed:', employeeError.message);
-          // Agar ikkalasi ham muvaffaqiyatsiz bo'lsa, xatolik ko'rsatamiz
-          throw new Error('Username yoki password noto\'g\'ri!');
+          throw new Error('Employee username yoki password noto\'g\'ri!');
+        }
+      } else {
+        // Agar admin username bo'lsa, faqat admin endpoint orqali login qilish
+        console.log('🔍 LOGIN FORM DEBUG: Detected admin username, trying admin login only...');
+        try {
+          const adminUser = await loginAdmin(username, password);
+          console.log('✅ LOGIN FORM DEBUG: Admin login successful:', adminUser);
+          navigate('/');
+        } catch (adminError) {
+          console.log('❌ LOGIN FORM DEBUG: Admin login failed:', adminError.message);
+          throw new Error('Admin username yoki password noto\'g\'ri!');
         }
       }
     } catch (error) {
