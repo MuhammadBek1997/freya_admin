@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UseGlobalContext } from '../Context';
 
 const Login = () => {
   const { t, handleChange, language, loginAdmin, loginEmployee } = UseGlobalContext();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [checkPsw, setCheckPsw] = useState(true);
   const [username, setUsername] = useState('');
@@ -10,8 +12,43 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Test funksiyalari
+  const testEmployeeCredentials = async () => {
+    console.log('🧪 Testing different employee credentials...');
+    
+    const credentials = [
+      { username: 'employee1_1', password: 'employee123' },
+      { username: 'employee123', password: 'employee123' },
+      { username: 'employee1', password: 'password123' },
+      { username: 'employee2', password: 'password123' }
+    ];
+
+    for (const cred of credentials) {
+      console.log(`🧪 Testing ${cred.username}/${cred.password}...`);
+      try {
+        const result = await loginEmployee(cred.username, cred.password);
+        console.log(`✅ ${cred.username} login successful:`, result);
+      } catch (error) {
+        console.log(`❌ ${cred.username} login failed:`, error.message);
+      }
+    }
+  };
+
+  // Global obyektga test funksiyasini qo'shish
+  if (typeof window !== 'undefined') {
+    window.testEmployeeCredentials = testEmployeeCredentials;
+    window.loginEmployeeTest = loginEmployee;
+    console.log('🧪 Login test functions added:');
+    console.log('🧪 - window.testEmployeeCredentials() - Test multiple employee credentials');
+    console.log('🧪 - window.loginEmployeeTest(username, password) - Direct login test');
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    
+    console.log('🔍 LOGIN FORM DEBUG: Starting login process');
+    console.log('🔍 LOGIN FORM DEBUG: Username:', username);
+    console.log('🔍 LOGIN FORM DEBUG: Password length:', password.length);
     
     if (!username || !password) {
       setErrorMessage('Username va password kiritish majburiy!');
@@ -23,18 +60,30 @@ const Login = () => {
 
     try {
       // Avval admin sifatida login qilishga harakat qilamiz
+      console.log('🔍 LOGIN FORM DEBUG: Trying admin login first...');
       try {
-        await loginAdmin(username, password);
+        const adminUser = await loginAdmin(username, password);
+        console.log('✅ LOGIN FORM DEBUG: Admin login successful:', adminUser);
+        // Admin login muvaffaqiyatli bo'lsa, home page'ga yo'naltirish
+        navigate('/');
       } catch (adminError) {
+        console.log('❌ LOGIN FORM DEBUG: Admin login failed:', adminError.message);
         // Agar admin login muvaffaqiyatsiz bo'lsa, employee sifatida harakat qilamiz
+        console.log('🔍 LOGIN FORM DEBUG: Trying employee login...');
         try {
-          await loginEmployee(username, password);
+          const employeeUser = await loginEmployee(username, password);
+          console.log('✅ LOGIN FORM DEBUG: Employee login successful:', employeeUser);
+          console.log('🔍 LOGIN FORM DEBUG: Navigating to /employee-chat');
+          // Employee login muvaffaqiyatli bo'lsa, employee-chat page'ga yo'naltirish
+          navigate('/employee-chat');
         } catch (employeeError) {
+          console.log('❌ LOGIN FORM DEBUG: Employee login failed:', employeeError.message);
           // Agar ikkalasi ham muvaffaqiyatsiz bo'lsa, xatolik ko'rsatamiz
           throw new Error('Username yoki password noto\'g\'ri!');
         }
       }
     } catch (error) {
+      console.log('❌ LOGIN FORM DEBUG: Final error:', error.message);
       setErrorMessage(error.message || 'Login xatolik yuz berdi!');
     } finally {
       setLoading(false);

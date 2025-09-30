@@ -14,10 +14,12 @@ import {
 	statisticsUrl
 } from "./apiUrls"
 
-// API base URL configuration
-const API_BASE_URL = import.meta.env.DEV 
-  ? "http://localhost:3009/api"
+// API base URL configuration - use the same BASE_URL from apiUrls.js
+const BASE_URL = import.meta.env.DEV 
+  ? "/api"
   : import.meta.env.VITE_API_BASE_URL;
+
+const API_BASE_URL = BASE_URL;
 
 const AppContext = createContext();
 
@@ -53,6 +55,15 @@ export const AppProvider = ({ children }) => {
 	const [servicesLoading, setServicesLoading] = useState(false);
 	const [servicesError, setServicesError] = useState(null);
 
+	// Chat state
+	const [conversations, setConversations] = useState([]);
+	const [conversationsLoading, setConversationsLoading] = useState(false);
+	const [conversationsError, setConversationsError] = useState(null);
+	const [currentConversation, setCurrentConversation] = useState(null);
+	const [messages, setMessages] = useState([]);
+	const [messagesLoading, setMessagesLoading] = useState(false);
+	const [messagesError, setMessagesError] = useState(null);
+
 
 
 	// Check if user is already logged in on app start
@@ -60,9 +71,25 @@ export const AppProvider = ({ children }) => {
 		const token = localStorage.getItem('authToken');
 		const userData = localStorage.getItem('userData');
 		
+		console.log('🔍 DEBUG: localStorage token:', token ? 'EXISTS' : 'NOT_FOUND');
+		console.log('🔍 DEBUG: localStorage userData:', userData);
+		
 		if (token && userData) {
 			try {
 				const parsedUser = JSON.parse(userData);
+				console.log('🔍 DEBUG: Parsed user object:', parsedUser);
+				console.log('🔍 DEBUG: User role:', parsedUser.role);
+				console.log('🔍 DEBUG: Role type:', typeof parsedUser.role);
+				
+				// Role mavjudligini tekshirish
+				if (!parsedUser.role) {
+					console.error('❌ ERROR: User role is missing! Clearing localStorage...');
+					localStorage.removeItem('authToken');
+					localStorage.removeItem('userData');
+					setAuthLoading(false);
+					return;
+				}
+				
 				setUser(parsedUser);
 				setIsAuthenticated(true);
 			} catch (error) {
@@ -295,19 +322,29 @@ export const AppProvider = ({ children }) => {
 			});
 
 			const data = await response.json();
+			console.log('🔍 LOGIN DEBUG: Backend response:', data);
 
 			if (response.ok) {
+				console.log('🔍 LOGIN DEBUG: Backend user data:', data.user);
+				
 				const userData = {
 					id: data.user.id,
 					username: data.user.username || data.user.name,
 					email: data.user.email,
-					name: data.user.name,
+					// Backend'dan name kelmaydi, shuning uchun username ishlatamiz
+					name: data.user.username || data.user.name,
 					role: 'employee',
 					salon_id: data.user.salon_id
 				};
 
+				console.log('🔍 LOGIN DEBUG: Created userData:', userData);
+				console.log('🔍 LOGIN DEBUG: userData.role:', userData.role);
+
 				localStorage.setItem('authToken', data.token);
 				localStorage.setItem('userData', JSON.stringify(userData));
+				
+				console.log('🔍 LOGIN DEBUG: Saved to localStorage');
+				console.log('🔍 LOGIN DEBUG: localStorage userData:', localStorage.getItem('userData'));
 				
 				setUser(userData);
 				setIsAuthenticated(true);
@@ -553,6 +590,185 @@ export const AppProvider = ({ children }) => {
 		}
 	};
 
+	// ===== CHAT API FUNCTIONS =====
+
+	// Fetch conversations for employee
+	const fetchConversations = async () => {
+		if (!user || user.role !== 'employee') {
+			console.error('Only employees can fetch conversations');
+			return;
+		}
+
+		setConversationsLoading(true);
+		setConversationsError(null);
+
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/messages/conversations`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Conversations fetched:', data);
+				setConversations(data.data || data || []);
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch conversations');
+			}
+		} catch (error) {
+			console.error('Error fetching conversations:', error);
+			setConversationsError(error.message);
+			setConversations([]);
+		} finally {
+			setConversationsLoading(false);
+		}
+	};
+
+	// Fetch messages for a specific conversation
+	const fetchMessages = async (userId) => {
+		if (!user || user.role !== 'employee') {
+			console.error('Only employees can fetch messages');
+			return;
+		}
+
+		setMessagesLoading(true);
+		setMessagesError(null);
+
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/messages/conversation/${userId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Messages fetched:', data);
+				setMessages(data.data || data || []);
+				setCurrentConversation(userId);
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch messages');
+			}
+		} catch (error) {
+			console.error('Error fetching messages:', error);
+			setMessagesError(error.message);
+			setMessages([]);
+		} finally {
+			setMessagesLoading(false);
+		}
+	};
+
+	// Send message to user
+	const sendMessage = async (receiverId, messageText, messageType = 'text') => {
+		if (!user || user.role !== 'employee') {
+			console.error('Only employees can send messages');
+			return;
+		}
+
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/messages/send`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					receiver_id: receiverId,
+					receiver_type: 'user',
+					message_text: messageText,
+					message_type: messageType
+				}),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Message sent:', data);
+				
+				// Add new message to current messages if this is the active conversation
+				if (currentConversation === receiverId) {
+					setMessages(prevMessages => [...prevMessages, data.data || data]);
+				}
+				
+				// Refresh conversations to update last message
+				await fetchConversations();
+				
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to send message');
+			}
+		} catch (error) {
+			console.error('Error sending message:', error);
+			throw error;
+		}
+	};
+
+	// Get unread messages count
+	const getUnreadCount = async () => {
+		if (!user || user.role !== 'employee') {
+			console.error('Only employees can get unread count');
+			return 0;
+		}
+
+		try {
+			// Get unread count from conversations data
+			if (conversations && conversations.length > 0) {
+				const totalUnread = conversations.reduce((total, conv) => {
+					return total + (conv.unread_count || 0);
+				}, 0);
+				return totalUnread;
+			}
+			return 0;
+		} catch (error) {
+			console.error('Error getting unread count:', error);
+			return 0;
+		}
+	};
+
+	// Mark messages as read
+	const markMessagesAsRead = async (userId) => {
+		if (!user || user.role !== 'employee') {
+			console.error('Only employees can mark messages as read');
+			return;
+		}
+
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/messages/mark-read`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					user_id: userId
+				}),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Messages marked as read:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to mark messages as read');
+			}
+		} catch (error) {
+			console.error('Error marking messages as read:', error);
+			throw error;
+		}
+	};
+
 	// Fetch employees - all employees from production server
 	const fetchEmployees = async () => {
 		if (!user || !user.salon_id) {
@@ -672,11 +888,11 @@ export const AppProvider = ({ children }) => {
 	// Fetch all data when user logs in and has salon_id
 	useEffect(() => {
 		if (isAuthenticated && user && user.salon_id) {
-			fetchAppointments(user.salon_id);
-			fetchSchedules();
-			fetchEmployees();
-			fetchServices();
-			fetchSalons();
+			// fetchAppointments(user.salon_id); // Disabled for production chat API
+			// fetchSchedules(); // Disabled for production chat API
+			// fetchEmployees(); // Disabled for production chat API
+			// fetchServices(); // Disabled for production chat API
+			// fetchSalons(); // Disabled for production chat API
 		}
 	}, [isAuthenticated, user]);
 
@@ -1067,6 +1283,10 @@ const moreDataAppoint = useMemo(() => {
 			employees, employeesLoading, employeesError, fetchEmployees, createEmployee,
 			// Services state va funksiyalari
 			services, servicesLoading, servicesError, fetchServices, createService,
+			// Chat state va funksiyalari
+			conversations, conversationsLoading, conversationsError, fetchConversations,
+			currentConversation, setCurrentConversation,
+			messages, messagesLoading, messagesError, fetchMessages, sendMessage, getUnreadCount, markMessagesAsRead,
 			// Salons state va funksiyalari
 	salons, salonsLoading, salonsError, fetchSalons, updateSalon,
 	// Salon rasmlarini yuklash va o'chirish funksiyalari
