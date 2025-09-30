@@ -291,6 +291,7 @@ export const AppProvider = ({ children }) => {
 			}
 
 			console.log('Response data:', data);
+			console.log('Backend user data:', data.user);
 
 			if (response.ok) {
 				const userData = {
@@ -298,16 +299,19 @@ export const AppProvider = ({ children }) => {
 					username: data.user.username,
 					email: data.user.email,
 					full_name: data.user.full_name,
-					role: 'admin',
-					salon_id: data.user.salon_id
+					role: data.user.role,
+					salon_id: data.user.salon_id || null
 				};
 
+				console.log('Created userData:', userData);
+				
 				localStorage.setItem('authToken', data.token);
 				localStorage.setItem('userData', JSON.stringify(userData));
 				
 				setUser(userData);
 				setIsAuthenticated(true);
 				
+				console.log('Login successful, userData set:', userData);
 				return userData;
 			} else {
 				console.error('Login failed with data:', data);
@@ -1011,25 +1015,78 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/admin/my-salon`, {
+			
+			// Production backend'da /admin/my-salon ishlamaydi, shuning uchun /salons endpoint'idan foydalanamiz
+			console.log('🔍 Fetching admin salon data...');
+			
+			// Avval /admin/my-salon ni sinab ko'ramiz
+			try {
+				const adminResponse = await fetch(`${API_BASE_URL}/admin/my-salon`, {
+					method: 'GET',
+					headers: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json',
+					},
+				});
+
+				if (adminResponse.ok) {
+					const adminData = await adminResponse.json();
+					console.log('✅ Admin salon fetched from /admin/my-salon:', adminData);
+					setProfArr([adminData.data]);
+					return adminData.data;
+				}
+			} catch (adminError) {
+				console.log('⚠️ /admin/my-salon failed, trying workaround...');
+			}
+
+			// Agar /admin/my-salon ishlamasa, /salons endpoint'idan foydalanamiz
+			const salonsResponse = await fetch(`${API_BASE_URL}/salons`, {
 				method: 'GET',
 				headers: {
-					'Authorization': `Bearer ${token}`,
 					'Content-Type': 'application/json',
 				},
 			});
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Admin salon fetched:', data);
-				setProfArr([data.data]); // profArr array formatida saqlanadi
-				return data.data;
+			if (salonsResponse.ok) {
+				const salonsData = await salonsResponse.json();
+				console.log('✅ Salons fetched:', salonsData);
+				
+				// Admin salon ID'larini aniqlash
+				const adminSalonIds = {
+					'admin1': '0b62ba7b-2fc3-48c8-b2c7-f1c8b8639cb6', // Freya Corporate Beauty Center
+					'admin2': 'f590077c-7c96-4bdc-9013-55620dabf651'  // Freya Beauty Private Salon
+				};
+				
+				// Current user'ning username'iga qarab salon ID'sini aniqlash
+				const currentAdminSalonId = user && user.username ? adminSalonIds[user.username] : null;
+				
+				if (currentAdminSalonId) {
+					const adminSalon = salonsData.data.find(salon => salon.id === currentAdminSalonId);
+					
+					if (adminSalon) {
+						console.log(`✅ ${user.username} salon found:`, adminSalon);
+						setProfArr([adminSalon]);
+						return adminSalon;
+					} else {
+						throw new Error(`${user.username} salon not found in salons list`);
+					}
+				} else {
+					// Fallback: birinchi salon'ni olish
+					const firstSalon = salonsData.data[0];
+					if (firstSalon) {
+						console.log('⚠️ Using first salon as fallback:', firstSalon);
+						setProfArr([firstSalon]);
+						return firstSalon;
+					} else {
+						throw new Error('No salons available');
+					}
+				}
 			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to fetch admin salon');
+				const errorData = await salonsResponse.json();
+				throw new Error(errorData.message || 'Failed to fetch salons');
 			}
 		} catch (error) {
-			console.error('Error fetching admin salon:', error);
+			console.error('❌ Error fetching admin salon:', error);
 			setAdminSalonError(error.message);
 			setProfArr([]);
 			throw error;

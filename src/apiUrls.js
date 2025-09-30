@@ -1,6 +1,5 @@
-const BASE_URL = import.meta.env.DEV 
-  ? "/api"
-  : import.meta.env.VITE_API_BASE_URL;
+// Har doim production backend URL ishlatiladi
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://freya-salon-backend-cc373ce6622a.herokuapp.com/api";
 
 export const superAdminUrl   = `${BASE_URL}/admin/masters/`;
 export const adminUrl        = `${BASE_URL}/admin/push/`;

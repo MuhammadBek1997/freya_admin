@@ -6,12 +6,13 @@ import flowbiteReact from "flowbite-react/plugin/vite";
 export default defineConfig({
   plugins: [react(), flowbiteReact()],
   server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5003',
-        changeOrigin: true,
-        secure: false,
-      }
-    }
+    // Proxy o'chirildi - production backend ishlatiladi
+    // proxy: {
+    //   '/api': {
+    //     target: 'http://localhost:5006',
+    //     changeOrigin: true,
+    //     secure: false,
+    //   }
+    // }
   }
 })

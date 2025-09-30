@@ -95,7 +95,7 @@ function App() {
   }
 
   // PRIVATE SALON ADMIN ROLE - cheklangan admin sahifalari
-  if (user?.role === 'private_salon_admin') {
+  if (user?.role === 'private_salon_admin' || user?.role === 'private_admin') {
     console.log('🟡 PRIVATE SALON ADMIN ROLE: Showing limited admin pages');
     return (
       <div style={{ display: 'flex', width: '100%', height: '100vh' }}>
