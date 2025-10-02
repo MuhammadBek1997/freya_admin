@@ -48,26 +48,19 @@ const Login = () => {
   if (typeof window !== 'undefined') {
     window.testEmployeeCredentials = testEmployeeCredentials;
     window.loginEmployeeTest = loginEmployee;
-    console.log('🧪 Login test functions added:');
-    console.log('🧪 - window.testEmployeeCredentials() - Test multiple employee credentials');
-    console.log('🧪 - window.loginEmployeeTest(username, password) - Direct login test');
   }
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
-    console.log('🔍 LOGIN FORM DEBUG: Starting login process');
-    console.log('🔍 LOGIN FORM DEBUG: Username:', username);
-    console.log('🔍 LOGIN FORM DEBUG: Password length:', password.length);
+  
     
     if (!username || !password) {
       setErrorMessage('Username va password kiritish majburiy!');
       return;
     }
-
+    
     setLoading(true);
     setErrorMessage('');
-
     try {
       // Employee username'larini aniqlash (employee bilan boshlanadi yoki employee1_1 kabi)
       const isEmployeeUsername = username.toLowerCase().includes('employee');
@@ -77,27 +70,21 @@ const Login = () => {
         console.log('🔍 LOGIN FORM DEBUG: Detected employee username, trying employee login only...');
         try {
           const employeeUser = await loginEmployee(username, password);
-          console.log('✅ LOGIN FORM DEBUG: Employee login successful:', employeeUser);
-          console.log('🔍 LOGIN FORM DEBUG: Navigating to /employee-chat');
           navigate('/employee-chat');
         } catch (employeeError) {
-          console.log('❌ LOGIN FORM DEBUG: Employee login failed:', employeeError.message);
           throw new Error('Employee username yoki password noto\'g\'ri!');
         }
       } else {
         // Agar admin username bo'lsa, faqat admin endpoint orqali login qilish
-        console.log('🔍 LOGIN FORM DEBUG: Detected admin username, trying admin login only...');
         try {
           const adminUser = await loginAdmin(username, password);
-          console.log('✅ LOGIN FORM DEBUG: Admin login successful:', adminUser);
           navigate('/');
         } catch (adminError) {
-          console.log('❌ LOGIN FORM DEBUG: Admin login failed:', adminError.message);
-          throw new Error('Admin username yoki password noto\'g\'ri!');
+          setCheckPsw(false);
+          // throw new Error('Admin username yoki password noto\'g\'ri!');
         }
       }
     } catch (error) {
-      console.log('❌ LOGIN FORM DEBUG: Final error:', error.message);
       setErrorMessage(error.message || 'Login xatolik yuz berdi!');
     } finally {
       setLoading(false);
@@ -126,12 +113,15 @@ const Login = () => {
           <img src={logoLight} alt="Logo" className="logo" />
           <div>
             <img src={globus} alt="" className='globus'/>
-          <select value={language} onChange={handleChange}>
+          <select value={language} onChange={handleChange} style={{
+            width:"2vw",
+            marginLeft:"0.3vw"
+          }}>
             <option value="ru">RU</option>
             <option value="uz">UZ</option>
             <option value="en">EN</option>
           </select>
-          {/* <img src="/images/Arrow.png" alt="Arrow" className='arrow' /> */}
+          <img src="/images/Arrowwhite.png" alt="Arrow" style={{width:"1vw",marginLeft:"-0.7vw",zIndex:"-1"}} />
           </div>
         </div>
 
@@ -145,12 +135,14 @@ const Login = () => {
             {/* Error Message */}
             {errorMessage && (
               <div style={{ 
+                width:"20vw",
                 color: '#FF0000', 
-                marginBottom: '15px', 
-                padding: '10px', 
+                marginBottom: '1vw', 
+                padding: '1vw', 
                 backgroundColor: '#ffe6e6', 
-                borderRadius: '5px',
-                border: '1px solid #FF0000'
+                borderRadius: '1vw',
+                border: '0.1vw solid #FF0000',
+                fontSize: '0.8vw'
               }}>
                 {errorMessage}
               </div>
@@ -171,7 +163,7 @@ const Login = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 style={{
-                    border: checkPsw ? 'none' : '1px solid #FF0000',
+                    border: checkPsw ? 'none' : '0.1vw solid #FF0000',
                     borderColor: checkPsw ? 'black' : '#FF0000',
                     outlineColor: checkPsw ? 'black' : '#FF0000',
                     color: checkPsw ? 'black' : '#FF0000'
@@ -191,7 +183,7 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={{
-                    border: checkPsw ? 'none' : '1px solid #FF0000',
+                    border: checkPsw ? 'none' : '0.1vw solid #FF0000',
                     borderColor: checkPsw ? 'black' : '#FF0000',
                     outlineColor: checkPsw ? 'black' : '#FF0000',
                     color: checkPsw ? 'black' : '#FF0000'
@@ -206,9 +198,9 @@ const Login = () => {
               </button>
             </div>
 
-            <a href="/forgot">{t('loginPswForgot')}</a>
+            <a href="https://t.me/muhammadallayev">{t('loginPswForgot')}</a>
           </div>
-          <button 
+          <button
             className="login-btn" 
             onClick={handleLogin}
             disabled={loading}
@@ -217,7 +209,7 @@ const Login = () => {
               cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
-            {loading ? 'Kirish...' : t('loginBtn')}
+            {loading ? t('loginLoading') : t('loginBtn')}
           </button>
         </div>
 

@@ -12,7 +12,8 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
     position: '',
     username: '',
     employee_password: '',
-    full_name: ''
+    full_name: '',
+    role: 'employee'
   });
   
   const [loading, setLoading] = useState(false);
@@ -46,10 +47,39 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
     setError('');
 
     try {
+      // Frontend required field validation to prevent 4xx errors
+      if (!formData.employee_name || !formData.employee_name.trim()) {
+        setError('Ism majburiy');
+        setLoading(false);
+        return;
+      }
+      if (!formData.employee_phone || !formData.employee_phone.trim()) {
+        setError('Telefon majburiy');
+        setLoading(false);
+        return;
+      }
+      if (!formData.employee_email || !formData.employee_email.trim()) {
+        setError('Email majburiy');
+        setLoading(false);
+        return;
+      }
+      if (!formData.position || !formData.position.trim()) {
+        setError('Lavozim majburiy');
+        setLoading(false);
+        return;
+      }
+      if (!formData.employee_password || !formData.employee_password.trim()) {
+        setError('Parol majburiy');
+        setLoading(false);
+        return;
+      }
+
       // Add salon_id from current user
       const employeeData = {
         ...formData,
-        salon_id: user?.salon_id
+        salon_id: user?.salon_id,
+        profession: formData.position,
+        role: formData.role || 'employee'
       };
 
       // Call createEmployee function from context
@@ -63,7 +93,8 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
         position: '',
         username: '',
         employee_password: '',
-        full_name: ''
+        full_name: '',
+        role: 'employee'
       });
       
       // Call onEmployeeAdded callback
@@ -90,7 +121,8 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
       position: '',
       username: '',
       employee_password: '',
-      full_name: ''
+      full_name: '',
+      role: 'employee'
     });
     setError('');
     onClose();
@@ -156,6 +188,7 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
                 onChange={handleInputChange}
                 placeholder="+998 90 123 45 67"
                 className="form-input"
+                required
               />
             </div>
 
@@ -169,23 +202,25 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
                 onChange={handleInputChange}
                 placeholder="employee@example.com"
                 className="form-input"
+                required
               />
             </div>
           </div>
 
           <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="position">Lavozim</label>
-              <input
-                type="text"
-                id="position"
-                name="position"
-                value={formData.position}
-                onChange={handleInputChange}
-                placeholder="Sartarosh, Stilist, va h.k."
-                className="form-input"
-              />
-            </div>
+          <div className="form-group">
+            <label htmlFor="position">Lavozim</label>
+            <input
+              type="text"
+              id="position"
+              name="position"
+              value={formData.position}
+              onChange={handleInputChange}
+              placeholder="Sartarosh, Stilist, va h.k."
+              className="form-input"
+              required
+            />
+          </div>
 
             <div className="form-group">
               <label htmlFor="username">Username (Login uchun)</label>
@@ -211,6 +246,7 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
               onChange={handleInputChange}
               placeholder="Kuchli parol kiriting"
               className="form-input"
+              required
             />
           </div>
 

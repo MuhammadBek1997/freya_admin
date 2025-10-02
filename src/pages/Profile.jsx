@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { UseGlobalContext } from '../Context'
 import YandexMap from '../components/YandexMap'
 import ReadMoreReact from 'read-more-react';
+import { smsUrl } from '../apiUrls';
 
 
 const Profile = () => {
@@ -385,7 +386,7 @@ const Profile = () => {
     try {
       // SMS yuborish API'sini chaqirish
       const token = localStorage.getItem('authToken')
-      const response = await fetch('https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/admin/send-sms', {
+      const response = await fetch(`${smsUrl}/send`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -401,11 +402,11 @@ const Profile = () => {
       if (response.ok && data.success) {
         setCardPhoneNumber(data.phone)
         setIsSmsSent(true)
-        
+
         // Muvaffaqiyatli xabar
         alert(`SMS kod yuborildi: ${data.phone}`)
         console.log(`SMS kod yuborildi: ${data.phone}`)
-        
+
         // Test uchun verification code'ni console'ga chiqarish
         if (data.verificationCode) {
           console.log(`Test uchun SMS kod: ${data.verificationCode}`)
@@ -440,7 +441,7 @@ const Profile = () => {
     try {
       // SMS kodni tasdiqlash API'sini chaqirish
       const token = localStorage.getItem('authToken')
-      const response = await fetch('https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/admin/verify-sms', {
+      const response = await fetch(`${smsUrl}/verify`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -458,13 +459,13 @@ const Profile = () => {
 
       if (response.ok && data.success) {
         alert('Karta muvaffaqiyatli qo\'shildi va tasdiqlandi!')
-        
+
         // SMS tasdiqlandi deb belgilash
         setIsSmsVerified(true)
-        
+
         // Avtomatik save - karta allaqachon API orqali saqlangan
         console.log('Card automatically saved:', data.card_data);
-        
+
         // State'larni tozalash
         setSmsCode('')
         setIsSmsSent(false)
@@ -476,7 +477,7 @@ const Profile = () => {
           card_type: 'HUMO'
         })
         setShowAddCard(false)
-        
+
         // Salon ma'lumotlarini qayta yuklash
         await fetchAdminSalon()
       } else {
@@ -488,22 +489,6 @@ const Profile = () => {
     } finally {
       setSmsLoading(false)
     }
-  }
-
-  // Loading va error holatlarini ko'rsatish
-  if (adminSalonLoading || (!profArr || profArr.length === 0 || !profArr[0])) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '18px',
-        color: '#666'
-      }}>
-        {t('loading')}...
-      </div>
-    );
   }
 
   // Error holatini ko'rsatish
@@ -537,7 +522,42 @@ const Profile = () => {
     );
   }
 
+  // Loading holatini ko'rsatish
+  if (adminSalonLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px',
+        color: '#666'
+      }}>
+        {t('loading')}...
+      </div>
+    );
+  }
+
+  // Data hali tayyor bo'lmasa, loading holatini saqlab turamiz (minimal o'zgarish)
+  if (!profArr || profArr.length === 0 || !profArr[0]) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px',
+        color: '#666'
+      }}>
+        {t('loading')}...
+      </div>
+    );
+  }
+
   let salonComments = commentsArr.filter(item => item.salon == profArr[0]?.id)
+
+  console.log(profArr);
+
 
   if (!changeMode) {
     return (
@@ -563,15 +583,15 @@ const Profile = () => {
               logout()
               window.location.href = '/login'
             }}
-            style={{
-              padding: '0.2vw 3vw',
-              backgroundColor: '#FF0000',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.5vw',
-              cursor: 'pointer'
+              style={{
+                padding: '0.2vw 3vw',
+                backgroundColor: '#FF0000',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5vw',
+                cursor: 'pointer'
 
-            }}>
+              }}>
               {t('profileLogout')}
             </button>
           </div>
@@ -850,6 +870,9 @@ const Profile = () => {
                   }
                 </div>
               </div>
+              { currentSale.amount 
+              ?
+
               <div className='company-sale'>
                 <div className='company-sale-amount'>
                   <h3>Скидка</h3>
@@ -864,6 +887,9 @@ const Profile = () => {
                   </div>
                 </div>
               </div>
+              :
+              null  
+              }
               {
                 profArr[0]?.social_media?.length > 0
                   ?
@@ -979,7 +1005,6 @@ const Profile = () => {
             </div>
           </div>
           <div className="profile-body-right">
-
             <div className="company-location">
               <div className='company-location-top'>
                 <h3>
@@ -1087,7 +1112,94 @@ const Profile = () => {
         </nav>
         <div className='profile-body' style={{ paddingTop: "12vh" }}>
           <div className="profile-body-left">
+
             <div className="company-data" style={{ minHeight: "70vh" }}>
+              <h3 style={{
+                fontSize: "1vw",
+                marginBottom: "0.3vw",
+                marginLeft: "1vw",
+                marginTop: "1vw",
+                }}>
+                Название
+              </h3>
+              <input type="text" style={{
+                width: "95%",
+                margin:" 0 0 0 1vw",
+                padding: '0.5vw 1vw',
+                border: '0.1vw solid #ddd',
+                borderRadius: '0.5vw',
+                fontSize: '1.1vw'
+              }} />
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "1vw",
+                padding:"1vw"
+              }}>
+                <div>
+                  <h3>
+                    время работы
+                  </h3>
+                  <input type="text" style={{
+                  width: '100%',
+                  padding: '0.5vw 1vw',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '14px'
+                }} />
+                </div>
+                <div>
+                  <h3>
+                    Даты работы
+                  </h3>
+                  <input type="text" style={{
+                  width: '100%',
+                  padding: '0.5vw 1vw',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '14px'
+                }} />
+                </div>
+                <div>
+                  <h3>
+                    тип конторы
+                  </h3>
+                  <select name="" id=""  style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '14px'
+                }}>
+                  {
+                    profArr[0].salon_types?.map((item, index) => {
+                      return (
+                        <option value={item.type}  >{item.type}</option>
+                      )
+                    })
+                  }
+                </select>
+                </div>
+                <div>
+                  <h3>
+                    Формат конторы
+                  </h3>
+                  <select name="" id=""  style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '14px'
+                }}>
+                  <option value="true">
+                    Корпоративный
+                  </option>
+                  <option value="true">
+                    Частный
+                  </option>
+                </select>
+                </div>
+              </div>
               <div className={getSalonData(profArr[0], 'salon_title') == "" ? 'company-title-empty' : 'company-title-full'}>
                 {/* <img src="/images/titleIcon.png" alt="" /> */}
                 <h3>
@@ -1444,7 +1556,7 @@ const Profile = () => {
                   )}
                 </div>
               </div>
-              
+
 
 
             </div>

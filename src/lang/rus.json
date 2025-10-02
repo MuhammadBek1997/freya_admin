@@ -68,5 +68,15 @@
     "profileTitle2": "Титул",
     "profileLogout": "Выйти",
     "profileAboutPlaceholder": "Введите информацию о вашем заведении...",
-    "profileNotePlaceholder": "Введите примечание..."
+    "profileNotePlaceholder": "Введите примечание...",
+    "chat": "Чат",
+    "loginLoading": "Входим...",
+    "modalEdit": "Редактировать",
+    "modalLesson": "Занятие",
+    "modalLessonPlh": "Занятие 1",
+    "modalTitle": "Титул",
+    "modalTitlePlh": "Титул 1",
+    "modalDate": "Дата",
+    "cancel": "Отменить",
+    "save": "Сохранить"
 }

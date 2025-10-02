@@ -68,5 +68,15 @@
     "profileTitle2": "Title",
     "profileLogout": "Logout",
     "profileAboutPlaceholder": "Enter information about your establishment...",
-    "profileNotePlaceholder": "Enter a note..."
+    "profileNotePlaceholder": "Enter a note...",
+    "chat": "Chat",
+    "loginLoading": "Logging in...",
+    "modalEdit": "Edit",
+    "modalLesson": "Lesson",
+    "modalLessonPlh": "Lesson 1",
+    "modalTitle": "Title",
+    "modalTitlePlh": "Title 1",
+    "modalDate": "Date",
+    "cancel": "Cancel",
+    "save": "Save"
 }

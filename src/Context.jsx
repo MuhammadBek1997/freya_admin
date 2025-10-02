@@ -1,21 +1,32 @@
 import { createContext, useContext, useEffect, useMemo, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
-	superAdminUrl,
+	authUrl,
+	adminLoginUrl,
+	employeeLoginUrl,
+	superAdminLoginUrl,
 	adminUrl,
 	salonsUrl,
+	adminSalonsUrl,
 	appointUrl,
 	commentsUrl,
 	mastersUrl,
+	employeesUrl,
 	servicesUrl,
 	salonsListUrl,
+	salonDetailUrl,
 	schedulesUrl,
 	salonServicesUrl,
-	statisticsUrl
+	statisticsUrl,
+	paymentUrl,
+	smsUrl,
+	translationUrl,
+	messagesUrl
 } from "./apiUrls"
 
-// API base URL configuration - always use production URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://freya-salon-backend-cc373ce6622a.herokuapp.com/api";
+
+// API base URL configuration - Python backend URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 const AppContext = createContext();
 
@@ -67,15 +78,11 @@ export const AppProvider = ({ children }) => {
 		const token = localStorage.getItem('authToken');
 		const userData = localStorage.getItem('userData');
 		
-		console.log('🔍 DEBUG: localStorage token:', token ? 'EXISTS' : 'NOT_FOUND');
-		console.log('🔍 DEBUG: localStorage userData:', userData);
 		
 		if (token && userData) {
 			try {
 				const parsedUser = JSON.parse(userData);
-				console.log('🔍 DEBUG: Parsed user object:', parsedUser);
-				console.log('🔍 DEBUG: User role:', parsedUser.role);
-				console.log('🔍 DEBUG: Role type:', typeof parsedUser.role);
+				
 				
 				// Role mavjudligini tekshirish
 				if (!parsedUser.role) {
@@ -110,7 +117,7 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/salons`, {
+			const response = await fetch(salonsListUrl, {
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -139,7 +146,7 @@ export const AppProvider = ({ children }) => {
 	const updateSalon = async (salonId, updateData) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/admin/salons/${salonId}`, {
+			const response = await fetch(`${adminSalonsUrl}/${salonId}`, {
 				method: 'PUT',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -191,7 +198,7 @@ export const AppProvider = ({ children }) => {
 				files.map(file => fileToBase64(file))
 			);
 
-			const response = await fetch(`${API_BASE_URL}/admin/salons/${salonId}/photos`, {
+			const response = await fetch(`${adminSalonsUrl}/${salonId}/photos`, {
 				method: 'POST',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -229,7 +236,7 @@ export const AppProvider = ({ children }) => {
 	const deleteSalonPhoto = async (salonId, photoIndex) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/admin/salons/${salonId}/photos/${photoIndex}`, {
+			const response = await fetch(`${adminSalonsUrl}/${salonId}/photos/${photoIndex}`, {
 				method: 'DELETE',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -265,7 +272,7 @@ export const AppProvider = ({ children }) => {
 		try {
 			console.log('Login attempt:', { username, password, API_BASE_URL });
 			
-			const response = await fetch(`${API_BASE_URL}/auth/admin/login`, {
+			const response = await fetch(adminLoginUrl, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -326,7 +333,7 @@ export const AppProvider = ({ children }) => {
 	// Employee login function
 	const loginEmployee = async (username, password) => {
 		try {
-			const response = await fetch(`${API_BASE_URL}/auth/employee/login`, {
+			const response = await fetch(employeeLoginUrl, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -376,6 +383,7 @@ export const AppProvider = ({ children }) => {
 	const logout = () => {
 		localStorage.removeItem('authToken');
 		localStorage.removeItem('userData');
+		localStorage.removeItem('whiteBoxPos');
 		setUser(null);
 		setIsAuthenticated(false);
 		// Clear all data when logging out
@@ -401,7 +409,7 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/appointments/filter/salon/${salonId}`, {
+			const response = await fetch(`${appointUrl}/filter/salon/${salonId}`, {
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -434,7 +442,7 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/schedules`, {
+			const response = await fetch(schedulesUrl, {
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -482,7 +490,7 @@ export const AppProvider = ({ children }) => {
 				salon_id: scheduleData.salon_id || user?.salon_id
 			};
 
-			const response = await fetch(`${API_BASE_URL}/schedules`, {
+			const response = await fetch(schedulesUrl, {
 				method: 'POST',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -522,31 +530,61 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/schedules/grouped-by-date`, {
-				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
+			const headers = {
+				'Authorization': `Bearer ${token}`,
+				'Content-Type': 'application/json',
+			};
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Grouped schedules fetched:', data);
-				
-				// Filter grouped schedules by salon_id if user has salon_id
-				let filteredGroupedSchedules = data.data || [];
-				if (user && user.salon_id) {
-					filteredGroupedSchedules = filteredGroupedSchedules.map(daySchedules => 
-						daySchedules.filter(schedule => schedule.salon_id === user.salon_id)
-					).filter(daySchedules => daySchedules.length > 0);
+			// Support both Node and Python backends:
+			// - Node:   /grouped-by-date
+			// - Python: /grouped/by-date
+			const candidateUrls = [
+				`${schedulesUrl}/grouped-by-date`,
+				`${schedulesUrl}/grouped/by-date`
+			];
+
+			let data = null;
+			let lastError = null;
+
+			for (const url of candidateUrls) {
+				try {
+					const resp = await fetch(url, { method: 'GET', headers });
+					if (resp.ok) {
+						data = await resp.json();
+						break;
+					} else {
+						// Try to extract useful error message
+						let errMsg = '';
+						try {
+							const errJson = await resp.json();
+							errMsg = errJson?.message || '';
+						} catch {
+							const errText = await resp.text();
+							errMsg = errText || `HTTP ${resp.status}`;
+						}
+						lastError = new Error(errMsg || 'Failed to fetch grouped schedules');
+					}
+				} catch (innerErr) {
+					// Network or parsing error
+					lastError = innerErr;
 				}
-				
-				setGroupedSchedules(filteredGroupedSchedules);
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to fetch grouped schedules');
 			}
+
+			if (!data) {
+				throw lastError || new Error('Failed to fetch grouped schedules');
+			}
+
+			console.log('Grouped schedules fetched:', data);
+			
+			// Filter grouped schedules by salon_id if user has salon_id
+			let filteredGroupedSchedules = data.data || [];
+			if (user && user.salon_id) {
+				filteredGroupedSchedules = filteredGroupedSchedules
+					.map(daySchedules => daySchedules.filter(schedule => schedule.salon_id === user.salon_id))
+					.filter(daySchedules => daySchedules.length > 0);
+			}
+			
+			setGroupedSchedules(filteredGroupedSchedules);
 		} catch (error) {
 			console.error('Error fetching grouped schedules:', error);
 			setGroupedSchedulesError(error.message);
@@ -570,7 +608,7 @@ export const AppProvider = ({ children }) => {
 				salon_id: serviceData.salon_id || user?.salon_id
 			};
 
-			const response = await fetch(`${API_BASE_URL}/services`, {
+			const response = await fetch(servicesUrl, {
 				method: 'POST',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -603,12 +641,953 @@ export const AppProvider = ({ children }) => {
 		}
 	};
 
+	// ===== AUTHENTICATION API FUNCTIONS =====
+
+	// Register new user
+	const registerUser = async (userData) => {
+		try {
+			const response = await fetch(`${authUrl}/register`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(userData),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('User registered:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to register user');
+			}
+		} catch (error) {
+			console.error('Error registering user:', error);
+			throw error;
+		}
+	};
+
+	// Verify user email
+	const verifyEmail = async (token) => {
+		try {
+			const response = await fetch(`${authUrl}/verify-email?token=${token}`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Email verified:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to verify email');
+			}
+		} catch (error) {
+			console.error('Error verifying email:', error);
+			throw error;
+		}
+	};
+
+	// Request password reset
+	const requestPasswordReset = async (email) => {
+		try {
+			const response = await fetch(`${authUrl}/request-password-reset`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ email }),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Password reset requested:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to request password reset');
+			}
+		} catch (error) {
+			console.error('Error requesting password reset:', error);
+			throw error;
+		}
+	};
+
+	// Reset password
+	const resetPassword = async (token, newPassword) => {
+		try {
+			const response = await fetch(`${authUrl}/reset-password`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ token, new_password: newPassword }),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Password reset:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to reset password');
+			}
+		} catch (error) {
+			console.error('Error resetting password:', error);
+			throw error;
+		}
+	};
+
+	// ===== ADMIN API FUNCTIONS =====
+
+	// Get all admins
+	const fetchAllAdmins = async () => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${adminUrl}/all`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('All admins fetched:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch all admins');
+			}
+		} catch (error) {
+			console.error('Error fetching all admins:', error);
+			throw error;
+		}
+	};
+
+	// Create new admin
+	const createAdmin = async (adminData) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${adminUrl}/create`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(adminData),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Admin created:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to create admin');
+			}
+		} catch (error) {
+			console.error('Error creating admin:', error);
+			throw error;
+		}
+	};
+
+	// Update admin
+	const updateAdmin = async (adminId, adminData) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${adminUrl}/${adminId}`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(adminData),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Admin updated:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to update admin');
+			}
+		} catch (error) {
+			console.error('Error updating admin:', error);
+			throw error;
+		}
+	};
+
+	// Delete admin
+	const deleteAdmin = async (adminId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${adminUrl}/${adminId}`, {
+				method: 'DELETE',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Admin deleted:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to delete admin');
+			}
+		} catch (error) {
+			console.error('Error deleting admin:', error);
+			throw error;
+		}
+	};
+
+	// ===== USER API FUNCTIONS =====
+
+	// Get all users
+	const fetchAllUsers = async (page = 1, limit = 10) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/users?page=${page}&limit=${limit}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('All users fetched:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch all users');
+			}
+		} catch (error) {
+			console.error('Error fetching all users:', error);
+			throw error;
+		}
+	};
+
+	// Get user by ID
+	const fetchUserById = async (userId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('User fetched by ID:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch user by ID');
+			}
+		} catch (error) {
+			console.error('Error fetching user by ID:', error);
+			throw error;
+		}
+	};
+
+	// Update user
+	const updateUser = async (userId, userData) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(userData),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('User updated:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to update user');
+			}
+		} catch (error) {
+			console.error('Error updating user:', error);
+			throw error;
+		}
+	};
+
+	// Delete user
+	const deleteUser = async (userId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+				method: 'DELETE',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('User deleted:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to delete user');
+			}
+		} catch (error) {
+			console.error('Error deleting user:', error);
+			throw error;
+		}
+	};
+
+	// ===== PAYMENT API FUNCTIONS =====
+
+	// Create payment
+	const createPayment = async (paymentData) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${paymentUrl}/create`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(paymentData),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Payment created:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to create payment');
+			}
+		} catch (error) {
+			console.error('Error creating payment:', error);
+			throw error;
+		}
+	};
+
+	// Verify payment
+	const verifyPayment = async (paymentId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${paymentUrl}/verify/${paymentId}`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Payment verified:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to verify payment');
+			}
+		} catch (error) {
+			console.error('Error verifying payment:', error);
+			throw error;
+		}
+	};
+
+	// Get payment status
+	const getPaymentStatus = async (paymentId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${paymentUrl}/status/${paymentId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Payment status:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to get payment status');
+			}
+		} catch (error) {
+			console.error('Error getting payment status:', error);
+			throw error;
+		}
+	};
+
+	// ===== SMS API FUNCTIONS =====
+
+	// Send SMS
+	const sendSMS = async (phoneNumber, message) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${smsUrl}/send`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ phone_number: phoneNumber, message }),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('SMS sent:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to send SMS');
+			}
+		} catch (error) {
+			console.error('Error sending SMS:', error);
+			throw error;
+		}
+	};
+
+	// Get SMS status
+	const getSMSStatus = async (smsId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${smsUrl}/status/${smsId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('SMS status:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to get SMS status');
+			}
+		} catch (error) {
+			console.error('Error getting SMS status:', error);
+			throw error;
+		}
+	};
+
+	// ===== TRANSLATION API FUNCTIONS =====
+
+	// Translate text
+	const translateText = async (text, targetLanguage) => {
+		try {
+			const response = await fetch(`${translationUrl}/translate`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ text, target_language: targetLanguage }),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Text translated:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to translate text');
+			}
+		} catch (error) {
+			console.error('Error translating text:', error);
+			throw error;
+		}
+	};
+
+	// Get supported languages
+	const getSupportedLanguages = async () => {
+		try {
+			const response = await fetch(`${translationUrl}/languages`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Supported languages:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to get supported languages');
+			}
+		} catch (error) {
+			console.error('Error getting supported languages:', error);
+			throw error;
+		}
+	};
+
+	// ===== EXTENDED APPOINTMENT API FUNCTIONS =====
+
+	// Get appointment by ID
+	const getAppointmentById = async (appointmentId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${appointmentUrl}/${appointmentId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Appointment fetched:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch appointment');
+			}
+		} catch (error) {
+			console.error('Error fetching appointment:', error);
+			throw error;
+		}
+	};
+
+	// Update appointment
+	const updateAppointment = async (appointmentId, appointmentData) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${appointmentUrl}/${appointmentId}`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(appointmentData),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Appointment updated:', data);
+				await fetchAppointments(); // Refresh appointments
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to update appointment');
+			}
+		} catch (error) {
+			console.error('Error updating appointment:', error);
+			throw error;
+		}
+	};
+
+	// Delete appointment
+	const deleteAppointment = async (appointmentId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${appointmentUrl}/${appointmentId}`, {
+				method: 'DELETE',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				console.log('Appointment deleted successfully');
+				await fetchAppointments(); // Refresh appointments
+				return true;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to delete appointment');
+			}
+		} catch (error) {
+			console.error('Error deleting appointment:', error);
+			throw error;
+		}
+	};
+
+	// ===== EXTENDED EMPLOYEE API FUNCTIONS =====
+
+	// Get employee by ID
+	const getEmployeeById = async (employeeId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${employeeUrl}/${employeeId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Employee fetched:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch employee');
+			}
+		} catch (error) {
+			console.error('Error fetching employee:', error);
+			throw error;
+		}
+	};
+
+	// Update employee
+	const updateEmployee = async (employeeId, employeeData) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${employeeUrl}/${employeeId}`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(employeeData),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Employee updated:', data);
+				await fetchEmployees(); // Refresh employees
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to update employee');
+			}
+		} catch (error) {
+			console.error('Error updating employee:', error);
+			throw error;
+		}
+	};
+
+	// Delete employee
+	const deleteEmployee = async (employeeId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${employeeUrl}/${employeeId}`, {
+				method: 'DELETE',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				console.log('Employee deleted successfully');
+				await fetchEmployees(); // Refresh employees
+				return true;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to delete employee');
+			}
+		} catch (error) {
+			console.error('Error deleting employee:', error);
+			throw error;
+		}
+	};
+
+	// ===== EXTENDED SALON API FUNCTIONS =====
+
+	// Get salon by ID
+	const getSalonById = async (salonId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${salonUrl}/${salonId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Salon fetched:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch salon');
+			}
+		} catch (error) {
+			console.error('Error fetching salon:', error);
+			throw error;
+		}
+	};
+
+	// Create salon
+	const createSalon = async (salonData) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${salonUrl}/create`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(salonData),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Salon created:', data);
+				await fetchSalons(); // Refresh salons
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to create salon');
+			}
+		} catch (error) {
+			console.error('Error creating salon:', error);
+			throw error;
+		}
+	};
+
+	// Delete salon
+	const deleteSalon = async (salonId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${salonUrl}/${salonId}`, {
+				method: 'DELETE',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				console.log('Salon deleted successfully');
+				await fetchSalons(); // Refresh salons
+				return true;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to delete salon');
+			}
+		} catch (error) {
+			console.error('Error deleting salon:', error);
+			throw error;
+		}
+	};
+
+	// ===== EXTENDED SERVICE API FUNCTIONS =====
+
+	// Get service by ID
+	const getServiceById = async (serviceId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${serviceUrl}/${serviceId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Service fetched:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch service');
+			}
+		} catch (error) {
+			console.error('Error fetching service:', error);
+			throw error;
+		}
+	};
+
+	// Update service
+	const updateService = async (serviceId, serviceData) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${serviceUrl}/${serviceId}`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(serviceData),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Service updated:', data);
+				await fetchServices(); // Refresh services
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to update service');
+			}
+		} catch (error) {
+			console.error('Error updating service:', error);
+			throw error;
+		}
+	};
+
+	// Delete service
+	const deleteService = async (serviceId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${serviceUrl}/${serviceId}`, {
+				method: 'DELETE',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				console.log('Service deleted successfully');
+				await fetchServices(); // Refresh services
+				return true;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to delete service');
+			}
+		} catch (error) {
+			console.error('Error deleting service:', error);
+			throw error;
+		}
+	};
+
+	// ===== EXTENDED SCHEDULE API FUNCTIONS =====
+
+	// Get schedule by ID
+	const getScheduleById = async (scheduleId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${scheduleUrl}/${scheduleId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Schedule fetched:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch schedule');
+			}
+		} catch (error) {
+			console.error('Error fetching schedule:', error);
+			throw error;
+		}
+	};
+
+	// Update schedule
+	const updateSchedule = async (scheduleId, scheduleData) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${scheduleUrl}/${scheduleId}`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(scheduleData),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Schedule updated:', data);
+				await fetchSchedules(); // Refresh schedules
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to update schedule');
+			}
+		} catch (error) {
+			console.error('Error updating schedule:', error);
+			throw error;
+		}
+	};
+
+	// Delete schedule
+	const deleteSchedule = async (scheduleId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${scheduleUrl}/${scheduleId}`, {
+				method: 'DELETE',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				console.log('Schedule deleted successfully');
+				await fetchSchedules(); // Refresh schedules
+				return true;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to delete schedule');
+			}
+		} catch (error) {
+			console.error('Error deleting schedule:', error);
+			throw error;
+		}
+	};
+
+	// ===== STATISTICS API FUNCTIONS =====
+
+	// Get statistics
+	const getStatistics = async () => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${statisticsUrl}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Statistics fetched:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch statistics');
+			}
+		} catch (error) {
+			console.error('Error fetching statistics:', error);
+			throw error;
+		}
+	};
+
 	// ===== CHAT API FUNCTIONS =====
 
-	// Fetch conversations for employee
+	// Fetch conversations for employee and admin2
 	const fetchConversations = async () => {
-		if (!user || user.role !== 'employee') {
-			console.error('Only employees can fetch conversations');
+		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
+			console.error('Only employees and admin2 can fetch conversations');
 			return;
 		}
 
@@ -617,7 +1596,7 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/messages/conversations`, {
+			const response = await fetch(`${messagesUrl}/conversations`, {
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -644,8 +1623,8 @@ export const AppProvider = ({ children }) => {
 
 	// Fetch messages for a specific conversation
 	const fetchMessages = async (userId) => {
-		if (!user || user.role !== 'employee') {
-			console.error('Only employees can fetch messages');
+		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
+			console.error('Only employees and admin2 can fetch messages');
 			return;
 		}
 
@@ -654,7 +1633,7 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/messages/conversation/${userId}`, {
+			const response = await fetch(`${messagesUrl}/conversation/${userId}`, {
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -682,14 +1661,14 @@ export const AppProvider = ({ children }) => {
 
 	// Send message to user
 	const sendMessage = async (receiverId, messageText, messageType = 'text') => {
-		if (!user || user.role !== 'employee') {
-			console.error('Only employees can send messages');
+		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
+			console.error('Only employees and admin2 can send messages');
 			return;
 		}
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/messages/send`, {
+			const response = await fetch(`${messagesUrl}/send`, {
 				method: 'POST',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -728,8 +1707,8 @@ export const AppProvider = ({ children }) => {
 
 	// Get unread messages count
 	const getUnreadCount = async () => {
-		if (!user || user.role !== 'employee') {
-			console.error('Only employees can get unread count');
+		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
+			console.error('Only employees and admin2 can get unread count');
 			return 0;
 		}
 
@@ -757,7 +1736,7 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/messages/mark-read`, {
+			const response = await fetch(`${messagesUrl}/mark-read`, {
 				method: 'POST',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -784,14 +1763,14 @@ export const AppProvider = ({ children }) => {
 
 	// Mark all messages in conversation as read
 	const markConversationAsRead = async (userId) => {
-		if (!user || user.role !== 'employee') {
-			console.error('Only employees can mark conversation as read');
+		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
+			console.error('Only employees and admin2 can mark conversation as read');
 			return;
 		}
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/messages/conversation/${userId}/mark-read`, {
+			const response = await fetch(`${messagesUrl}/conversation/${userId}/mark-read`, {
 				method: 'PUT',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -835,7 +1814,7 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/employees/salon/${user.salon_id}`, {
+			const response = await fetch(`${employeesUrl}/salon/${user.salon_id}`, {
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -874,7 +1853,7 @@ export const AppProvider = ({ children }) => {
 				salon_id: employeeData.salon_id || user?.salon_id
 			};
 
-			const response = await fetch(`${API_BASE_URL}/employees`, {
+			const response = await fetch(employeesUrl, {
 				method: 'POST',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -886,17 +1865,34 @@ export const AppProvider = ({ children }) => {
 			if (response.ok) {
 				const data = await response.json();
 				console.log('Employee created:', data);
-				
-				// Add new employee to existing employees
-				setEmployees(prevEmployees => [...prevEmployees, data]);
-				
+
+				// Add new employee to existing employees (prefer data.data shape)
+				setEmployees(prevEmployees => [...prevEmployees, (data && data.data) ? data.data : data]);
+
 				// Refresh employees to get updated list
 				await fetchEmployees();
-				
+
 				return data;
 			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to create employee');
+				// Improved error parsing: prefer JSON, include FastAPI 'detail'
+				try {
+					const contentType = response.headers.get('content-type') || '';
+					let parsed = null;
+					let rawText = '';
+					if (contentType.includes('application/json')) {
+						parsed = await response.json();
+					} else {
+						rawText = await response.text();
+						try { parsed = JSON.parse(rawText); } catch { /* keep rawText */ }
+					}
+
+					const messageDetail = parsed?.detail || parsed?.message || parsed?.error || (typeof parsed === 'string' ? parsed : undefined) || rawText || 'Xodim yaratishda xatolik yuz berdi';
+					console.error('Create employee failed:', { status: response.status, detail: messageDetail, raw: parsed ?? rawText, payload: dataToSend });
+					throw new Error(`HTTP ${response.status}: ${messageDetail}`);
+				} catch (parseErr) {
+					console.error('Create employee error (unparseable response):', { status: response.status, payload: dataToSend, error: parseErr?.message });
+					throw new Error('Failed to create employee');
+				}
 			}
 		} catch (error) {
 			console.error('Error creating employee:', error);
@@ -914,7 +1910,7 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${API_BASE_URL}/services`, {
+			const response = await fetch(servicesUrl, {
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -1015,75 +2011,45 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			
-			// Production backend'da /admin/my-salon ishlamaydi, shuning uchun /salons endpoint'idan foydalanamiz
-			console.log('🔍 Fetching admin salon data...');
-			
-			// Avval /admin/my-salon ni sinab ko'ramiz
-			try {
-				const adminResponse = await fetch(`${API_BASE_URL}/admin/my-salon`, {
-					method: 'GET',
-					headers: {
-						'Authorization': `Bearer ${token}`,
-						'Content-Type': 'application/json',
-					},
-				});
 
-				if (adminResponse.ok) {
-					const adminData = await adminResponse.json();
-					console.log('✅ Admin salon fetched from /admin/my-salon:', adminData);
-					setProfArr([adminData.data]);
-					return adminData.data;
-				}
-			} catch (adminError) {
-				console.log('⚠️ /admin/my-salon failed, trying workaround...');
+			// YANGI: To'g'ridan-to'g'ri `/salons/:id` endpointiga zapros beramiz
+			console.log('🔍 Fetching admin salon by ID...');
+			let currentAdminSalonId = user?.salon_id || null;
+
+			// Agar user.salon_id bo'lmasa, fallback username-map
+			if (!currentAdminSalonId && user?.username) {
+				const adminSalonIds = {
+					'admin1': '0b62ba7b-2fc3-48c8-b2c7-f1c8b8639cb6',
+					'admin2': 'f590077c-7c96-4bdc-9013-55620dabf651'
+				};
+				currentAdminSalonId = adminSalonIds[user.username] || null;
 			}
 
-			// Agar /admin/my-salon ishlamasa, /salons endpoint'idan foydalanamiz
-			const salonsResponse = await fetch(`${API_BASE_URL}/salons`, {
+			if (!currentAdminSalonId) {
+				throw new Error('Admin salon ID aniqlanmadi');
+			}
+
+			const detailResponse = await fetch(`${salonDetailUrl}/${currentAdminSalonId}`, {
 				method: 'GET',
 				headers: {
+					'Authorization': `Bearer ${token}`,
 					'Content-Type': 'application/json',
 				},
 			});
 
-			if (salonsResponse.ok) {
-				const salonsData = await salonsResponse.json();
-				console.log('✅ Salons fetched:', salonsData);
-				
-				// Admin salon ID'larini aniqlash
-				const adminSalonIds = {
-					'admin1': '0b62ba7b-2fc3-48c8-b2c7-f1c8b8639cb6', // Freya Corporate Beauty Center
-					'admin2': 'f590077c-7c96-4bdc-9013-55620dabf651'  // Freya Beauty Private Salon
-				};
-				
-				// Current user'ning username'iga qarab salon ID'sini aniqlash
-				const currentAdminSalonId = user && user.username ? adminSalonIds[user.username] : null;
-				
-				if (currentAdminSalonId) {
-					const adminSalon = salonsData.data.find(salon => salon.id === currentAdminSalonId);
-					
-					if (adminSalon) {
-						console.log(`✅ ${user.username} salon found:`, adminSalon);
-						setProfArr([adminSalon]);
-						return adminSalon;
-					} else {
-						throw new Error(`${user.username} salon not found in salons list`);
-					}
-				} else {
-					// Fallback: birinchi salon'ni olish
-					const firstSalon = salonsData.data[0];
-					if (firstSalon) {
-						console.log('⚠️ Using first salon as fallback:', firstSalon);
-						setProfArr([firstSalon]);
-						return firstSalon;
-					} else {
-						throw new Error('No salons available');
-					}
+			if (detailResponse.ok) {
+				const detailData = await detailResponse.json();
+				// Backend ba'zan {data: {...}} yoki bevosita obyekt qaytarishi mumkin
+				const salonObj = detailData?.data || detailData;
+				if (!salonObj || !salonObj.id) {
+					throw new Error('Salon maʼlumotlari topilmadi');
 				}
+				console.log('✅ Salon fetched by ID:', salonObj);
+				setProfArr([salonObj]);
+				return salonObj;
 			} else {
-				const errorData = await salonsResponse.json();
-				throw new Error(errorData.message || 'Failed to fetch salons');
+				const errorData = await detailResponse.json().catch(() => ({}));
+				throw new Error(errorData.message || 'Failed to fetch salon by ID');
 			}
 		} catch (error) {
 			console.error('❌ Error fetching admin salon:', error);
@@ -1147,6 +2113,7 @@ export const AppProvider = ({ children }) => {
 
 	// Schedule uchun funksiyalar
 	const handleMouseDown = (e, containerRef) => {
+		if (!containerRef.current) return
 		e.preventDefault()
 		setIsDragging(true)
 		setStartX(e.pageX - containerRef.current.offsetLeft)
@@ -1154,7 +2121,7 @@ export const AppProvider = ({ children }) => {
 	}
 
 	const handleMouseMove = (e, containerRef) => {
-		if (!isDragging) return
+		if (!isDragging || !containerRef.current) return
 		e.preventDefault()
 		const x = e.pageX - containerRef.current.offsetLeft
 		const walk = (x - startX) * 2
@@ -1252,6 +2219,11 @@ const moreDataAppoint = useMemo(() => {
 			style: 'underline'
 		},
 		{
+			img: '/images/chat-dark.png',
+			color: 'white',
+			style: 'underline'
+		},
+		{
 			img: '/images/settings-dark.png',
 			color: 'white',
 			style: 'underline'
@@ -1271,6 +2243,11 @@ const moreDataAppoint = useMemo(() => {
 		},
 		{
 			img: '/images/group-light.png',
+			color: '#9C2BFF',
+			style: 'none'
+		},
+		{
+			img: '/images/chat-light.png',
 			color: '#9C2BFF',
 			style: 'none'
 		},
@@ -1343,7 +2320,8 @@ const moreDataAppoint = useMemo(() => {
 		if (savedPos && whiteBoxRef.current) {
 			const { topVH, leftVW, heightVH, widthVW } = savedPos;
 			const whiteBox = whiteBoxRef.current;
-			whiteBox.style.top = `${topVH}vh`;
+			// Konsistent joylashuv: moveWhiteBoxToElement topVH-2 ishlatadi
+			whiteBox.style.top = `${topVH - 2}vh`;
 			whiteBox.style.left = `${leftVW}vw`;
 			whiteBox.style.height = `${heightVH}vh`;
 			whiteBox.style.width = `${widthVW}vw`;
@@ -1397,7 +2375,33 @@ const moreDataAppoint = useMemo(() => {
 			// Salons state va funksiyalari
 	salons, salonsLoading, salonsError, fetchSalons, updateSalon,
 	// Salon rasmlarini yuklash va o'chirish funksiyalari
-	uploadSalonPhotos, deleteSalonPhoto
+	uploadSalonPhotos, deleteSalonPhoto,
+
+	// ===== YANGI API FUNKSIYALARI =====
+	// Authentication functions
+	registerUser, verifyEmail, requestPasswordReset, resetPassword,
+	// Admin functions
+	fetchAllAdmins, createAdmin, updateAdmin, deleteAdmin,
+	// User functions
+	fetchAllUsers, fetchUserById, updateUser, deleteUser,
+	// Payment functions
+	createPayment, verifyPayment, getPaymentStatus,
+	// SMS functions
+	sendSMS, getSMSStatus,
+	// Translation functions
+	translateText, getSupportedLanguages,
+	// Extended appointment functions
+	getAppointmentById, updateAppointment, deleteAppointment,
+	// Extended employee functions
+	getEmployeeById, updateEmployee, deleteEmployee,
+	// Extended salon functions
+	getSalonById, createSalon, deleteSalon,
+	// Extended service functions
+	getServiceById, updateService, deleteService,
+	// Extended schedule functions
+	getScheduleById, updateSchedule, deleteSchedule,
+	// Statistics functions
+	getStatistics
 
 }}>
 	{children}

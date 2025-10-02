@@ -200,7 +200,7 @@ const Schedule = () => {
                         (new Date(item.date).getDate() - 7) <= currentDay.day
                       && new Date(item.date).getMonth() + 1 == currentDay.month
                       ?
-                      <BookScheduleModal />
+                      <BookScheduleModal {...item} setEditModal={setEditModal}/>
                       :
                       <EditScheduleModal {...item} setEditModal={setEditModal} />
                       }

@@ -68,5 +68,15 @@
     "profileTitle2": "Sarlavha",
     "profileLogout": "Chiqish",
     "profileAboutPlaceholder": "Muassasa haqida ma'lumotlarni kiriting...",
-    "profileNotePlaceholder": "Izohni kiriting..."
+    "profileNotePlaceholder": "Izohni kiriting...",
+    "chat": "Chat",
+    "loginLoading": "Kirish...",
+    "modalEdit": "Tahrirlash",
+    "modalLesson": "Mashg'ulot",
+    "modalLessonPlh": "Mashg'ulot 1",
+    "modalTitle": "Sarlavha",
+    "modalTitlePlh": "Sarlavha 1",
+    "modalDate": "Sana",
+    "cancel": "Bekor qilish",
+    "save": "Saqlash"
 }

@@ -44,18 +44,19 @@ header{
 .chat-container {
   display: flex;
   height: 100vh;
-  overflow: hidden;
 }
 
 /* chatSIDEBAR STYLES */
 .chatSidebar {
-  width: 22.4vw;
+  width: 20vw;
+  height: 100vh;
   background-color: #9c2bff;
   color: var(--text-light);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   flex-shrink: 0;
+  position: fixed;
 }
 
 .chat-profile-card {
@@ -82,23 +83,74 @@ header{
 }
 
 .chatSidebar-top {
+  width: 100%;
   display: flex;
   gap: 0.8vw;
   padding: 1.4vh 1.0vw;
   background-color: #8d2afd;
 }
 
-.chatSidebarLogo {
-  width: 2.2vw;
-  height: 2.9vh;
+
+
+.stars {
+  --star-size: 1.2vw;
+  --star-color: #ccc;
+  --star-background: #ffA600;
+
+
+  --percent: calc(var(--rating) / 5 * 100%);
+  
+  display: inline-block;
+  width: calc(var(--star-size) * 5);
+  height: var(--star-size);
+  background: linear-gradient(90deg, var(--star-background) var(--percent), var(--star-color) var(--percent));
+  -webkit-mask-size: calc(var(--star-size)) 100%;
+  mask-size: calc(var(--star-size)) 100%;
+  
+  -webkit-mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" /></svg>');
+  mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" /></svg>');
+
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
 }
 
+
+
+
+
+
+
 .profile-avatar {
-  margin-left: 3.1vw;
   width: 5.2vw;
-  height: 7.0vh;
   border-radius: 50%;
   object-fit: cover;
+  margin-left: 20%;
+}
+
+.employee-profile-modal-edit-button{
+  width: 20vw;
+  background-color: #0076E5;
+  padding: 2vh 0;
+  border-radius: 1.5vw;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1vw;
+  cursor: pointer;
+}
+.employee-profile-modal-button{
+  width: 20vw;
+  background-color: white;
+  padding: 2vh 0;
+  border-radius: 0.7vw;
+  color: #9C2BFF;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1vw;
+  margin-top: 1vw;
+  cursor: pointer;
 }
 
 .online-status-wrapper {
@@ -226,7 +278,6 @@ header{
 .chat-avatar {
   border-radius: 50%;
   width: 3.5vw;
-  height: 4.7vh;
 }
 
 .chat-info {
@@ -304,6 +355,7 @@ header{
   display: flex;
   flex-direction: column;
   height: 100%;
+  padding-left: 20vw;
 }
 
 .chat-header {
@@ -324,7 +376,6 @@ header{
 .chat-header-avatar {
   border-radius: 50%;
   width: 3.1vw;
-  height: 4.2vh;
   margin-right: 2.1vw;
   object-fit: cover;
 }
@@ -389,13 +440,16 @@ header{
   font-size: 0.6vw;
   font-weight: 600;
   color: var(--text-light);
-  margin-bottom: 3.8vh;
+  margin: 1vw auto;
+  min-width: 4vw;
+  max-width: fit-content;
 }
 
 .message {
   display: flex;
   max-width: 16.9vw;
   animation: fadeIn 0.3s ease;
+  padding-top: 2vw;
 }
 
 .message.receive {
@@ -406,6 +460,8 @@ header{
 .message.send {
   align-self: flex-end;
   flex-direction: row-reverse;
+  position: absolute;
+  right: 0;
 }
 
 .message-content {
@@ -525,6 +581,12 @@ header{
   transform: scale(1.05);
 }
 
+
+.employee-profile-modal{
+  min-height: 40vh;
+}
+
+
 /* ANIMATIONS */
 @keyframes fadeIn {
   from {
@@ -578,3 +640,127 @@ header{
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
+
+
+
+/* Additional styles for employee-specific features can be added here */
+
+/* Example: Different background for employee chat window */
+
+.chat-schedule {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: #38383866;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.schedule-cont{
+  width: 30vw;
+  height: 70vh;
+  border-radius: 1.5vw;
+  background: #E9EDEE;
+  position: absolute;
+  top: 10%;
+  left: 35%;
+  box-sizing: border-box;
+}
+.schedule-header{
+  display: flex;
+  align-items: center;
+  padding: 2vh;
+  border-top-left-radius: 1.5vw;
+  border-top-right-radius: 1.5vw;
+}
+.schedule-back-button{
+  background: none;
+  border: none;
+  cursor: pointer;
+  transform: rotateZ(180deg);
+  margin-right: 30%;
+}
+
+
+.scheduleEmployee-body{
+  height: 50vh;
+  overflow-y: auto;
+}
+.scheduleEmployee-list-item{
+  padding: 1.4vh 2.1vw;
+  font-size: 0.9vw;
+  font-weight: 500;
+  background-color: white;
+  border-radius: 1vw;
+  margin-bottom: 1vw;
+}
+
+
+
+.employee-header{
+  position: fixed;
+  top: 0;
+  left: 20vw;
+  width: 80vw;
+  height: 10vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20vw;
+  color: white;
+  font-size: 1.5vw;
+  font-weight: bold;
+  background: #9ba7f4d7;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 30;
+}
+.posts-body{
+  padding-top: 12vh;
+  margin-left: 21vw;
+}
+.comments-body{
+  padding-top: 12vh;
+  margin-left: 21vw;
+  width: 78vw;
+  background: var(--light-bg) url("testbg.png");
+}
+
+.comments-list-item{
+  width: 60%;
+  min-height: 15vh;
+  margin: 0 auto;
+  background: white;
+  border-radius: 0.5vw;
+  padding: 1.4vh 1.6vw;
+  box-shadow: var(--shadow);
+  margin-bottom: 2vh;
+  display: flex;
+  gap: 1.4vw;
+}
+.comments-list-item-info{
+  flex-grow: 1;
+  font-size: 0.7vw;
+}
+.comments-list-item-rating .stars{
+  --star-size: 1.0vw;
+  margin-bottom: 0.7vh;
+  margin-right: -30vw;
+}
+.comments-list-item-rating{
+  height: 5vh;
+  display: flex;
+  align-items: center;
+  gap: 30vw;
+  margin-top: 1vw;
+
+}
+.comments-list-item-user{
+  display: flex;
+  align-items: center;
+  gap: 0.5vw;
+  margin-bottom: 1.4vh;
+  font-size: 1vw;
+}
+

@@ -22,15 +22,15 @@ const EditScheduleModal = ({
                     <label htmlFor="">
                         Занятие
                     </label>
-                    <input type="text" placeholder='Занятие 1' className="form-inputs" value={schedule_name} />
+                    <input type="text" placeholder='Занятие 1' className="form-inputs" defaultValue={schedule_name} />
                     <label htmlFor="">
                         Титул
                     </label>
-                    <input type="text" placeholder='Титул 1' className="form-inputs" value={title} />
+                    <input type="text" placeholder='Титул 1' className="form-inputs" defaultValue={title} />
                     <label htmlFor="">
                         Дата
                     </label>
-                    <input type="date" className="form-inputs" value={date} />
+                    <input type="date" className="form-inputs" defaultValue={date} />
                     
                 </div>
                 <div className='schedule-modal-btns'>
