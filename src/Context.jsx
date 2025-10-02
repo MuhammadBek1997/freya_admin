@@ -1895,10 +1895,11 @@ export const AppProvider = ({ children }) => {
 		try {
 			const token = getAuthToken();
 			
-			// Add salon_id from current user if not provided
+			// Add salon_id (forced or provided or from current user)
+			const idToUse = FORCE_SALON_ID || employeeData.salon_id || user?.salon_id;
 			const dataToSend = {
 				...employeeData,
-				salon_id: employeeData.salon_id || user?.salon_id
+				salon_id: idToUse
 			};
 
 			const response = await fetch(employeesUrl, {
