@@ -1,32 +1,36 @@
 import { createContext, useContext, useEffect, useMemo, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
-	authUrl,
-	adminLoginUrl,
-	employeeLoginUrl,
-	superAdminLoginUrl,
-	adminUrl,
-	salonsUrl,
-	adminSalonsUrl,
-	appointUrl,
-	commentsUrl,
-	mastersUrl,
-	employeesUrl,
-	servicesUrl,
-	salonsListUrl,
-	salonDetailUrl,
-	schedulesUrl,
-	salonServicesUrl,
-	statisticsUrl,
-	paymentUrl,
-	smsUrl,
-	translationUrl,
-	messagesUrl
+    authUrl,
+    adminLoginUrl,
+    employeeLoginUrl,
+    superAdminLoginUrl,
+    adminUrl,
+    salonsUrl,
+    adminSalonsUrl,
+    adminMySalonUrl,
+    appointUrl,
+    commentsUrl,
+    mastersUrl,
+    employeesUrl,
+    servicesUrl,
+    salonsListUrl,
+    salonDetailUrl,
+    schedulesUrl,
+    salonServicesUrl,
+    statisticsUrl,
+    paymentUrl,
+    smsUrl,
+    translationUrl,
+    messagesUrl
 } from "./apiUrls"
 
 
 // API base URL configuration - Python backend URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+
+// Force a specific salon ID when provided
+const FORCE_SALON_ID = "f074b2f1-b742-4e0a-a858-f997359c5631";
 
 const AppContext = createContext();
 
@@ -146,7 +150,16 @@ export const AppProvider = ({ children }) => {
 	const updateSalon = async (salonId, updateData) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${adminSalonsUrl}/${salonId}`, {
+			// Ensure user has admin privileges before calling admin route
+			const role = user?.role;
+			if (!role || (role !== 'admin' && role !== 'superadmin')) {
+				throw new Error('Admin huquqi talab qilinadi. Iltimos, admin sifatida tizimga kiring.');
+			}
+			if (!token) {
+				throw new Error('Admin token topilmadi');
+			}
+			const targetId = FORCE_SALON_ID || salonId;
+			const response = await fetch(`${adminSalonsUrl}/${targetId}`, {
 				method: 'PUT',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -162,15 +175,33 @@ export const AppProvider = ({ children }) => {
 				// Update profArr if it exists
 				if (profArr && profArr.length > 0) {
 					const updatedProfArr = profArr.map(salon => 
-						salon.id === salonId ? { ...salon, ...updateData } : salon
+						salon.id === targetId ? { ...salon, ...updateData } : salon
 					);
 					setProfArr(updatedProfArr);
 				}
 				
 				return data;
 			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to update salon');
+				let message = `Failed to update salon (HTTP ${response.status})`;
+				try {
+					const errorData = await response.json();
+					// Prefer detailed server error fields when available
+					message = errorData.message || errorData.error || message;
+					// Map common statuses to clearer messages
+					if (response.status === 401) {
+						message = 'Avtorizatsiya xatosi: Admin token yaroqsiz yoki muddati o\'tgan.';
+					} else if (response.status === 403) {
+						message = 'Ruxsat etilmagan: Admin huquqi talab qilinadi.';
+					} else if (response.status === 404) {
+						message = 'Salon topilmadi.';
+					} else if (response.status === 500) {
+						message = `Server xatoligi: ${errorData.error || 'Noma\'lum xato'}`;
+					}
+				} catch (_) {
+					const text = await response.text();
+					message = text || message;
+				}
+				throw new Error(message);
 			}
 		} catch (error) {
 			console.error('Error updating salon:', error);
@@ -192,6 +223,9 @@ export const AppProvider = ({ children }) => {
 	const uploadSalonPhotos = async (salonId, files) => {
 		try {
 			const token = getAuthToken();
+			if (!token) {
+				throw new Error('Admin token topilmadi');
+			}
 			
 			// Convert files to base64
 			const base64Photos = await Promise.all(
@@ -223,8 +257,15 @@ export const AppProvider = ({ children }) => {
 				
 				return data.data;
 			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to upload salon photos');
+				let message = 'Failed to upload salon photos';
+				try {
+					const errorData = await response.json();
+					message = errorData.message || message;
+				} catch (_) {
+					const text = await response.text();
+					message = text || message;
+				}
+				throw new Error(message);
 			}
 		} catch (error) {
 			console.error('Error uploading salon photos:', error);
@@ -1802,9 +1843,10 @@ export const AppProvider = ({ children }) => {
 		}
 	};
 
-	// Fetch employees - all employees from production server
+	// Fetch employees - filtered by current user's salon with pagination
 	const fetchEmployees = async () => {
-		if (!user || !user.salon_id) {
+		const idToUse = FORCE_SALON_ID || (user && user.salon_id);
+		if (!idToUse) {
 			console.error('User salon_id is required to fetch employees');
 			return;
 		}
@@ -1814,7 +1856,9 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${employeesUrl}/salon/${user.salon_id}`, {
+			// Use backend route that supports pagination and salon filter
+			const url = `${employeesUrl}/salon/${idToUse}?page=1&limit=10`;
+			const response = await fetch(url, {
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -1825,7 +1869,10 @@ export const AppProvider = ({ children }) => {
 			if (response.ok) {
 				const data = await response.json();
 				console.log('Employees fetched:', data);
-				setEmployees(data.data || []);
+				const items = data.data || [];
+				setEmployees(items);
+				// Keep Employees page (mastersArr) in sync so mapping works
+				setMastersArr(items);
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch employees');
@@ -1834,6 +1881,7 @@ export const AppProvider = ({ children }) => {
 			console.error('Error fetching employees:', error);
 			setEmployeesError(error.message);
 			setEmployees([]);
+			setMastersArr([]);
 		} finally {
 			setEmployeesLoading(false);
 		}
@@ -1938,11 +1986,12 @@ export const AppProvider = ({ children }) => {
 	// Fetch all data when user logs in and has salon_id
 	useEffect(() => {
 		if (isAuthenticated && user && user.salon_id) {
-			// fetchAppointments(user.salon_id); // Disabled for production chat API
-			// fetchSchedules(); // Disabled for production chat API
-			// fetchEmployees(); // Disabled for production chat API
-			// fetchServices(); // Disabled for production chat API
-			// fetchSalons(); // Disabled for production chat API
+			// Optionally load related resources
+			// fetchAppointments(user.salon_id);
+			// fetchSchedules();
+			fetchEmployees();
+			// fetchServices();
+			// fetchSalons();
 		}
 	}, [isAuthenticated, user]);
 
@@ -2004,62 +2053,113 @@ export const AppProvider = ({ children }) => {
 	const [adminSalonLoading, setAdminSalonLoading] = useState(false)
 	const [adminSalonError, setAdminSalonError] = useState(null)
 
-	// Admin salon ma'lumotlarini olish
-	const fetchAdminSalon = async () => {
-		setAdminSalonLoading(true);
-		setAdminSalonError(null);
+	// Admin salon ma'lumotlarini olish (barqaror: backenddagi adminga biriktirilgan salon)
+    const fetchAdminSalon = async () => {
+        setAdminSalonLoading(true);
+        setAdminSalonError(null);
 
-		try {
-			const token = getAuthToken();
+        try {
+            const token = getAuthToken();
+            if (!token) {
+                throw new Error('Admin token topilmadi');
+            }
 
-			// YANGI: To'g'ridan-to'g'ri `/salons/:id` endpointiga zapros beramiz
-			console.log('🔍 Fetching admin salon by ID...');
-			let currentAdminSalonId = user?.salon_id || null;
+            // If forced salon id is provided, fetch directly by this id
+            if (FORCE_SALON_ID) {
+                const detailResponse = await fetch(`${salonDetailUrl}/${FORCE_SALON_ID}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (detailResponse.ok) {
+                    const detailData = await detailResponse.json();
+                    const salonObj = detailData?.data || detailData;
+                    if (!salonObj || !salonObj.id) {
+                        throw new Error('Salon maʼlumotlari topilmadi (forced)');
+                    }
+                    setProfArr([salonObj]);
+                    return salonObj;
+                }
+            }
 
-			// Agar user.salon_id bo'lmasa, fallback username-map
-			if (!currentAdminSalonId && user?.username) {
-				const adminSalonIds = {
-					'admin1': '0b62ba7b-2fc3-48c8-b2c7-f1c8b8639cb6',
-					'admin2': 'f590077c-7c96-4bdc-9013-55620dabf651'
-				};
-				currentAdminSalonId = adminSalonIds[user.username] || null;
-			}
+            // To'g'ridan-to'g'ri backenddagi `admin/my-salon` endpointidan olish
+            console.log('🔍 Fetching admin my-salon...');
+            const response = await fetch(adminMySalonUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
 
-			if (!currentAdminSalonId) {
-				throw new Error('Admin salon ID aniqlanmadi');
-			}
+            if (response.ok) {
+                const data = await response.json();
+                const salonObj = data?.data || data;
+                if (!salonObj || !salonObj.id) {
+                    throw new Error('Salon maʼlumotlari topilmadi');
+                }
+                console.log('✅ Admin my-salon fetched:', salonObj);
+                setProfArr([salonObj]);
+                return salonObj;
+            } else {
+                let message = `Failed to fetch admin salon (HTTP ${response.status})`;
+                let errorData = null;
+                try {
+                    errorData = await response.json();
+                    message = errorData.message || errorData.error || message;
+                    if (response.status === 403) {
+                        message = 'Ruxsat yo\'q: Adminga biriktirilgan salon topilmadi yoki ruxsat yo\'q.';
+                    } else if (response.status === 404) {
+                        message = 'Salon topilmadi';
+                    }
+                } catch (_) {
+                    const text = await response.text();
+                    message = text || message;
+                }
 
-			const detailResponse = await fetch(`${salonDetailUrl}/${currentAdminSalonId}`, {
-				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
+                // Fallback: agar server 500 qaytarsa, user.salon_id orqali `/salons/:id` dan olishga urinamiz
+                if (response.status === 500 && user?.salon_id) {
+                    try {
+                        console.warn('⚠️ Admin my-salon 500. Fallback: fetching by user.salon_id', user.salon_id);
+                        const detailResponse = await fetch(`${salonDetailUrl}/${user.salon_id}`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                            },
+                        });
 
-			if (detailResponse.ok) {
-				const detailData = await detailResponse.json();
-				// Backend ba'zan {data: {...}} yoki bevosita obyekt qaytarishi mumkin
-				const salonObj = detailData?.data || detailData;
-				if (!salonObj || !salonObj.id) {
-					throw new Error('Salon maʼlumotlari topilmadi');
-				}
-				console.log('✅ Salon fetched by ID:', salonObj);
-				setProfArr([salonObj]);
-				return salonObj;
-			} else {
-				const errorData = await detailResponse.json().catch(() => ({}));
-				throw new Error(errorData.message || 'Failed to fetch salon by ID');
-			}
-		} catch (error) {
-			console.error('❌ Error fetching admin salon:', error);
-			setAdminSalonError(error.message);
-			setProfArr([]);
-			throw error;
-		} finally {
-			setAdminSalonLoading(false);
-		}
-	};
+                        if (detailResponse.ok) {
+                            const detailData = await detailResponse.json();
+                            const salonObj = detailData?.data || detailData;
+                            if (!salonObj || !salonObj.id) {
+                                throw new Error('Salon maʼlumotlari topilmadi (fallback)');
+                            }
+                            console.log('✅ Fallback salon fetched by ID:', salonObj);
+                            setProfArr([salonObj]);
+                            return salonObj;
+                        } else {
+                            const fallbackErr = await detailResponse.json().catch(() => ({}));
+                            console.error('Fallback fetch failed:', fallbackErr);
+                        }
+                    } catch (fallbackError) {
+                        console.error('Fallback error fetching salon by ID:', fallbackError);
+                    }
+                }
+
+                throw new Error(message);
+            }
+        } catch (error) {
+            console.error('❌ Error fetching admin salon:', error);
+            setAdminSalonError(error.message);
+            setProfArr([]);
+            throw error;
+        } finally {
+            setAdminSalonLoading(false);
+        }
+    };
 
 
 

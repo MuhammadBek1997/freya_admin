@@ -8,7 +8,7 @@ import { smsUrl } from '../apiUrls';
 const Profile = () => {
 
   const {
-    t, language, handleChange, profArr, commentsArr,
+    t, language, handleChange, profArr, commentsArr, user,
     adminSalonLoading, adminSalonError, fetchAdminSalon, updateSalon,
     uploadSalonPhotos, deleteSalonPhoto, logout
   } = UseGlobalContext()
@@ -306,17 +306,14 @@ const Profile = () => {
       const salonId = profArr[0].id;
       const updateData = {};
 
-      // Til bo'yicha ma'lumotlarni yangilash
-      const fieldSuffix = language === 'uz' ? '_uz' : language === 'en' ? '_en' : '_ru';
-
-      // Salon nomi (salon_name) yangilash
+      // Asosiy ma'lumotlarni yangilash (bazaviy maydonlar)
+      // Tarjima xizmati bazaviy maydonlardan barcha tillar uchun yangilaydi
       if (editSalonName !== '') {
-        updateData[`salon_name${fieldSuffix}`] = editSalonName;
+        updateData['salon_name'] = editSalonName;
       }
 
-      // Description yangilash
       if (editDescription !== '') {
-        updateData[`salon_description${fieldSuffix}`] = editDescription;
+        updateData['salon_description'] = editDescription;
       }
 
       // Additionals yangilash
@@ -371,6 +368,13 @@ const Profile = () => {
       if (pendingImages.length > 0) {
         try {
           const files = pendingImages.map(img => img.file);
+          // Hajm cheklovi: har bir fayl <= 4MB bo‘lishi kerak
+          const maxBytes = 4 * 1024 * 1024;
+          const tooLarge = files.find(f => f && f.size > maxBytes);
+          if (tooLarge) {
+            alert('Baʼzi rasmlar juda katta (4MB dan katta). Iltimos, kichikroq rasmlarni yuklang.');
+            return;
+          }
           const result = await uploadSalonPhotos(salonId, files);
           console.log('Photos uploaded successfully:', result);
 
@@ -825,7 +829,7 @@ const Profile = () => {
                 <div className={getSalonData(profArr[0], 'salon_description') == "" ? 'empty' : 'info'}>
                   {changeMode ? (
                     <textarea
-                      value={editDescription}
+                      value={editDescription ?? ''}
                       onChange={(e) => setEditDescription(e.target.value)}
                       placeholder={t('profileAboutPlaceholder')}
                       rows={6}
@@ -868,7 +872,7 @@ const Profile = () => {
                 <div className={profArr[0]?.salon_additionals?.length == 0 ? 'empty' : 'info'}>
                   {changeMode ? (
                     <textarea
-                      value={editAdditionals}
+                      value={editAdditionals ?? ''}
                       onChange={(e) => setEditAdditionals(e.target.value)}
                       placeholder={t('profileNotePlaceholder')}
                       rows={4}
@@ -931,13 +935,13 @@ const Profile = () => {
                 <div className='company-sale-amount'>
                   <h3>Скидка</h3>
                   <div className='sale-info'>
-                    {currentSale.amount ? `${currentSale.amount}%` : 'Скидка не установлена'}
+                    {currentSale?.amount ? `${currentSale.amount}%` : 'Скидка не установлена'}
                   </div>
                 </div>
                 <div className='company-sale-date'>
                   <h3>Срок действия</h3>
                   <div className='sale-info'>
-                    {currentSale.date ? new Date(currentSale.date).toLocaleDateString('ru-RU') : 'Не указан'}
+                    {currentSale?.date ? new Date(currentSale.date).toLocaleDateString('ru-RU') : 'Не указан'}
                   </div>
                 </div>
               </div>
@@ -1149,6 +1153,16 @@ const Profile = () => {
                 className='profile-nav-cancel'
                 onClick={() => {
                   setChangeMode(false)
+                  // Matn maydonlari va selectlar uchun xavfsiz default qiymatlar
+                  setEditSalonName(profArr[0]?.salon_name ?? '')
+                  setEditWorkHours(profArr[0]?.work_schedule?.working_hours ?? '')
+                  setEditWorkDates(profArr[0]?.work_schedule?.working_days ?? '')
+                  const initialType = (profArr[0]?.salon_types?.find(t => t?.selected)?.type)
+                    ?? (profArr[0]?.salon_types?.[0]?.type)
+                    ?? ''
+                  setEditSalonType(initialType)
+                  setEditSalonFormat(profArr[0]?.salon_format?.format ?? 'corporative')
+
                   setEditDescription('')
                   setEditAdditionals('')
                   setEditComfort([])
@@ -1198,8 +1212,32 @@ const Profile = () => {
                     type="file"
                     accept="image/*"
                     onChange={(e) => {
+                      // Admin guard: faqat admin token bilan ruxsat
+                      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+                        alert('Faqat admin foydalanuvchilar rasmlar yuklay oladi');
+                        e.target.value = '';
+                        return;
+                      }
+
                       const file = e.target.files && e.target.files[0];
                       if (!file) return;
+                      if (!file.type || !file.type.startsWith('image/')) {
+                        alert('Faqat rasm fayllarini yuklash mumkin');
+                        e.target.value = '';
+                        return;
+                      }
+                      // Fayl hajmini tekshirish (<= 4MB tavsiya)
+                      const maxBytes = 4 * 1024 * 1024;
+                      if (file.size > maxBytes) {
+                        alert('Rasm fayli juda katta. Iltimos, 4MB dan kichik rasm yuklang.');
+                        e.target.value = '';
+                        return;
+                      }
+                      if (!profArr || !profArr.length || !profArr[0]?.id) {
+                        alert('Salon ma\'lumotlari yuklanmagan. Iltimos, sahifani qayta yuklang.');
+                        e.target.value = '';
+                        return;
+                      }
                       // Yagona logo faylini yuklash
                       const salonId = profArr[0]?.id;
                       (async () => {
@@ -1211,19 +1249,18 @@ const Profile = () => {
                             const last = photos[photos.length - 1];
                             if (last) {
                               const reordered = [last, ...photos.slice(0, photos.length - 1)];
-                              // Tartibni saqlab qo'yish uchun backendga qayta yuboramiz
-                              await updateSalon(salonId, { salon_photos: reordered });
                               setCompanyImages(reordered);
                             } else {
-                              setCompanyImages(photos);
+                              setCompanyImages(Array.isArray(photos) ? photos : companyImages);
                             }
                           }
                           alert('Logo muvaffaqiyatli yangilandi');
                         } catch (err) {
                           console.error('Logo yuklashda xatolik:', err);
-                          alert('Logo yuklashda xatolik yuz berdi: ' + (err?.message || ''));
+                          alert('Logo yuklashda xatolik yuz berdi: ' + (err?.message || 'Noma\'lum xatolik'));
                         } finally {
-                          e.target.value = '';
+                          // File inputni tozalash
+                          try { e.target.value = ''; } catch {}
                         }
                       })();
                     }}
@@ -1241,7 +1278,7 @@ const Profile = () => {
                 }}>
                 Название
               </h3>
-              <input type="text" value={editSalonName} onChange={(e) => setEditSalonName(e.target.value)} style={{
+              <input type="text" value={editSalonName ?? ''} onChange={(e) => setEditSalonName(e.target.value)} style={{
                 width: "95%",
                 margin:" 0 0 0 1vw",
                 padding: '0.5vw 1vw',
@@ -1259,7 +1296,7 @@ const Profile = () => {
                   <h3>
                     время работы
                   </h3>
-                  <input type="text" value={editWorkHours} onChange={(e) => setEditWorkHours(e.target.value)} style={{
+                  <input type="text" value={editWorkHours ?? ''} onChange={(e) => setEditWorkHours(e.target.value)} style={{
                   width: '100%',
                   padding: '0.5vw 1vw',
                   border: '1px solid #ddd',
@@ -1271,7 +1308,7 @@ const Profile = () => {
                   <h3>
                     Даты работы
                   </h3>
-                  <input type="text" value={editWorkDates} onChange={(e) => setEditWorkDates(e.target.value)} style={{
+                  <input type="text" value={editWorkDates ?? ''} onChange={(e) => setEditWorkDates(e.target.value)} style={{
                   width: '100%',
                   padding: '0.5vw 1vw',
                   border: '1px solid #ddd',
@@ -1283,7 +1320,7 @@ const Profile = () => {
                   <h3>
                     тип конторы
                   </h3>
-                  <select value={editSalonType} onChange={(e) => setEditSalonType(e.target.value)} style={{
+                  <select value={editSalonType ?? (profArr[0]?.salon_types?.[0]?.type ?? '')} onChange={(e) => setEditSalonType(e.target.value)} style={{
                   width: '100%',
                   padding: '10px',
                   border: '1px solid #ddd',
@@ -1303,7 +1340,7 @@ const Profile = () => {
                   <h3>
                     Формат конторы
                   </h3>
-                  <select value={editSalonFormat} onChange={(e) => setEditSalonFormat(e.target.value)} style={{
+                  <select value={editSalonFormat ?? 'corporative'} onChange={(e) => setEditSalonFormat(e.target.value)} style={{
                   width: '100%',
                   padding: '10px',
                   border: '1px solid #ddd',
@@ -1328,7 +1365,7 @@ const Profile = () => {
                 <div className={getSalonData(profArr[0], 'salon_description') == "" ? 'empty' : 'info'}>
                   {changeMode ? (
                     <textarea
-                      value={editDescription}
+                      value={editDescription ?? ''}
                       onChange={(e) => setEditDescription(e.target.value)}
                       placeholder={t('profileAboutPlaceholder')}
                       rows={6}
@@ -1371,7 +1408,7 @@ const Profile = () => {
                 <div className={profArr[0]?.salon_additionals?.length == 0 ? 'empty' : 'info'}>
                   {changeMode ? (
                     <textarea
-                      value={editAdditionals}
+                      value={editAdditionals ?? ''}
                       onChange={(e) => setEditAdditionals(e.target.value)}
                       placeholder={t('profileNotePlaceholder')}
                       rows={4}
@@ -1405,7 +1442,7 @@ const Profile = () => {
                   <h4>Скидка (%)</h4>
                   <input
                     type="text"
-                    value={editSale.amount}
+                      value={editSale.amount ?? ''}
                     onChange={(e) => setEditSale({ ...editSale, amount: e.target.value })}
                     placeholder="28 (%)"
                     min="0"
@@ -1423,7 +1460,7 @@ const Profile = () => {
                   <h4>Срок действия</h4>
                   <input
                     type="text"
-                    value={editSale.date}
+                      value={editSale.date ?? ''}
                     onChange={(e) => setEditSale({ ...editSale, date: e.target.value })}
                     placeholder='7 (дней)'
                     style={{
@@ -1550,7 +1587,7 @@ const Profile = () => {
                     {changeMode ? (
                       <input
                         type="text"
-                        value={editContacts.phone1}
+                      value={editContacts.phone1 ?? ''}
                         onChange={(e) => setEditContacts(prev => ({ ...prev, phone1: e.target.value }))}
                         placeholder="+998901234567"
                         style={{
@@ -1594,7 +1631,7 @@ const Profile = () => {
                     {changeMode ? (
                       <input
                         type="text"
-                        value={editContacts.phone2}
+                      value={editContacts.phone2 ?? ''}
                         onChange={(e) => setEditContacts(prev => ({ ...prev, phone2: e.target.value }))}
                         placeholder="+998901234567"
                         style={{
@@ -1639,7 +1676,7 @@ const Profile = () => {
                   {changeMode ? (
                     <input
                       type="text"
-                      value={editContacts.instagram}
+                      value={editContacts.instagram ?? ''}
                       onChange={(e) => setEditContacts(prev => ({ ...prev, instagram: e.target.value }))}
                       placeholder="https://instagram.com/user"
                       style={{
