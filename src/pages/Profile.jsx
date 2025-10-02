@@ -20,6 +20,13 @@ const Profile = () => {
   const [editSale, setEditSale] = useState({ amount: '', date: '' })
   const [currentSale, setCurrentSale] = useState({ amount: '', date: '' })
 
+  // Salon asosiy ma'lumotlari uchun state
+  const [editSalonName, setEditSalonName] = useState('')
+  const [editWorkHours, setEditWorkHours] = useState('')
+  const [editWorkDates, setEditWorkDates] = useState('')
+  const [editSalonType, setEditSalonType] = useState('')
+  const [editSalonFormat, setEditSalonFormat] = useState('corporative')
+
   // Rasmlar uchun ref va state'lar
   const imageListRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -90,10 +97,25 @@ const Profile = () => {
       const currentComfort = profArr[0]?.salon_comfort || [];
       const currentSaleData = profArr[0]?.salon_sale || { amount: '', date: '' };
 
+      // Asosiy maydonlarni edit uchun to'ldirish
+      const currentName = getSalonData(profArr[0], 'salon_name');
+      const currentSchedule = profArr[0]?.work_schedule || {};
+      const currentTypes = profArr[0]?.salon_types || [];
+      const selectedType = Array.isArray(currentTypes)
+        ? (currentTypes.find(t => t.selected)?.type || '')
+        : '';
+      const currentFormat = (profArr[0]?.salon_format && profArr[0]?.salon_format.format) || 'corporative';
+
       setEditDescription(currentDescription);
       setEditAdditionals(Array.isArray(currentAdditionals) ? currentAdditionals.join('\n') : '');
       setEditComfort([...currentComfort]); // Deep copy qilish
       setEditSale({ ...currentSaleData });
+
+      setEditSalonName(currentName || '');
+      setEditWorkHours(currentSchedule?.hours || '');
+      setEditWorkDates(currentSchedule?.dates || '');
+      setEditSalonType(selectedType);
+      setEditSalonFormat(currentFormat);
     }
   }, [changeMode, profArr, language]);
 
@@ -287,6 +309,11 @@ const Profile = () => {
       // Til bo'yicha ma'lumotlarni yangilash
       const fieldSuffix = language === 'uz' ? '_uz' : language === 'en' ? '_en' : '_ru';
 
+      // Salon nomi (salon_name) yangilash
+      if (editSalonName !== '') {
+        updateData[`salon_name${fieldSuffix}`] = editSalonName;
+      }
+
       // Description yangilash
       if (editDescription !== '') {
         updateData[`salon_description${fieldSuffix}`] = editDescription;
@@ -310,6 +337,28 @@ const Profile = () => {
           amount: editSale.amount,
           date: editSale.date
         };
+      }
+
+      // Ish vaqti / Ish kunlari (work_schedule) yangilash
+      if (editWorkHours !== '' || editWorkDates !== '') {
+        updateData['work_schedule'] = {
+          hours: editWorkHours,
+          dates: editWorkDates
+        };
+      }
+
+      // Salon turi (salon_types) yangilash — tanlangan bitta turga selected=true
+      if (editSalonType && Array.isArray(profArr[0]?.salon_types)) {
+        const updatedTypes = (profArr[0].salon_types || []).map(t => ({
+          ...t,
+          selected: t.type === editSalonType
+        }));
+        updateData['salon_types'] = updatedTypes;
+      }
+
+      // Salon format (salon_format) yangilash
+      if (editSalonFormat) {
+        updateData['salon_format'] = { selected: true, format: editSalonFormat };
       }
 
       // Agar yangilanishi kerak bo'lgan ma'lumotlar bo'lsa
@@ -350,6 +399,11 @@ const Profile = () => {
       setEditAdditionals('');
       setEditComfort([]);
       setEditSale({ amount: '', date: '' });
+      setEditSalonName('');
+      setEditWorkHours('');
+      setEditWorkDates('');
+      setEditSalonType('');
+      setEditSalonFormat('corporative');
     } catch (error) {
       console.error('Salon yangilashda xatolik:', error);
     }
@@ -1112,7 +1166,72 @@ const Profile = () => {
         </nav>
         <div className='profile-body' style={{ paddingTop: "12vh" }}>
           <div className="profile-body-left">
-
+            <div className='company-logo-change'>
+              {/* Salon logo / asosiy rasmni yangilash */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1vw' }}>
+                <div>
+                  <h3 style={{ fontSize: '1vw', marginBottom: '0.5vw' }}>Salon logosi</h3>
+                  <div style={{
+                    width: '10vw',
+                    height: '10vw',
+                    borderRadius: '0.7vw',
+                    border: '0.1vw solid #ddd',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#fafafa'
+                  }}>
+                    {(() => {
+                      const currentLogo = companyImages && companyImages.length > 0 ? companyImages[0] : null;
+                      if (currentLogo && typeof currentLogo === 'string') {
+                        return <img src={currentLogo} alt="Salon logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      }
+                      return <span style={{ color: '#999' }}>Logo yo'q</span>
+                    })()}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5vw' }}>
+                  <label htmlFor="logoUpload" style={{ fontSize: '0.9vw' }}>Yangi logo tanlang</label>
+                  <input
+                    id="logoUpload"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files && e.target.files[0];
+                      if (!file) return;
+                      // Yagona logo faylini yuklash
+                      const salonId = profArr[0]?.id;
+                      (async () => {
+                        try {
+                          const result = await uploadSalonPhotos(salonId, [file]);
+                          // Yangi rasm odatda oxiriga qo'shiladi — uni boshiga olib qo'yamiz
+                          if (result && Array.isArray(result.salon_photos)) {
+                            const photos = [...result.salon_photos];
+                            const last = photos[photos.length - 1];
+                            if (last) {
+                              const reordered = [last, ...photos.slice(0, photos.length - 1)];
+                              // Tartibni saqlab qo'yish uchun backendga qayta yuboramiz
+                              await updateSalon(salonId, { salon_photos: reordered });
+                              setCompanyImages(reordered);
+                            } else {
+                              setCompanyImages(photos);
+                            }
+                          }
+                          alert('Logo muvaffaqiyatli yangilandi');
+                        } catch (err) {
+                          console.error('Logo yuklashda xatolik:', err);
+                          alert('Logo yuklashda xatolik yuz berdi: ' + (err?.message || ''));
+                        } finally {
+                          e.target.value = '';
+                        }
+                      })();
+                    }}
+                    style={{ fontSize: '0.9vw' }}
+                  />
+                </div>
+              </div>
+            </div>
             <div className="company-data" style={{ minHeight: "70vh" }}>
               <h3 style={{
                 fontSize: "1vw",
@@ -1122,7 +1241,7 @@ const Profile = () => {
                 }}>
                 Название
               </h3>
-              <input type="text" style={{
+              <input type="text" value={editSalonName} onChange={(e) => setEditSalonName(e.target.value)} style={{
                 width: "95%",
                 margin:" 0 0 0 1vw",
                 padding: '0.5vw 1vw',
@@ -1140,7 +1259,7 @@ const Profile = () => {
                   <h3>
                     время работы
                   </h3>
-                  <input type="text" style={{
+                  <input type="text" value={editWorkHours} onChange={(e) => setEditWorkHours(e.target.value)} style={{
                   width: '100%',
                   padding: '0.5vw 1vw',
                   border: '1px solid #ddd',
@@ -1152,7 +1271,7 @@ const Profile = () => {
                   <h3>
                     Даты работы
                   </h3>
-                  <input type="text" style={{
+                  <input type="text" value={editWorkDates} onChange={(e) => setEditWorkDates(e.target.value)} style={{
                   width: '100%',
                   padding: '0.5vw 1vw',
                   border: '1px solid #ddd',
@@ -1164,7 +1283,7 @@ const Profile = () => {
                   <h3>
                     тип конторы
                   </h3>
-                  <select name="" id=""  style={{
+                  <select value={editSalonType} onChange={(e) => setEditSalonType(e.target.value)} style={{
                   width: '100%',
                   padding: '10px',
                   border: '1px solid #ddd',
@@ -1174,7 +1293,7 @@ const Profile = () => {
                   {
                     profArr[0].salon_types?.map((item, index) => {
                       return (
-                        <option value={item.type}  >{item.type}</option>
+                        <option key={index} value={item.type}>{item.type}</option>
                       )
                     })
                   }
@@ -1184,19 +1303,15 @@ const Profile = () => {
                   <h3>
                     Формат конторы
                   </h3>
-                  <select name="" id=""  style={{
+                  <select value={editSalonFormat} onChange={(e) => setEditSalonFormat(e.target.value)} style={{
                   width: '100%',
                   padding: '10px',
                   border: '1px solid #ddd',
                   borderRadius: '8px',
                   fontSize: '14px'
                 }}>
-                  <option value="true">
-                    Корпоративный
-                  </option>
-                  <option value="true">
-                    Частный
-                  </option>
+                  <option value="corporative">Корпоративный</option>
+                  <option value="private">Частный</option>
                 </select>
                 </div>
               </div>
