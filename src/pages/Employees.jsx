@@ -7,11 +7,16 @@ import EmployWaitingCard from '../components/EmployWaitingCard';
 import AddEmployeeModal from '../components/AddEmployeeModal';
 
 const Employees = () => {
-  const { t, waitingEmp, setWaitingEmp, mastersArr, setMastersArr, handleAddWaitingEmp, handleRemoveWaitingEmp, isCheckedItem, setIsCheckedItem } = UseGlobalContext();
+  const { t, waitingEmp, setWaitingEmp, mastersArr, setMastersArr, handleAddWaitingEmp, handleRemoveWaitingEmp, isCheckedItem, setIsCheckedItem, fetchEmployees, employeesLoading } = UseGlobalContext();
   const [openCardId, setOpenCardId] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState({ menu: null, cardId: null });
   const [showWait, setShowWait] = useState(false);
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  
+  // Sahifa ochilganda xodimlarni yuklash
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
   // Function to toggle the menu for a specific card
   const handleToggleMenu = (id) => {
     setOpenCardId((prevId) => (prevId === id ? null : id));
@@ -145,37 +150,39 @@ const Employees = () => {
         </div>
       </nav>
       <div className="employ-body">
-        {
-          showWait
-            ?
-            waitingEmp.map((item)=>(
-              <EmployWaitingCard
-                key={item.id}
-                {...item}
-                isOpen={openCardId === item.id}
-                handleToggleMenu={() => handleToggleMenu(item.id)}
-                isMenuOpen={isMenuOpen}
-                setIsMenuOpen={setIsMenuOpen}
-                isCheckedItem={isCheckedItem}
-                setIsCheckedItem={setIsCheckedItem}
-                handleRemoveWaitingEmp={handleRemoveWaitingEmp}
-              />
-            ))
-            :
-            workingEmployees.map((item) => (
-              <EmployeeCard
-                key={item.id}
-                {...item}
-                isOpen={openCardId === item.id}
-                handleToggleMenu={() => handleToggleMenu(item.id)}
-                isMenuOpen={isMenuOpen}
-                setIsMenuOpen={setIsMenuOpen}
-                isCheckedItem={isCheckedItem}
-                setIsCheckedItem={setIsCheckedItem}
-                handleAddWaitingEmp={handleAddWaitingEmp}
-              />
-            ))
-        }
+        {employeesLoading ? (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            {t('loading')}...
+          </div>
+        ) : showWait ? (
+          waitingEmp.map((item)=>(
+            <EmployWaitingCard
+              key={item.id}
+              {...item}
+              isOpen={openCardId === item.id}
+              handleToggleMenu={() => handleToggleMenu(item.id)}
+              isMenuOpen={isMenuOpen}
+              setIsMenuOpen={setIsMenuOpen}
+              isCheckedItem={isCheckedItem}
+              setIsCheckedItem={setIsCheckedItem}
+              handleRemoveWaitingEmp={handleRemoveWaitingEmp}
+            />
+          ))
+        ) : (
+          workingEmployees.map((item) => (
+            <EmployeeCard
+              key={item.id}
+              {...item}
+              isOpen={openCardId === item.id}
+              handleToggleMenu={() => handleToggleMenu(item.id)}
+              isMenuOpen={isMenuOpen}
+              setIsMenuOpen={setIsMenuOpen}
+              isCheckedItem={isCheckedItem}
+              setIsCheckedItem={setIsCheckedItem}
+              handleAddWaitingEmp={handleAddWaitingEmp}
+            />
+          ))
+        )}
 
         { }
       </div>
@@ -190,7 +197,7 @@ const Employees = () => {
           onClose={() => setShowAddEmployeeModal(false)}
           onEmployeeAdded={() => {
             setShowAddEmployeeModal(false);
-            // Refresh employees list if needed
+            fetchEmployees();
           }}
         />
       )}

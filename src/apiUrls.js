@@ -1,5 +1,5 @@
-// Production server URL
-const BASE_URL = "https://freya-salon-backend-cc373ce6622a.herokuapp.com/api";
+// Base URL: uses env var in dev/prod; falls back to Heroku
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://freya-salon-backend-cc373ce6622a.herokuapp.com/api";
 
 // Authentication endpoints
 export const authUrl         = `${BASE_URL}/auth`;
@@ -58,6 +58,7 @@ export const salonCommentsUrl = `${BASE_URL}/salons`;
 export const salonPhotosUrl  = `${BASE_URL}/salons`;
 export const salonNearbyUrl  = `${BASE_URL}/salons/nearby`;
 export const salonFilterTypesUrl = `${BASE_URL}/salons/filter/types`;
+export const photoUploadUrl = `${BASE_URL}/photos/upload`;
 
 // Service endpoints
 export const servicesUrl     = `${BASE_URL}/services`;

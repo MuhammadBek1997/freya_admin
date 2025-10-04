@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
+import { Formik, Form, Field, ErrorMessage } from 'formik'
+import * as Yup from 'yup'
 import { UseGlobalContext } from '../Context'
 import YandexMap from '../components/YandexMap'
 import ReadMoreReact from 'read-more-react';
@@ -8,7 +10,7 @@ import { smsUrl } from '../apiUrls';
 const Profile = () => {
 
   const {
-    t, language, handleChange, profArr, commentsArr, user,
+    t, language, handleChange, salonProfile, commentsArr, user,
     adminSalonLoading, adminSalonError, fetchAdminSalon, updateSalon,
     uploadSalonPhotos, deleteSalonPhoto, logout
   } = UseGlobalContext()
@@ -34,9 +36,25 @@ const Profile = () => {
   const [canScrollRight, setCanScrollRight] = useState(false)
   const [companyImages, setCompanyImages] = useState([])
   const [pendingImages, setPendingImages] = useState([])
+  const [pendingLogo, setPendingLogo] = useState(null)
+
+  // Faylni base64 ga o‘tkazish yordamchisi (logo/photos uchun)
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
   // Carousel uchun state
   const [currentSlide, setCurrentSlide] = useState(0)
+
+  // Salon profilidagi mavjud rasmlarni UI ga sync qilish
+  useEffect(() => {
+    if (Array.isArray(salonProfile?.salon_photos)) {
+      setCompanyImages(salonProfile.salon_photos)
+    }
+  }, [salonProfile])
 
   // Kontaktlar uchun state
   const [editContacts, setEditContacts] = useState({
@@ -52,6 +70,226 @@ const Profile = () => {
     card_type: 'HUMO'
   })
   const [showAddCard, setShowAddCard] = useState(false)
+
+  // Formik/Yup: profil tahrir formasi uchun validatsiya va boshlang'ich qiymatlar
+  const profileValidationSchema = Yup.object({
+    salon_name: Yup.string().min(2, 'Kamida 2 belgi').max(100, 'Ko‘pi bilan 100 belgi').required('Majburiy maydon'),
+    work_hours: Yup.string().max(100, 'Ko‘pi bilan 100 belgi'),
+    work_dates: Yup.string().max(100, 'Ko‘pi bilan 100 belgi'),
+    salon_type: Yup.string().required('Majburiy maydon'),
+    salon_format: Yup.string().required('Majburiy maydon'),
+  })
+
+  const getInitialFormValues = (sp) => {
+    const types = sp?.salon_types || []
+    const initialType = Array.isArray(types)
+      ? (types.find(t => t?.selected)?.type || types[0]?.type || '')
+      : ''
+    const format = sp?.salon_format?.format || 'corporative'
+    const hours = sp?.work_schedule?.hours ?? sp?.work_schedule?.working_hours ?? ''
+    const dates = sp?.work_schedule?.dates ?? sp?.work_schedule?.working_days ?? ''
+    const name = getSalonData(sp, 'salon_name') || sp?.name || ''
+    return {
+      salon_name: name,
+      work_hours: hours,
+      work_dates: dates,
+      salon_type: initialType,
+      salon_format: format,
+    }
+  }
+
+  const submitProfileForm = () => {
+    const form = document.getElementById('profile-edit-form')
+    if (form) form.requestSubmit()
+  }
+
+  // Faqat salonning matn maydonlarini (rasm yuksiz) saqlash
+  const saveSalonInfoOnly = async () => {
+    if (!salonProfile) return;
+    try {
+      const salonId = salonProfile.id;
+      const updateData = {};
+
+      if (editSalonName !== '') {
+        // Asosiy va tilga xos maydonlarni birga yuboramiz
+        updateData['salon_name'] = editSalonName;
+        updateData[`salon_name_${language}`] = editSalonName;
+      }
+      if (editDescription !== '') updateData['salon_description'] = editDescription;
+      if (editAdditionals !== '') {
+        const additionalsArray = editAdditionals.split('\n').filter(item => item.trim() !== '');
+        updateData['salon_additionals'] = additionalsArray;
+      }
+      if (editComfort.length > 0) updateData['salon_comfort'] = editComfort;
+      if (editSale.amount !== '' || editSale.date !== '') {
+        updateData['salon_sale'] = { amount: editSale.amount, date: editSale.date };
+      }
+      if (editWorkHours !== '' || editWorkDates !== '') {
+        updateData['work_schedule'] = { hours: editWorkHours, dates: editWorkDates };
+      }
+      if (editSalonType && Array.isArray(salonProfile?.salon_types)) {
+        const updatedTypes = (salonProfile?.salon_types || []).map(t => ({ ...t, selected: t.type === editSalonType }));
+        updateData['salon_types'] = updatedTypes;
+      }
+      if (editSalonFormat) updateData['salon_format'] = { selected: true, format: editSalonFormat };
+
+      if (Object.keys(updateData).length > 0) {
+        await updateSalon(salonId, updateData);
+        console.log('Salon ma\'lumotlari (rasm yuksiz) muvaffaqiyatli yangilandi');
+      }
+    } catch (error) {
+      console.error('Salon ma\'lumotlarini saqlashda xatolik:', error);
+    }
+  }
+
+  // Formik submit handler'ini to'g'ri yozish
+const handleFormikSubmit = async (values, { setSubmitting }) => {
+  try {
+    if (!salonProfile) return;
+
+    const salonId = salonProfile.id;
+    const updateData = {};
+
+    // Formik values'dan ma'lumotlarni olish
+    if (values.salon_name && values.salon_name !== getSalonData(salonProfile, 'salon_name')) {
+      updateData['salon_name'] = values.salon_name;
+      updateData[`salon_name_${language}`] = values.salon_name;
+    }
+
+    if (values.work_hours && values.work_hours !== salonProfile?.work_schedule?.hours) {
+      updateData['work_schedule'] = {
+        ...salonProfile?.work_schedule,
+        hours: values.work_hours,
+        dates: values.work_dates || salonProfile?.work_schedule?.dates || ''
+      };
+    } else if (values.work_dates && values.work_dates !== salonProfile?.work_schedule?.dates) {
+      updateData['work_schedule'] = {
+        ...salonProfile?.work_schedule,
+        hours: values.work_hours || salonProfile?.work_schedule?.hours || '',
+        dates: values.work_dates
+      };
+    }
+
+    if (values.salon_type && Array.isArray(salonProfile?.salon_types)) {
+      const currentType = salonProfile?.salon_types?.find(t => t?.selected)?.type;
+      if (values.salon_type !== currentType) {
+        const updatedTypes = salonProfile.salon_types.map(t => ({
+          ...t,
+          selected: t.type === values.salon_type
+        }));
+        updateData['salon_types'] = updatedTypes;
+      }
+    }
+
+    if (values.salon_format && values.salon_format !== salonProfile?.salon_format?.format) {
+      updateData['salon_format'] = { selected: true, format: values.salon_format };
+    }
+
+    // Description va boshqa manual state'lar
+    if (editDescription && editDescription !== getSalonData(salonProfile, 'salon_description')) {
+      updateData['salon_description'] = editDescription;
+    }
+
+    if (editAdditionals && editAdditionals !== (salonProfile?.salon_additionals || []).join('\n')) {
+      const additionalsArray = editAdditionals.split('\n').filter(item => item.trim() !== '');
+      updateData['salon_additionals'] = additionalsArray;
+    }
+
+    if (editComfort.length > 0) {
+      const comfortChanged = JSON.stringify(editComfort) !== JSON.stringify(salonProfile?.salon_comfort || []);
+      if (comfortChanged) {
+        updateData['salon_comfort'] = editComfort;
+      }
+    }
+
+    if (editSale.amount || editSale.date) {
+      const saleChanged = (
+        editSale.amount !== (salonProfile?.salon_sale?.amount || '') ||
+        editSale.date !== (salonProfile?.salon_sale?.date || '')
+      );
+      if (saleChanged) {
+        updateData['salon_sale'] = {
+          amount: editSale.amount,
+          date: editSale.date
+        };
+      }
+    }
+
+    console.log('=== UPDATE DEBUG ===');
+    console.log('Salon ID:', salonId);
+    console.log('Update Data:', updateData);
+    console.log('Has changes:', Object.keys(updateData).length > 0);
+
+    // Agar o'zgarishlar bo'lsa, update qilish
+    if (Object.keys(updateData).length > 0) {
+      console.log('Sending update request...');
+      const result = await updateSalon(salonId, updateData);
+      console.log('Update result:', result);
+      alert('Ma\'lumotlar muvaffaqiyatli yangilandi!');
+    } else {
+      console.log('No changes detected');
+    }
+
+    // Rasmlarni yuklash (agar bor bo'lsa)
+    const maxBytes = 4 * 1024 * 1024;
+    const filesToUpload = [];
+    
+    if (pendingLogo?.file) {
+      if (pendingLogo.file.size > maxBytes) {
+        alert('Logo fayli 4MB dan katta');
+        setSubmitting(false);
+        return;
+      }
+      filesToUpload.push(pendingLogo.file);
+    }
+    
+    if (pendingImages.length > 0) {
+      const validImages = pendingImages.filter(img => img?.file && img.file.size <= maxBytes);
+      if (validImages.length < pendingImages.length) {
+        alert('Ba\'zi rasmlar juda katta (4MB dan katta)');
+      }
+      validImages.forEach(img => filesToUpload.push(img.file));
+    }
+
+    if (filesToUpload.length > 0) {
+      console.log('Uploading', filesToUpload.length, 'photos...');
+      const uploaded = await uploadSalonPhotos(salonId, filesToUpload);
+      console.log('Photos uploaded:', uploaded);
+      
+      if (uploaded?.salon_photos) {
+        setCompanyImages(uploaded.salon_photos);
+      } else if (Array.isArray(uploaded)) {
+        setCompanyImages(uploaded);
+      }
+      
+      // Pending'larni tozalash
+      if (pendingLogo?.preview) URL.revokeObjectURL(pendingLogo.preview);
+      pendingImages.forEach(img => img?.preview && URL.revokeObjectURL(img.preview));
+      setPendingLogo(null);
+      setPendingImages([]);
+      
+      alert('Rasmlar muvaffaqiyatli yuklandi!');
+    }
+
+    // Salonni qayta yuklash
+    await fetchAdminSalon(salonId);
+
+    // Edit mode'dan chiqish
+    setChangeMode(false);
+    setEditDescription('');
+    setEditAdditionals('');
+    setEditComfort([]);
+    setEditSale({ amount: '', date: '' });
+
+  } catch (error) {
+    console.error('=== UPDATE ERROR ===');
+    console.error('Error:', error);
+    console.error('Error message:', error.message);
+    alert('Xatolik: ' + error.message);
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   // SMS verifikatsiya uchun state
   const [smsCode, setSmsCode] = useState('')
@@ -71,40 +309,40 @@ const Profile = () => {
       }
     };
 
-    // Agar profArr bo'sh bo'lsa, ma'lumotlarni yuklash
-    if (!profArr || profArr.length === 0) {
+    // Agar salonProfile bo'sh bo'lsa, ma'lumotlarni yuklash
+    if (!salonProfile) {
       loadAdminSalon();
     }
   }, []);
 
-  // profArr yuklanganda editPayment state'ini database ma'lumotlari bilan to'ldirish
+  // salonProfile yuklanganda editPayment state'ini database ma'lumotlari bilan to'ldirish
   useEffect(() => {
-    if (profArr && profArr.length > 0 && profArr[0]?.paymentSystem) {
-      const paymentData = profArr[0].paymentSystem;
+    if (salonProfile?.paymentSystem) {
+      const paymentData = salonProfile.paymentSystem;
       setEditPayment({
         card_number: paymentData.card_number || '',
         phone_number: paymentData.phone_number || '',
         card_type: paymentData.card_type || 'HUMO'
       });
     }
-  }, [profArr]);
+  }, [salonProfile]);
 
   // Edit mode ga kirganda current ma'lumotlarni yuklash
   useEffect(() => {
-    if (changeMode && profArr && profArr.length > 0) {
-      const currentDescription = getSalonData(profArr[0], 'salon_description');
-      const currentAdditionals = profArr[0]?.salon_additionals || [];
-      const currentComfort = profArr[0]?.salon_comfort || [];
-      const currentSaleData = profArr[0]?.salon_sale || { amount: '', date: '' };
+    if (changeMode && salonProfile) {
+      const currentDescription = getSalonData(salonProfile, 'salon_description');
+      const currentAdditionals = salonProfile?.salon_additionals || [];
+      const currentComfort = salonProfile?.salon_comfort || [];
+      const currentSaleData = salonProfile?.salon_sale || { amount: '', date: '' };
 
       // Asosiy maydonlarni edit uchun to'ldirish
-      const currentName = getSalonData(profArr[0], 'salon_name');
-      const currentSchedule = profArr[0]?.work_schedule || {};
-      const currentTypes = profArr[0]?.salon_types || [];
+      const currentName = getSalonData(salonProfile, 'salon_name');
+      const currentSchedule = salonProfile?.work_schedule || {};
+      const currentTypes = salonProfile?.salon_types || [];
       const selectedType = Array.isArray(currentTypes)
         ? (currentTypes.find(t => t.selected)?.type || '')
         : '';
-      const currentFormat = (profArr[0]?.salon_format && profArr[0]?.salon_format.format) || 'corporative';
+      const currentFormat = (salonProfile?.salon_format && salonProfile?.salon_format.format) || 'corporative';
 
       setEditDescription(currentDescription);
       setEditAdditionals(Array.isArray(currentAdditionals) ? currentAdditionals.join('\n') : '');
@@ -117,19 +355,19 @@ const Profile = () => {
       setEditSalonType(selectedType);
       setEditSalonFormat(currentFormat);
     }
-  }, [changeMode, profArr, language]);
+  }, [changeMode, salonProfile, language]);
 
   // currentSale ni yuklash
   useEffect(() => {
-    if (profArr && profArr.length > 0) {
-      const saleData = profArr[0]?.salon_sale || { amount: '', date: '' };
+    if (salonProfile) {
+      const saleData = salonProfile?.salon_sale || { amount: '', date: '' };
       setCurrentSale({ ...saleData });
 
       // Salon photos ni yuklash
-      const images = profArr[0]?.salon_photos || [];
+      const images = salonProfile?.salon_photos || [];
       setCompanyImages(Array.isArray(images) ? images : []);
     }
-  }, [profArr]);
+  }, [salonProfile]);
 
   // Tilga qarab salon ma'lumotlarini olish funksiyasi
   const getSalonData = (salon, field) => {
@@ -194,22 +432,24 @@ const Profile = () => {
 
   // Rasm yuklash funksiyasi (faqat preview uchun)
   const handleImageUpload = (event) => {
-    const files = Array.from(event.target.files);
-    if (files.length === 0) return;
+    const files = Array.from(event.target.files)
+    if (files.length === 0) return
+
+    // Client-side tekshiruv: faqat image va <= 4MB
+    const maxBytes = 4 * 1024 * 1024
+    const validImages = files.filter(f => f && f.type && f.type.startsWith('image/') && f.size <= maxBytes)
+    if (validImages.length < files.length) {
+      alert('Faqat rasm fayllari va 4MB dan kichik fayllar ruxsat etiladi.')
+    }
 
     // Fayllarni preview uchun URL yaratish
-    const newImagePreviews = files.map(file => {
-      return {
-        file: file,
-        preview: URL.createObjectURL(file)
-      };
-    });
+    const newImagePreviews = validImages.map(file => ({ file, preview: URL.createObjectURL(file) }))
 
     // Pending images ga qo'shish
-    setPendingImages(prev => [...prev, ...newImagePreviews]);
+    setPendingImages(prev => [...prev, ...newImagePreviews])
 
     // Input ni tozalash
-    event.target.value = '';
+    try { event.target.value = '' } catch {}
   };
 
   // Rasmni o'chirish funksiyasi
@@ -222,12 +462,12 @@ const Profile = () => {
 
     if (index < totalExistingImages) {
       // Mavjud rasmni serverdan o'chirish
-      if (!profArr || profArr.length === 0) {
+      if (!salonProfile) {
         alert('Salon ma\'lumotlari yuklanmagan');
         return;
       }
 
-      const salonId = profArr[0].id;
+      const salonId = salonProfile.id;
 
       try {
         // Serverdan o'chirish (index ni yuborish)
@@ -300,10 +540,10 @@ const Profile = () => {
 
   // Saqlash funksiyasi
   const handleSave = async () => {
-    if (!profArr || profArr.length === 0) return;
+    if (!salonProfile) return;
 
     try {
-      const salonId = profArr[0].id;
+      const salonId = salonProfile.id;
       const updateData = {};
 
       // Asosiy ma'lumotlarni yangilash (bazaviy maydonlar)
@@ -345,8 +585,8 @@ const Profile = () => {
       }
 
       // Salon turi (salon_types) yangilash — tanlangan bitta turga selected=true
-      if (editSalonType && Array.isArray(profArr[0]?.salon_types)) {
-        const updatedTypes = (profArr[0].salon_types || []).map(t => ({
+      if (editSalonType && Array.isArray(salonProfile?.salon_types)) {
+        const updatedTypes = (salonProfile?.salon_types || []).map(t => ({
           ...t,
           selected: t.type === editSalonType
         }));
@@ -358,41 +598,42 @@ const Profile = () => {
         updateData['salon_format'] = { selected: true, format: editSalonFormat };
       }
 
-      // Agar yangilanishi kerak bo'lgan ma'lumotlar bo'lsa
+      // Fayl hajmini tekshirish (<= 4MB)
+      const maxBytes = 4 * 1024 * 1024;
+      if (pendingLogo?.file && pendingLogo.file.size > maxBytes) {
+        alert('Logo fayli 4MB dan katta. Iltimos, kichikroq fayl tanlang.');
+        return;
+      }
+      const tooLargePhoto = pendingImages.find(img => img?.file?.size > maxBytes);
+      if (tooLargePhoto) {
+        alert('Baʼzi rasmlar juda katta (4MB dan katta). Iltimos, kichikroq rasmlarni yuklang.');
+        return;
+      }
+      // Avval matn ma'lumotlarini yangilash
       if (Object.keys(updateData).length > 0) {
         await updateSalon(salonId, updateData);
         console.log('Salon ma\'lumotlari muvaffaqiyatli yangilandi');
       }
 
-      // Pending rasmlarni yuklash
+      // Keyin rasmlarni alohida endpoint orqali yuklaymiz (agar bor bo'lsa)
+      const filesToUpload = [];
+      if (pendingLogo?.file) filesToUpload.push(pendingLogo.file);
       if (pendingImages.length > 0) {
-        try {
-          const files = pendingImages.map(img => img.file);
-          // Hajm cheklovi: har bir fayl <= 4MB bo‘lishi kerak
-          const maxBytes = 4 * 1024 * 1024;
-          const tooLarge = files.find(f => f && f.size > maxBytes);
-          if (tooLarge) {
-            alert('Baʼzi rasmlar juda katta (4MB dan katta). Iltimos, kichikroq rasmlarni yuklang.');
-            return;
-          }
-          const result = await uploadSalonPhotos(salonId, files);
-          console.log('Photos uploaded successfully:', result);
-
-          // Local state ni yangilash (server javobidan)
-          if (result.salon_photos) {
-            setCompanyImages(result.salon_photos);
-          }
-
-          // Pending images ni tozalash
-          pendingImages.forEach(img => URL.revokeObjectURL(img.preview));
-          setPendingImages([]);
-
-          console.log('Rasmlar muvaffaqiyatli yuklandi');
-        } catch (error) {
-          console.error('Error uploading photos:', error);
-          alert('Rasmlarni yuklashda xatolik yuz berdi: ' + error.message);
-          return; // Xatolik bo'lsa, edit mode dan chiqmaslik
+        pendingImages.forEach(img => { if (img?.file) filesToUpload.push(img.file); });
+      }
+      if (filesToUpload.length > 0) {
+        const uploaded = await uploadSalonPhotos(salonId, filesToUpload);
+        if (uploaded?.salon_photos) {
+          setCompanyImages(uploaded.salon_photos);
+        } else if (Array.isArray(uploaded)) {
+          setCompanyImages(uploaded);
         }
+        console.log('Salon rasmlari muvaffaqiyatli yuklandi');
+        // Pending previewlarni tozalash
+        if (pendingLogo?.preview) URL.revokeObjectURL(pendingLogo.preview);
+        pendingImages.forEach(img => img?.preview && URL.revokeObjectURL(img.preview));
+        setPendingLogo(null);
+        setPendingImages([]);
       }
 
       // Edit mode dan chiqish
@@ -597,7 +838,7 @@ const Profile = () => {
   }
 
   // Data hali tayyor bo'lmasa, loading holatini saqlab turamiz (minimal o'zgarish)
-  if (!profArr || profArr.length === 0 || !profArr[0]) {
+  if (!salonProfile) {
     return (
       <div style={{
         display: 'flex',
@@ -612,9 +853,9 @@ const Profile = () => {
     );
   }
 
-  let salonComments = commentsArr.filter(item => item.salon == profArr[0]?.id)
+  let salonComments = commentsArr.filter(item => item.salon == salonProfile?.id)
 
-  console.log(profArr);
+  console.log(salonProfile);
 
 
   if (!changeMode) {
@@ -656,8 +897,10 @@ const Profile = () => {
           <div className='profile-nav-bottom'>
             <div className="profile-nav-left">
               <div className='company-image' style={{
-                background: profArr[0].icon ? `url(${profArr[0].icon})` : "/images/ForCompanyImage.png",
-                backgroundSize: profArr[0].icon ? "cover" : "30%",
+                background: (salonProfile.icon || (companyImages && companyImages[0]))
+                  ? `url(${salonProfile.icon || companyImages[0]})`
+                  : `url(/images/ForCompanyImage.png)`,
+                backgroundSize: (salonProfile.icon || (companyImages && companyImages[0])) ? "cover" : "30%",
                 backgroundPosition: "center center"
               }}>
 
@@ -665,7 +908,7 @@ const Profile = () => {
               <div className='profile-nav-info'>
                 <div className='profile-salon-name'>
                   <h2>
-                    {getSalonData(profArr[0], 'salon_name') || profArr[0].name}
+                    {getSalonData(salonProfile, 'salon_name') || salonProfile.name}
                   </h2>
                   {changeMode ? (
                     <div style={{ display: 'flex', gap: '10px' }}>
@@ -693,12 +936,12 @@ const Profile = () => {
                 <div className='profile-salon-rating'>
                   <div
                     className="stars"
-                    style={{ '--rating': profArr[0].rating }}
-                    aria-label={`Rating: ${profArr[0].rating} out of 5 stars`}
+                    style={{ '--rating': salonProfile.rating }}
+                    aria-label={`Rating: ${salonProfile.rating} out of 5 stars`}
                   >
                   </div>
                   <p>
-                    {profArr[0].rating} ({salonComments.length} {t('profileReviews')} )
+                    {salonProfile.rating} ({salonComments.length} {t('profileReviews')} )
                   </p>
                 </div>
                 <div className='profile-salon-sale'>
@@ -816,17 +1059,17 @@ const Profile = () => {
                   <img src="/images/NoCompImg.png" alt="" className='compNoImg' />
                 }
               </div>
-              <div className={getSalonData(profArr[0], 'salon_title') == "" ? 'company-title-empty' : 'company-title-full'}>
+              <div className={getSalonData(salonProfile, 'salon_name') == "" ? 'company-title-empty' : 'company-title-full'}>
                 <img src="/images/titleIcon.png" alt="" />
                 <h3>
-                  {getSalonData(profArr[0], 'salon_title') == "" ? t('profileTitle2') : getSalonData(profArr[0], 'salon_title')}
+                  {getSalonData(salonProfile, 'salon_name') == "" ? t('profileTitle2') : getSalonData(salonProfile, 'salon_name')}
                 </h3>
               </div>
               <div className='company-about'>
                 <h3>
                   {t('profileAbout')}
                 </h3>
-                <div className={getSalonData(profArr[0], 'salon_description') == "" ? 'empty' : 'info'}>
+                <div className={getSalonData(salonProfile, 'salon_description') == "" ? 'empty' : 'info'}>
                   {changeMode ? (
                     <textarea
                       value={editDescription ?? ''}
@@ -844,12 +1087,12 @@ const Profile = () => {
                       }}
                     />
                   ) : (
-                    getSalonData(profArr[0], 'salon_description') == ""
+                    getSalonData(salonProfile, 'salon_description') == ""
                       ?
                       t('profileEmpty')
                       :
                       <ReadMoreReact
-                        text={getSalonData(profArr[0], 'salon_description')}
+                        text={getSalonData(salonProfile, 'salon_description')}
                         min={120}
                         ideal={350}
                         max={770}
@@ -869,7 +1112,7 @@ const Profile = () => {
                 <h3>
                   {t('profileNote')}
                 </h3>
-                <div className={profArr[0]?.salon_additionals?.length == 0 ? 'empty' : 'info'}>
+                <div className={salonProfile?.salon_additionals?.length == 0 ? 'empty' : 'info'}>
                   {changeMode ? (
                     <textarea
                       value={editAdditionals ?? ''}
@@ -887,11 +1130,11 @@ const Profile = () => {
                       }}
                     />
                   ) : (
-                    profArr[0]?.salon_additionals?.length == 0
+                    salonProfile?.salon_additionals?.length == 0
                       ?
                       t('profileEmpty')
                       :
-                      profArr[0]?.salon_additionals?.map((item, index) => {
+                      salonProfile?.salon_additionals?.map((item, index) => {
                         return (
                           <p key={index}>
                             ✨ {item}
@@ -907,21 +1150,21 @@ const Profile = () => {
                 </h3>
                 <div className='company-number-list'>
                   {
-                    profArr[0]?.salon_phone && (
+                    salonProfile?.salon_phone && (
                       <div className='company-number-card'>
                         <img src="/images/callIcon.png" alt="" />
-                        <a href={`tel:${profArr[0].salon_phone}`}>
-                          {profArr[0].salon_phone}
+                        <a href={`tel:${salonProfile.salon_phone}`}>
+                          {salonProfile.salon_phone}
                         </a>
                       </div>
                     )
                   }
                   {
-                    profArr[0]?.salon_add_phone && (
+                    salonProfile?.salon_add_phone && (
                       <div className='company-number-card'>
                         <img src="/images/callIcon.png" alt="" />
-                        <a href={`tel:${profArr[0].salon_add_phone}`}>
-                          {profArr[0].salon_add_phone}
+                        <a href={`tel:${salonProfile.salon_add_phone}`}>
+                          {salonProfile.salon_add_phone}
                         </a>
                       </div>
                     )
@@ -949,7 +1192,7 @@ const Profile = () => {
               null  
               }
               {
-                profArr[0]?.social_media?.length > 0
+                salonProfile?.social_media?.length > 0
                   ?
                   <div className='company-social'>
                     <h3>
@@ -957,7 +1200,7 @@ const Profile = () => {
                     </h3>
                     <div className='company-social-list'>
                       {
-                        profArr[0]?.social_media?.map((item, index) => {
+                        salonProfile?.social_media?.map((item, index) => {
                           return (
                             <div className='company-social-card' key={index}>
                               <img src={`/images/${item.type}.png`} alt="" />
@@ -981,7 +1224,7 @@ const Profile = () => {
               </h3>
               <div className="facilities-list">
                 {
-                  profArr[0]?.salon_comfort?.map((item, index) => {
+                  salonProfile?.salon_comfort?.map((item, index) => {
                     return (
                       <div key={index} className='facilities-list-item'>
                         <img src={item.isActive ? `/images/${item.name}true.png` : `/images/${item.name}.png`} alt="" />
@@ -1070,7 +1313,7 @@ const Profile = () => {
                 </h3>
               </div>
               <div className='company-location-map'>
-                <YandexMap lat={profArr[0]?.location?.lat} long={profArr[0]?.location?.long} />
+            <YandexMap lat={salonProfile?.location?.lat} long={salonProfile?.location?.long} />
               </div>
               <div className='company-location-bottom'>
                 <div className='company-location-address'>
@@ -1093,9 +1336,9 @@ const Profile = () => {
               </h3>
               <div>
                 {
-                  profArr[0]?.top_clients?.length > 0
+                  salonProfile?.top_clients?.length > 0
                     ?
-                    profArr[0]?.top_clients?.map((item, index) => {
+                    salonProfile?.top_clients?.map((item, index) => {
                       return (
                         <div className='company-clients-card' key={index}>
                           <img src="/images/customerImage.png" alt="" className='top-client-image' />
@@ -1154,14 +1397,14 @@ const Profile = () => {
                 onClick={() => {
                   setChangeMode(false)
                   // Matn maydonlari va selectlar uchun xavfsiz default qiymatlar
-                  setEditSalonName(profArr[0]?.salon_name ?? '')
-                  setEditWorkHours(profArr[0]?.work_schedule?.working_hours ?? '')
-                  setEditWorkDates(profArr[0]?.work_schedule?.working_days ?? '')
-                  const initialType = (profArr[0]?.salon_types?.find(t => t?.selected)?.type)
-                    ?? (profArr[0]?.salon_types?.[0]?.type)
+                  setEditSalonName(salonProfile?.salon_name ?? '')
+                  setEditWorkHours(salonProfile?.work_schedule?.working_hours ?? '')
+                  setEditWorkDates(salonProfile?.work_schedule?.working_days ?? '')
+                  const initialType = (salonProfile?.salon_types?.find(t => t?.selected)?.type)
+                    ?? (salonProfile?.salon_types?.[0]?.type)
                     ?? ''
                   setEditSalonType(initialType)
-                  setEditSalonFormat(profArr[0]?.salon_format?.format ?? 'corporative')
+                  setEditSalonFormat(salonProfile?.salon_format?.format ?? 'corporative')
 
                   setEditDescription('')
                   setEditAdditionals('')
@@ -1172,7 +1415,7 @@ const Profile = () => {
               </button>
               <button
                 className='profile-nav-save'
-                onClick={handleSave}>
+                onClick={submitProfileForm}>
                 Сохранить
               </button>
             </div>
@@ -1197,7 +1440,11 @@ const Profile = () => {
                     background: '#fafafa'
                   }}>
                     {(() => {
-                      const currentLogo = companyImages && companyImages.length > 0 ? companyImages[0] : null;
+                      const staged = pendingLogo?.preview || null;
+                      const currentLogo = !staged && companyImages && companyImages.length > 0 ? companyImages[0] : null;
+                      if (staged) {
+                        return <img src={staged} alt="Yangi logo (saqlanmagan)" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      }
                       if (currentLogo && typeof currentLogo === 'string') {
                         return <img src={currentLogo} alt="Salon logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       }
@@ -1213,7 +1460,7 @@ const Profile = () => {
                     accept="image/*"
                     onChange={(e) => {
                       // Admin guard: faqat admin token bilan ruxsat
-                      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+                      if (!user || (user.role !== 'admin' && user.role !== 'super_admin' && user.role !== 'superadmin')) {
                         alert('Faqat admin foydalanuvchilar rasmlar yuklay oladi');
                         e.target.value = '';
                         return;
@@ -1233,36 +1480,19 @@ const Profile = () => {
                         e.target.value = '';
                         return;
                       }
-                      if (!profArr || !profArr.length || !profArr[0]?.id) {
-                        alert('Salon ma\'lumotlari yuklanmagan. Iltimos, sahifani qayta yuklang.');
+                      // Endi yuklanmaydi: memoga qo'yamiz, saqlashda yuboriladi
+                      try {
+                        const previewUrl = URL.createObjectURL(file);
+                        setPendingLogo(prev => {
+                          if (prev?.preview) URL.revokeObjectURL(prev.preview);
+                          return { file, preview: previewUrl };
+                        });
                         e.target.value = '';
-                        return;
+                      } catch (err) {
+                        console.error('Logo tayyorlashda xatolik:', err);
+                        alert('Logo tayyorlashda xatolik yuz berdi');
+                        e.target.value = '';
                       }
-                      // Yagona logo faylini yuklash
-                      const salonId = profArr[0]?.id;
-                      (async () => {
-                        try {
-                          const result = await uploadSalonPhotos(salonId, [file]);
-                          // Yangi rasm odatda oxiriga qo'shiladi — uni boshiga olib qo'yamiz
-                          if (result && Array.isArray(result.salon_photos)) {
-                            const photos = [...result.salon_photos];
-                            const last = photos[photos.length - 1];
-                            if (last) {
-                              const reordered = [last, ...photos.slice(0, photos.length - 1)];
-                              setCompanyImages(reordered);
-                            } else {
-                              setCompanyImages(Array.isArray(photos) ? photos : companyImages);
-                            }
-                          }
-                          alert('Logo muvaffaqiyatli yangilandi');
-                        } catch (err) {
-                          console.error('Logo yuklashda xatolik:', err);
-                          alert('Logo yuklashda xatolik yuz berdi: ' + (err?.message || 'Noma\'lum xatolik'));
-                        } finally {
-                          // File inputni tozalash
-                          try { e.target.value = ''; } catch {}
-                        }
-                      })();
                     }}
                     style={{ fontSize: '0.9vw' }}
                   />
@@ -1270,99 +1500,73 @@ const Profile = () => {
               </div>
             </div>
             <div className="company-data" style={{ minHeight: "70vh" }}>
-              <h3 style={{
-                fontSize: "1vw",
-                marginBottom: "0.3vw",
-                marginLeft: "1vw",
-                marginTop: "1vw",
-                }}>
-                Название
-              </h3>
-              <input type="text" value={editSalonName ?? ''} onChange={(e) => setEditSalonName(e.target.value)} style={{
-                width: "95%",
-                margin:" 0 0 0 1vw",
-                padding: '0.5vw 1vw',
-                border: '0.1vw solid #ddd',
-                borderRadius: '0.5vw',
-                fontSize: '1.1vw'
-              }} />
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "1vw",
-                padding:"1vw"
-              }}>
-                <div>
-                  <h3>
-                    время работы
-                  </h3>
-                  <input type="text" value={editWorkHours ?? ''} onChange={(e) => setEditWorkHours(e.target.value)} style={{
-                  width: '100%',
-                  padding: '0.5vw 1vw',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }} />
-                </div>
-                <div>
-                  <h3>
-                    Даты работы
-                  </h3>
-                  <input type="text" value={editWorkDates ?? ''} onChange={(e) => setEditWorkDates(e.target.value)} style={{
-                  width: '100%',
-                  padding: '0.5vw 1vw',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }} />
-                </div>
-                <div>
-                  <h3>
-                    тип конторы
-                  </h3>
-                  <select value={editSalonType ?? (profArr[0]?.salon_types?.[0]?.type ?? '')} onChange={(e) => setEditSalonType(e.target.value)} style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }}>
-                  {
-                    profArr[0].salon_types?.map((item, index) => {
-                      return (
-                        <option key={index} value={item.type}>{item.type}</option>
-                      )
-                    })
-                  }
-                </select>
-                </div>
-                <div>
-                  <h3>
-                    Формат конторы
-                  </h3>
-                  <select value={editSalonFormat ?? 'corporative'} onChange={(e) => setEditSalonFormat(e.target.value)} style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }}>
-                  <option value="corporative">Корпоративный</option>
-                  <option value="private">Частный</option>
-                </select>
-                </div>
-              </div>
-              <div className={getSalonData(profArr[0], 'salon_title') == "" ? 'company-title-empty' : 'company-title-full'}>
+              <Formik
+                initialValues={getInitialFormValues(salonProfile)}
+                validationSchema={profileValidationSchema}
+                enableReinitialize
+                onSubmit={handleFormikSubmit}
+              >
+                {({ isSubmitting }) => (
+                  <Form id='profile-edit-form'>
+                    <h3 style={{ fontSize: "1vw", marginBottom: "0.3vw", marginLeft: "1vw", marginTop: "1vw" }}>
+                      Название
+                    </h3>
+                    <Field name='salon_name' type="text" style={{ width: "95%", margin:" 0 0 0 1vw", padding: '0.5vw 1vw', border: '0.1vw solid #ddd', borderRadius: '0.5vw', fontSize: '1.1vw' }} />
+                    <div style={{ color: '#d32f2f', marginLeft: '1vw', fontSize: '0.9vw' }}>
+                      <ErrorMessage name='salon_name' />
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1vw", padding:"1vw" }}>
+                      <div>
+                        <h3>время работы</h3>
+                        <Field name='work_hours' type="text" style={{ width: '100%', padding: '0.5vw 1vw', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }} />
+                        <div style={{ color: '#d32f2f', fontSize: '0.8vw' }}>
+                          <ErrorMessage name='work_hours' />
+                        </div>
+                      </div>
+                      <div>
+                        <h3>Даты работы</h3>
+                        <Field name='work_dates' type="text" style={{ width: '100%', padding: '0.5vw 1vw', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }} />
+                        <div style={{ color: '#d32f2f', fontSize: '0.8vw' }}>
+                          <ErrorMessage name='work_dates' />
+                        </div>
+                      </div>
+                      <div>
+                        <h3>тип конторы</h3>
+                        <Field as='select' name='salon_type' style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }}>
+                          {salonProfile.salon_types?.map((item, index) => (
+                            <option key={index} value={item.type}>{item.type}</option>
+                          ))}
+                        </Field>
+                        <div style={{ color: '#d32f2f', fontSize: '0.8vw' }}>
+                          <ErrorMessage name='salon_type' />
+                        </div>
+                      </div>
+                      <div>
+                        <h3>Формат конторы</h3>
+                        <Field as='select' name='salon_format' style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }}>
+                          <option value="corporative">Корпоративный</option>
+                          <option value="private">Частный</option>
+                        </Field>
+                        <div style={{ color: '#d32f2f', fontSize: '0.8vw' }}>
+                          <ErrorMessage name='salon_format' />
+                        </div>
+                      </div>
+                    </div>
+                  </Form>
+                )}
+              </Formik>
+            </div>
+            <div className={getSalonData(salonProfile, 'salon_name') == "" ? 'company-title-empty' : 'company-title-full'}>
                 {/* <img src="/images/titleIcon.png" alt="" /> */}
                 <h3>
-                  {getSalonData(profArr[0], 'salon_title') == "" ? t('profileTitle2') : getSalonData(profArr[0], 'salon_title')}
+                  {getSalonData(salonProfile, 'salon_name') == "" ? t('profileTitle2') : getSalonData(salonProfile, 'salon_name')}
                 </h3>
               </div>
               <div className='company-about'>
                 <h3>
                   {t('profileAbout')}
                 </h3>
-                <div className={getSalonData(profArr[0], 'salon_description') == "" ? 'empty' : 'info'}>
+                <div className={getSalonData(salonProfile, 'salon_description') == "" ? 'empty' : 'info'}>
                   {changeMode ? (
                     <textarea
                       value={editDescription ?? ''}
@@ -1380,12 +1584,12 @@ const Profile = () => {
                       }}
                     />
                   ) : (
-                    getSalonData(profArr[0], 'salon_description') == ""
+                    getSalonData(salonProfile, 'salon_description') == ""
                       ?
                       t('profileEmpty')
                       :
                       <ReadMoreReact
-                        text={getSalonData(profArr[0], 'salon_description')}
+                        text={getSalonData(salonProfile, 'salon_description')}
                         min={120}
                         ideal={350}
                         max={770}
@@ -1405,7 +1609,7 @@ const Profile = () => {
                 <h3>
                   {t('profileNote')}
                 </h3>
-                <div className={profArr[0]?.salon_additionals?.length == 0 ? 'empty' : 'info'}>
+                <div className={salonProfile?.salon_additionals?.length == 0 ? 'empty' : 'info'}>
                   {changeMode ? (
                     <textarea
                       value={editAdditionals ?? ''}
@@ -1423,11 +1627,11 @@ const Profile = () => {
                       }}
                     />
                   ) : (
-                    profArr[0]?.salon_additionals?.length == 0
+                    salonProfile?.salon_additionals?.length == 0
                       ?
                       t('profileEmpty')
                       :
-                      profArr[0]?.salon_additionals?.map((item, index) => {
+                    salonProfile?.salon_additionals?.map((item, index) => {
                         return (
                           <p key={index}>
                             ✨ {item}
@@ -1708,12 +1912,9 @@ const Profile = () => {
                   )}
                 </div>
               </div>
-
-
-
             </div>
           </div>
-        </div>
+        
       </section>
     )
   }

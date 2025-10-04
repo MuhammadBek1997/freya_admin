@@ -6,13 +6,16 @@ import flowbiteReact from "flowbite-react/plugin/vite";
 export default defineConfig({
   plugins: [react(), flowbiteReact()],
   server: {
-    // Proxy o'chirildi - production backend ishlatiladi
-    // proxy: {
-    //   '/api': {
-    //     target: 'http://localhost:5006',
-    //     changeOrigin: true,
-    //     secure: false,
-    //   }
-    // }
+    port: 5173,
+    strictPort: true,
+    host: 'localhost',
+    // Devda CORS muammosini oldini olish uchun backendga proxy qilamiz
+    proxy: {
+      '/api': {
+        target: 'https://freya-salon-backend-cc373ce6622a.herokuapp.com',
+        changeOrigin: true,
+        secure: true,
+      }
+    }
   }
 })

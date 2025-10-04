@@ -90,10 +90,9 @@ const AddScheduleModal = () => {
 
             let serviceId = existingService?.id
 
-            // If service doesn't exist, create it
+            // If service doesn't exist, create it (do NOT send a client-generated id)
             if (!existingService) {
                 const newService = {
-                    id: uuidv4(),
                     name: formData.name,
                     title: formData.title,
                     price: formData.price
@@ -101,11 +100,16 @@ const AddScheduleModal = () => {
 
                 try {
                     const createdService = await createService(newService)
-                    serviceId = createdService.id
+                    // Backend may return { data: { id, ... } } or plain object
+                    serviceId = (createdService && createdService.data && createdService.data.id) 
+                        ? createdService.data.id 
+                        : createdService?.id
                     console.log('New service created:', createdService)
                 } catch (error) {
                     console.error('Error creating service:', error)
-                    // Continue with schedule creation even if service creation fails
+                    // If service creation fails, abort schedule creation to avoid invalid service_id
+                    alert('Xizmat yaratishda xatolik: jadvalni saqlashdan oldin xizmatni tanlang yoki yarating')
+                    return
                 }
             }
 

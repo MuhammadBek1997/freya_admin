@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { UseGlobalContext } from "../Context"
 import AppointCard from "../components/AppointCard"
 import ConfirmModal from "../components/ConfirmModal"
@@ -8,7 +8,6 @@ const Home = () => {
   let {
         t,
         confirmModal,
-        moreDataAppoint,
         isRightSidebarOpen,
         openRightSidebar,
         selectedFilter,
@@ -26,6 +25,48 @@ const Home = () => {
       setSelectedFilter(parseInt(savedFilter));
     }
   }, []);
+
+  const filteredAppointments = useMemo(() => {
+    if (!appointments) return [];
+    const now = new Date();
+
+    const startOfWeek = (() => {
+      const d = new Date(now);
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day; // Monday as start
+      d.setDate(d.getDate() + diff);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    })();
+
+    const endOfWeek = (() => {
+      const d = new Date(startOfWeek);
+      d.setDate(d.getDate() + 6);
+      d.setHours(23, 59, 59, 999);
+      return d;
+    })();
+
+    return appointments.filter((item) => {
+      const d = new Date(item?.application_date);
+      if (Number.isNaN(d.getTime())) return false;
+
+      switch (selectedFilter) {
+        case 1:
+          return d.toDateString() === now.toDateString();
+        case 2:
+          return d >= startOfWeek && d <= endOfWeek;
+        case 3:
+          return (
+            d.getMonth() === now.getMonth() &&
+            d.getFullYear() === now.getFullYear()
+          );
+        case 4:
+          return d.getFullYear() === now.getFullYear();
+        default:
+          return true;
+      }
+    });
+  }, [appointments, selectedFilter]);
 
   return (
     <section className='home'>
@@ -178,7 +219,7 @@ const Home = () => {
               {t("loading") || "Loading appointments..."}
             </p>
           </div>
-        ) : moreDataAppoint.length > 0 ? moreDataAppoint.map((item) => {
+        ) : filteredAppointments.length > 0 ? filteredAppointments.map((item) => {
           
           return <AppointCard key={item.id} {...item} openRightSidebar={openRightSidebar} />
         })
