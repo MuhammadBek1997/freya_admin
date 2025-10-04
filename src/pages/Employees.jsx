@@ -7,7 +7,7 @@ import EmployWaitingCard from '../components/EmployWaitingCard';
 import AddEmployeeModal from '../components/AddEmployeeModal';
 
 const Employees = () => {
-  const { t, waitingEmp, setWaitingEmp, mastersArr, setMastersArr, handleAddWaitingEmp, handleRemoveWaitingEmp, isCheckedItem, setIsCheckedItem, fetchEmployees, employeesLoading } = UseGlobalContext();
+  const { t, waitingEmp, setWaitingEmp, employees, handleAddWaitingEmp, handleRemoveWaitingEmp, isCheckedItem, setIsCheckedItem, fetchEmployees, employeesLoading } = UseGlobalContext();
   const [openCardId, setOpenCardId] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState({ menu: null, cardId: null });
   const [showWait, setShowWait] = useState(false);
@@ -33,7 +33,7 @@ const Employees = () => {
   //   );
 
 
-  let workingEmployees = mastersArr.filter(
+  let workingEmployees = employees.filter(
     (employee) => !waitingEmp.some((emp) => emp.id === employee.id)
   );
 
@@ -75,7 +75,7 @@ const Employees = () => {
 
 
   // Find the selected employee based on isMenuOpen.cardId
-  const selectedEmployee = mastersArr.find((item) => item.id === isMenuOpen.cardId);
+  const selectedEmployee = employees.find((item) => item.id === isMenuOpen.cardId);
 
   return (
     <section>
@@ -86,7 +86,7 @@ const Employees = () => {
             <h2>{t('employHT')}</h2>
           </div>
           <div className="employ-nav-summ">
-            <h2>{mastersArr.length}</h2>
+            <h2>{employees.length}</h2>
             <h5>{t('employSmry')}</h5>
           </div>
         </div>

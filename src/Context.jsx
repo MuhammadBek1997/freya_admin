@@ -1780,7 +1780,7 @@ const uploadSalonPhotos = async (salonId, files) => {
 
             const items = responseData?.data ?? responseData ?? [];
             setEmployees(items);
-            setMastersArr(items);
+
             console.log('Employees loaded:', items.length);
             success = true;
             break;
@@ -1808,7 +1808,7 @@ const uploadSalonPhotos = async (salonId, files) => {
         if (!success) {
           // No variant succeeded; treat as empty list rather than hard error
           setEmployees([]);
-          setMastersArr([]);
+
           setEmployeesError(null);
           console.warn('No employees found for salon or endpoint; returned empty list.');
         }
@@ -1816,7 +1816,7 @@ const uploadSalonPhotos = async (salonId, files) => {
         console.error('Error fetching employees:', error);
         setEmployeesError(error.message);
         setEmployees([]);
-        setMastersArr([]);
+
       } finally {
         setEmployeesLoading(false);
       }
@@ -1984,7 +1984,7 @@ const uploadSalonPhotos = async (salonId, files) => {
 
 	// Home sahifasi uchun state
 	const [selectedFilter, setSelectedFilter] = useState(null)
-	const [mastersArr, setMastersArr] = useState([])
+
 
 	// Schedule qo'shish uchun
 	const [addSched, setAddSched] = useState(false)
@@ -2106,7 +2106,7 @@ const uploadSalonPhotos = async (salonId, files) => {
 
 
 	const handleAddWaitingEmp = (ids) => {
-    const selectedEmployees = mastersArr.filter(
+    const selectedEmployees = employees.filter(
       (employee) => ids.includes(employee.id) && !waitingEmp.some((emp) => emp.id === employee.id)
     );
 
@@ -2242,79 +2242,149 @@ const uploadSalonPhotos = async (salonId, files) => {
 		}
 	]
 
-
-
-
 	let selectedIcon = JSON.parse(localStorage.getItem("icons"))
 	let selectedTop = localStorage.getItem("sidebarTop")
 	const [sidebarTop, setSidebarTop] = useState(selectedTop || '19vh')
 	const [selectIcon, setSelectIcon] = useState(selectedIcon || darkImg)
 
-
 	const whiteBoxRef = useRef(null);
 
-	const moveWhiteBoxToElement = (element, save = true) => {
-		if (!element || !whiteBoxRef.current) return;
+const moveWhiteBoxToElement = (element, save = true) => {
+	if (!element || !whiteBoxRef.current) return;
 
-		const rect = element.getBoundingClientRect();
-		const sidebar = element.closest(".sidebar");
-		const sidebarRect = sidebar.getBoundingClientRect();
+	const rect = element.getBoundingClientRect();
+	const sidebar = element.closest(".sidebar");
+	const sidebarRect = sidebar.getBoundingClientRect();
 
-		const whiteBox = whiteBoxRef.current;
+	const whiteBox = whiteBoxRef.current;
 
-		// px → vh/vw
-		const topVH = ((rect.top - sidebarRect.top) / window.innerHeight) * 100;
-		const leftVW = ((rect.left - sidebarRect.left) / window.innerWidth) * 100;
-		const heightVH = (rect.height / window.innerHeight) * 100;
-		const widthVW = (rect.width / window.innerWidth) * 100;
+	// px → vh/vw
+	const topVH = ((rect.top - sidebarRect.top) / window.innerHeight) * 100;
+	const leftVW = ((rect.left - sidebarRect.left) / window.innerWidth) * 100;
+	const heightVH = (rect.height / window.innerHeight) * 100;
+	const widthVW = (rect.width / window.innerWidth) * 100;
 
-		whiteBox.style.top = `${topVH - 2}vh`;
-		whiteBox.style.left = `${leftVW}vw`;
-		whiteBox.style.height = `${heightVH}vh`;
-		whiteBox.style.width = `${widthVW}vw`;
+	whiteBox.style.top = `${topVH - 2}vh`;
+	whiteBox.style.left = `${leftVW}vw`;
+	whiteBox.style.height = `${heightVH}vh`;
+	whiteBox.style.width = `${widthVW}vw`;
 
-		// localStorage ga saqlash
-		if (save) {
-			localStorage.setItem(
-				"whiteBoxPos",
-				JSON.stringify({ topVH, leftVW, heightVH, widthVW })
-			);
+	// localStorage ga saqlash
+	if (save) {
+		localStorage.setItem(
+			"whiteBoxPos",
+			JSON.stringify({ topVH, leftVW, heightVH, widthVW })
+		);
+		// ✅ Tanlangan element indexini ham saqlash
+		const sidebarItems = document.querySelectorAll('.sidebar-item');
+		const elementIndex = Array.from(sidebarItems).indexOf(element);
+		if (elementIndex !== -1) {
+			localStorage.setItem("selectedSidebarIndex", elementIndex.toString());
 		}
-	};
-	const handleClick = (e) => {
-		let index = e.currentTarget.id
-		moveWhiteBoxToElement(e.currentTarget);
-		const updatedIcons = [...darkImg];
-		if (index != 0) {
+	}
+};
 
-			updatedIcons[0] = lightImg[0]
-			updatedIcons[index] = lightImg[index];
-			setSelectIcon(updatedIcons);
+const handleClick = (e) => {
+	let index = e.currentTarget.id
+	moveWhiteBoxToElement(e.currentTarget);
+	const updatedIcons = [...darkImg];
+	if (index != 0) {
+		updatedIcons[0] = lightImg[0]
+		updatedIcons[index] = lightImg[index];
+		setSelectIcon(updatedIcons);
+	} else {
+		updatedIcons[0] = darkImg[0]
+		setSelectIcon(updatedIcons);
+	}
+};
 
+// ✅ WhiteBox pozitsiyasini yuklash
+useEffect(() => {
+	// Sidebar elementlari to'liq yuklangunga qadar kutish
+	const timer = setTimeout(() => {
+		const savedPosString = localStorage.getItem("whiteBoxPos");
+		const savedIndexString = localStorage.getItem("selectedSidebarIndex");
+		
+		if (savedPosString && savedIndexString && whiteBoxRef.current) {
+			// ✅ localStorage'da saqlangan pozitsiya va index bor
+			try {
+				const savedPos = JSON.parse(savedPosString);
+				const savedIndex = parseInt(savedIndexString);
+				const { topVH, leftVW, heightVH, widthVW } = savedPos;
+				const whiteBox = whiteBoxRef.current;
+				
+				// Pozitsiyani o'rnatish
+				whiteBox.style.top = `${topVH - 2}vh`;
+				whiteBox.style.left = `${leftVW}vw`;
+				whiteBox.style.height = `${heightVH}vh`;
+				whiteBox.style.width = `${widthVW}vw`;
+				
+				// ✅ Saqlangan element iconini yangilash
+				const sidebarItems = document.querySelectorAll('.sidebar-item');
+				if (sidebarItems[savedIndex]) {
+					const updatedIcons = [...darkImg];
+					if (savedIndex !== 0) {
+						updatedIcons[0] = lightImg[0];
+						updatedIcons[savedIndex] = lightImg[savedIndex];
+					} else {
+						updatedIcons[0] = darkImg[0];
+					}
+					setSelectIcon(updatedIcons);
+				}
+			} catch (error) {
+				console.error('Error parsing saved data:', error);
+				setDefaultWhiteBoxPosition();
+			}
 		} else {
-			updatedIcons[0] = darkImg[0]
-			setSelectIcon(updatedIcons);
+			// ✅ localStorage'da ma'lumot yo'q - birinchi elementga o'rnatish
+			setDefaultWhiteBoxPosition();
 		}
+	}, 100); // 100ms kutish - DOM yuklangunga qadar
 
-	};
+	return () => clearTimeout(timer);
+}, []);
 
+// ✅ Default pozitsiya - birinchi sidebar elementiga
+const setDefaultWhiteBoxPosition = () => {
+	if (!whiteBoxRef.current) return;
+	
+	// Birinchi sidebar elementini topish
+	const firstSidebarElement = document.querySelector('.sidebar-item');
+	
+	if (firstSidebarElement) {
+		// Birinchi elementga avtomatik joylashtirish
+		moveWhiteBoxToElement(firstSidebarElement, true);
+		
+		// ✅ Birinchi element iconini active qilish
+		const updatedIcons = [...darkImg];
+		updatedIcons[0] = darkImg[0]; // Home icon active
+		setSelectIcon(updatedIcons);
+	} else {
+		// Fallback: manual default (agar sidebar element topilmasa)
+		const whiteBox = whiteBoxRef.current;
+		whiteBox.style.top = '17vh';
+		whiteBox.style.left = '0.5vw';
+		whiteBox.style.height = '5.5vh';
+		whiteBox.style.width = '4vw';
+		
+		// Default pozitsiyani localStorage'ga saqlash
+		localStorage.setItem(
+			"whiteBoxPos",
+			JSON.stringify({
+				topVH: 19, // 17 + 2
+				leftVW: 0.5,
+				heightVH: 5.5,
+				widthVW: 4
+			})
+		);
+		localStorage.setItem("selectedSidebarIndex", "0");
+	}
+};
 
-	useEffect(() => {
-		const savedPos = JSON.parse(localStorage.getItem("whiteBoxPos"));
-		if (savedPos && whiteBoxRef.current) {
-			const { topVH, leftVW, heightVH, widthVW } = savedPos;
-			const whiteBox = whiteBoxRef.current;
-			// Konsistent joylashuv: moveWhiteBoxToElement topVH-2 ishlatadi
-			whiteBox.style.top = `${topVH - 2}vh`;
-			whiteBox.style.left = `${leftVW}vw`;
-			whiteBox.style.height = `${heightVH}vh`;
-			whiteBox.style.width = `${widthVW}vw`;
-		}
-	}, []);
-	useEffect(() => {
-		localStorage.setItem("icons", JSON.stringify(selectIcon));
-	}, [selectIcon])
-
+// Icons localStorage'ga saqlash
+useEffect(() => {
+	localStorage.setItem("icons", JSON.stringify(selectIcon));
+}, [selectIcon]);
 
 
 
@@ -2342,7 +2412,7 @@ const uploadSalonPhotos = async (salonId, files) => {
 			isCheckedItem, setIsCheckedItem, handleRemoveWaitingEmp,
 			// Home state
 			selectedFilter, setSelectedFilter, confirmModal, setConfirmModal,
-			mastersArr, setMastersArr, handleConfirm,
+			handleConfirm,
 			//Schedule state
 			addSched, setAddSched, schedArr,
 			// Profile page state
