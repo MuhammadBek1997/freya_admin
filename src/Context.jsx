@@ -1328,59 +1328,139 @@ const uploadSalonPhotos = async (salonId, files) => {
 		}
 	};
 
-	// Update appointment
-	const updateAppointment = async (appointmentId, appointmentData) => {
-		try {
-			const token = getAuthToken();
-			const response = await fetch(`${appointmentsUrl}/${appointmentId}`, {
-				method: 'PUT',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(appointmentData),
-			});
+	// Appointment statusini o'zgartirish
+const updateAppointmentStatus = async (appointmentId, status) => {
+    try {
+        const token = getAuthToken();
+        
+        if (!token) {
+            throw new Error('Tizimga kirish tokeni topilmadi');
+        }
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Appointment updated:', data);
-				await fetchAppointments(); // Refresh appointments
-				return data;
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to update appointment');
-			}
-		} catch (error) {
-			console.error('Error updating appointment:', error);
-			throw error;
-		}
-	};
+        console.log(`📤 Updating appointment ${appointmentId} to status: ${status}`);
 
-	// Delete appointment
-	const deleteAppointment = async (appointmentId) => {
-		try {
-			const token = getAuthToken();
-			const response = await fetch(`${appointmentsUrl}/${appointmentId}`, {
-				method: 'DELETE',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
+        const response = await fetch(`${appointmentsUrl}/${appointmentId}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status }),
+        });
 
-			if (response.ok) {
-				console.log('Appointment deleted successfully');
-				await fetchAppointments(); // Refresh appointments
-				return true;
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to delete appointment');
-			}
-		} catch (error) {
-			console.error('Error deleting appointment:', error);
-			throw error;
-		}
-	};
+        console.log('📥 Response status:', response.status);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('❌ Error response:', errorData);
+            throw new Error(errorData.message || errorData.detail || 'Status o\'zgartirishda xatolik');
+        }
+
+        const data = await response.json();
+        console.log('✅ Status o\'zgartirildi:', data);
+
+        // Appointments ro'yxatini yangilash
+        setAppointments(prev => 
+            prev.map(app => 
+                app.id === appointmentId 
+                    ? { ...app, status, updated_at: new Date().toISOString() }
+                    : app
+            )
+        );
+
+        // Combined appointments ham yangilansin
+        setCombinedAppointments(prev =>
+            prev.map(app =>
+                app.id === appointmentId
+                    ? { ...app, status, updated_at: new Date().toISOString() }
+                    : app
+            )
+        );
+
+        // Agar salon_id mavjud bo'lsa, qayta yuklash
+        if (user?.salon_id) {
+            await fetchCombinedAppointments(user.salon_id);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('❌ Status o\'zgartirishda xatolik:', error);
+        throw error;
+    }
+};
+
+// Appointment ni bekor qilish
+const cancelAppointment = async (appointmentId, cancellationReason) => {
+    try {
+        const token = getAuthToken();
+        
+        if (!token) {
+            throw new Error('Tizimga kirish tokeni topilmadi');
+        }
+
+        console.log(`📤 Cancelling appointment ${appointmentId}`);
+
+        const response = await fetch(`${appointmentsUrl}/${appointmentId}/cancel`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ cancellation_reason: cancellationReason }),
+        });
+
+        console.log('📥 Response status:', response.status);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('❌ Error response:', errorData);
+            throw new Error(errorData.message || errorData.detail || 'Bekor qilishda xatolik');
+        }
+
+        const data = await response.json();
+        console.log('✅ Appointment bekor qilindi:', data);
+
+        // Appointments ro'yxatini yangilash
+        setAppointments(prev => 
+            prev.map(app => 
+                app.id === appointmentId 
+                    ? { 
+                        ...app, 
+                        status: 'cancelled',
+                        is_cancelled: true,
+                        cancellation_reason: cancellationReason,
+                        updated_at: new Date().toISOString() 
+                      }
+                    : app
+            )
+        );
+
+        // Combined appointments ham yangilansin
+        setCombinedAppointments(prev =>
+            prev.map(app =>
+                app.id === appointmentId
+                    ? { 
+                        ...app, 
+                        status: 'cancelled',
+                        is_cancelled: true,
+                        cancellation_reason: cancellationReason,
+                        updated_at: new Date().toISOString() 
+                      }
+                    : app
+            )
+        );
+
+        // Agar salon_id mavjud bo'lsa, qayta yuklash
+        if (user?.salon_id) {
+            await fetchCombinedAppointments(user.salon_id);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('❌ Bekor qilishda xatolik:', error);
+        throw error;
+    }
+};
 
 	// Get employee by ID
 	const getEmployeeById = async (employeeId) => {
@@ -2190,33 +2270,15 @@ const getScheduleById = async (scheduleId) => {
         }
     }, [isAuthenticated, user]);
 
-	const handleConfirm = async (item) => {
-		try {
-			const response = await fetch(`${appointUrl}/${item.id}/status`, {
-				method: "PUT",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ status: "confirmed" }),
-			});
-
-			if (!response.ok) {
-				throw new Error("Status update failed!");
-			}
-
-			const result = await response.json();
-			console.log("✅ Status updated:", result);
-
-			// Appointmentlarni qayta yuklash
-			if (user && user.salon_id) {
-				fetchAppointments(user.salon_id);
-			}
-
-		} catch (err) {
-			console.error("❌ Error:", err.message);
-		}
-
-		setConfirmModal(false); // modal yopilad
-
-	}
+	const handleConfirm = async () => {
+        try {
+            await updateAppointmentStatus(selectedElement.id, 'confirmed');
+            closeRightSidebar();
+        } catch (error) {
+            console.error('Status o\'zgartirishda xato:', error);
+            alert(error.message);
+        }
+    };
 
 
 	// RightSidebar uchun state
@@ -2979,7 +3041,7 @@ useEffect(() => {
 	// Translation functions
 	translateText, getSupportedLanguages,
 	// Extended appointment functions
-	getAppointmentById, updateAppointment, deleteAppointment,
+	getAppointmentById,
 	// Extended employee functions
 	getEmployeeById, updateEmployee, deleteEmployee,
 	// Extended salon functions
@@ -2990,6 +3052,8 @@ useEffect(() => {
 	getScheduleById, updateSchedule, deleteSchedule,
 	// Statistics functions
 	getStatistics,
+	updateAppointmentStatus,
+        cancelAppointment,
 
 // Bookings state va funksiyalari
     bookings, 

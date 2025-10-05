@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { UseGlobalContext } from "../Context"
 import AppointCard from "../components/AppointCard"
 import ConfirmModal from "../components/ConfirmModal"
@@ -19,6 +19,8 @@ const Home = () => {
         fetchCombinedAppointments, // ✅ yangi funksiya
         user
       } = UseGlobalContext()
+
+      const [selectedAppoint, setSelectedAppoint] = useState({})
 
   // Sahifa yuklanganda ma'lumotlarni olish
   useEffect(() => {
@@ -200,7 +202,8 @@ const Home = () => {
             <AppointCard 
               key={`${item.type}-${item.id}`} 
               {...item} 
-              openRightSidebar={openRightSidebar} 
+              openRightSidebar={openRightSidebar}
+              setSelectedAppoint={setSelectedAppoint} 
             />
           ))
         ) : (
@@ -223,11 +226,11 @@ const Home = () => {
       <div className="right-sidebar-cont" style={{
         transform: isRightSidebarOpen ? "translateX(0vw)" : "translateX(100vw)"
       }}>
-        <RightSidebar />
+        <RightSidebar selectedAppoint={selectedAppoint} />
       </div>
       {!confirmModal && (
         <div className="confirm-modal">
-          <ConfirmModal />
+          <ConfirmModal selectedAppoint={selectedAppoint} />
         </div>
       )}
     </section>

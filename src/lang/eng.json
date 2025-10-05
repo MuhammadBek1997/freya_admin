@@ -78,5 +78,84 @@
     "modalTitlePlh": "Title 1",
     "modalDate": "Date",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "actions": {
+        "add": "add",
+        "retry": "Retry"
+    },
+    "common": {
+        "unknown": "Unknown"
+    },
+    "chat": {
+        "title": "Chats",
+        "loading_conversations": "Loading conversations...",
+        "no_conversations": "No conversations",
+        "no_last_message": "No message",
+        "loading_messages": "Loading messages...",
+        "messages_error": "Failed to load messages",
+        "no_messages": "No messages yet",
+        "write_first": "Write the first message",
+        "input_placeholder": "Type a message...",
+        "select_conversation": "Select a conversation"
+    },
+    "schedule": {
+        "title": "Schedule",
+        "loading": "Loading schedule...",
+        "empty": "No schedule",
+        "no_schedule_day": "No schedule for this day",
+        "client": "Client",
+        "service": "Service",
+        "employee": "Employee",
+        "selected_employees": "Selected employees:",
+        "employee_placeholder": "Employee",
+        "add_title": "Add",
+        "edit_title": "Edit",
+        "create_success": "Schedule created successfully!",
+        "create_error": "Error saving schedule",
+        "update_success": "Schedule updated successfully!",
+        "update_error": "Error updating schedule",
+        "field": {
+            "name": "Lesson *",
+            "title": "Title *",
+            "date": "Date *",
+            "start_time": "Start time *",
+            "end_time": "End time *",
+            "repeat": "Repeat",
+            "repeat_value": "Repeat every",
+            "employees": "Employees"
+        },
+        "placeholder": {
+            "name": "Lesson 1",
+            "title": "Title 1",
+            "repeat_value": "e.g., 1 week"
+        },
+        "validation": {
+            "name_required": "Lesson is required",
+            "title_required": "Title is required",
+            "date_required": "Date is required",
+            "start_time_required": "Start time is required",
+            "end_time_required": "End time is required",
+            "salon_missing": "Salon ID not found"
+        }
+    },
+    "posts": {
+        "title": "Posts",
+        "add": "New post",
+        "soon": "Posts will be added soon"
+    },
+    "comments": {
+        "title": "Comments",
+        "soon": "Comments will be added soon"
+    },
+    "map": {
+        "hint": "Place",
+        "balloon": "Selected place"
+    },
+    "auth": {
+        "forbidden": "You do not have permission to access this page!"
+    },
+    "common": {
+        "loading": "Loading...",
+        "unknown": "Unknown"
+    }
 }

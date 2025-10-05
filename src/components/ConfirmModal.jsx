@@ -18,7 +18,7 @@ const ConfirmModal = () => {
                     <button onClick={()=>setConfirmModal(true)}>
                         Нет
                     </button>
-                    <button onClick={()=>handleConfirm(selectedElement)}>
+                    <button onClick={handleConfirm}>
                         Да
                     </button>
                 </div>

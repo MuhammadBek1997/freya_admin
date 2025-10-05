@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // Yandex Maps API skriptini dinamik yuklash
 const loadYandexMapScript = () => {
@@ -27,6 +28,7 @@ const loadYandexMapScript = () => {
 };
 
 const YandexMap = ({ lat, long }) => {
+    const { t } = useTranslation();
     const mapRef = useRef(null);
     const mapInstance = useRef(null); // Xarita obyektini saqlash
     const placemarkInstance = useRef(null); // Marker obyektini saqlash
@@ -83,8 +85,8 @@ const YandexMap = ({ lat, long }) => {
                     placemarkInstance.current = new ymaps.Placemark(
                         [validLat, validLong],
                         {
-                            hintContent: 'Joy',
-                            balloonContent: 'Belgilangan joy',
+                            hintContent: t('map.hint', 'Joy'),
+                            balloonContent: t('map.balloon', 'Belgilangan joy'),
                         },
                         {
                             iconLayout: 'default#image',

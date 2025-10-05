@@ -1,8 +1,10 @@
 import { UseGlobalContext } from '../Context';
+import { useTranslation } from 'react-i18next';
 import Login from '../pages/Login';
 
 const ProtectedRoute = ({ children, requiredRole = null }) => {
   const { isAuthenticated, user, authLoading } = UseGlobalContext();
+  const { t } = useTranslation();
 
   // Agar authentication yuklanayotgan bo'lsa, loading ko'rsatamiz
   if (authLoading) {
@@ -14,7 +16,7 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
         height: '100vh',
         fontSize: '18px'
       }}>
-        Loading...
+        {t('common.loading', 'Loading...')}
       </div>
     );
   }
@@ -35,7 +37,7 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
         fontSize: '18px',
         color: 'red'
       }}>
-        Bu sahifaga kirish uchun sizda ruxsat yo'q!
+        {t('auth.forbidden', "Bu sahifaga kirish uchun sizda ruxsat yo'q!")}
       </div>
     );
   }
