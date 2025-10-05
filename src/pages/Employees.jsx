@@ -13,6 +13,9 @@ const Employees = () => {
   const [showWait, setShowWait] = useState(false);
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   
+
+
+
   // Sahifa ochilganda xodimlarni yuklash
   useEffect(() => {
     fetchEmployees();

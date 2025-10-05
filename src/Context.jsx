@@ -13,11 +13,13 @@ import {
     commentsUrl,
     mastersUrl,
     employeesUrl,
+    employeeBulkWaitingStatusUrl,
     servicesUrl,
     appointmentsUrl,
     salonsListUrl,
     salonDetailUrl,
     schedulesUrl,
+    scheduleGroupedUrl,
     salonServicesUrl,
     statisticsUrl,
     paymentUrl,
@@ -198,6 +200,45 @@ export const AppProvider = ({ children }) => {
 		setMessages(lsGet(LS_KEYS.messages, []));
 	}, []);
 
+	// ===== Statistics functions =====
+	// Backendda to'liq implementatsiya bo'lmagan holatlarda ham xavfsiz ishlaydi.
+	// Agar endpoint mavjud bo'lmasa yoki xato qaytsa, bo'sh obyektni qaytaradi.
+	const getStatistics = async (params = {}) => {
+		try {
+			const token = getAuthToken();
+			const headers = {
+				...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+				'Content-Type': 'application/json',
+			};
+
+			// Parametrlarni query stringga aylantiramiz (masalan, salon_id)
+			const qs = new URLSearchParams(
+				Object.entries(params).filter(([_, v]) => v !== undefined && v !== null)
+			).toString();
+			const url = qs ? `${statisticsUrl}?${qs}` : statisticsUrl;
+
+			const resp = await fetch(url, { method: 'GET', headers });
+			if (!resp.ok) {
+				// Backend hali tayyor bo'lmasligi mumkin — xatoni muloyim qaytamiz
+				let msg = `HTTP ${resp.status}`;
+				try {
+					const errJson = await resp.json();
+					msg = errJson?.message || errJson?.detail || msg;
+				} catch {
+					try { msg = await resp.text(); } catch {}
+				}
+				console.warn('[getStatistics] request failed:', msg);
+				return { data: {}, message: msg };
+			}
+
+			const data = await resp.json();
+			return data?.data ? data : { data };
+		} catch (error) {
+			console.error('[getStatistics] unexpected error:', error);
+			return { data: {} };
+		}
+	};
+
 	// Local CRUD wrappers to update localStorage and state in test-data mode
 	const saveLocal = (key, item, idField, setter) => {
 		const arr = lsUpsert(key, item, idField);
@@ -333,139 +374,299 @@ const updateSalon = async (salonId, updateData) => {
 		});
 	};
 
-	// Central photos upload helper: sends files to photos/upload and returns URLs
-	const uploadPhotosToServer = async (files) => {
-		const token = getAuthToken();
-		if (!token) throw new Error('Admin token topilmadi');
+	// Context.jsx - uploadPhotosToServer funksiyasi (alertsiz)
+const uploadPhotosToServer = async (files) => {
+	const token = getAuthToken();
+	if (!token) throw new Error('Admin token topilmadi');
 
-		const maxSize = 4 * 1024 * 1024; // 4MB
-		for (const file of files) {
-			if (!file.type?.startsWith('image/')) {
-				throw new Error(`Fayl "${file.name}" rasm emas`);
-			}
-			if (file.size > maxSize) {
-				throw new Error(`Fayl "${file.name}" hajmi katta (maks 4MB)`);
-			}
+	const maxSize = 4 * 1024 * 1024;
+	const uploadedUrls = [];
+
+	for (let i = 0; i < files.length; i++) {
+		const file = files[i];
+
+		if (!file.type?.startsWith('image/')) {
+			throw new Error(`Fayl "${file.name}" rasm emas`);
+		}
+		if (file.size > maxSize) {
+			throw new Error(`Fayl "${file.name}" hajmi katta (maks 4MB)`);
 		}
 
 		const formData = new FormData();
-		// Backend expects field name 'files' for file list (FastAPI: files: List[UploadFile])
-		files.forEach((file) => formData.append('files', file, file.name));
+		formData.append('file', file);
 
-		const response = await fetch(photoUploadUrl, {
-			method: 'POST',
+		console.log(`📤 Uploading file ${i + 1}/${files.length}:`, file.name);
+
+		try {
+			const response = await fetch(photoUploadUrl, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Accept': 'application/json'
+				},
+				body: formData
+			});
+
+			if (!response.ok) {
+				let message = `Upload failed (HTTP ${response.status})`;
+				try {
+					const contentType = response.headers.get('content-type');
+					if (contentType?.includes('application/json')) {
+						const errData = await response.json();
+						if (Array.isArray(errData?.detail)) {
+							message = errData.detail.map(d => d?.msg || JSON.stringify(d)).join('; ');
+						} else if (typeof errData?.detail === 'string') {
+							message = errData.detail;
+						} else {
+							message = errData?.message || errData?.error || message;
+						}
+					} else {
+						const text = await response.text();
+						message = text || message;
+					}
+				} catch {}
+				throw new Error(message);
+			}
+
+			const data = await response.json();
+			let url = null;
+			if (typeof data === 'string') {
+				url = data;
+			} else if (data?.url) {
+				url = data.url;
+			} else if (data?.data?.url) {
+				url = data.data.url;
+			}
+
+			if (url) {
+				uploadedUrls.push(url);
+			} else {
+				throw new Error(`File ${i + 1}: Backend dan URL qaytmadi`);
+			}
+
+		} catch (fileError) {
+			throw new Error(`File "${file.name}": ${fileError.message}`);
+		}
+	}
+
+	return uploadedUrls;
+};
+
+// Logo ni alohida yuklash
+const uploadSalonLogo = async (salonId, logoFile) => {
+	try {
+		console.log('=== UPLOAD SALON LOGO START ===');
+
+		const targetSalonId = salonId || salonProfile?.id || user?.salon_id;
+		if (!targetSalonId) throw new Error('Salon ID topilmadi');
+
+		const urls = await uploadPhotosToServer([logoFile]);
+		
+		if (!urls || urls.length === 0) {
+			throw new Error('Logo yuklanmadi');
+		}
+
+		const logoUrl = urls[0];
+		console.log('✅ Logo uploaded:', logoUrl);
+
+		const token = getAuthToken();
+		const updatePayload = {
+			icon: logoUrl,
+			logo: logoUrl
+		};
+
+		const response = await fetch(`${salonsUrl}/${targetSalonId}`, {
+			method: 'PUT',
 			headers: {
 				'Authorization': `Bearer ${token}`,
-				'Accept': 'application/json'
+				'Content-Type': 'application/json'
 			},
-			body: formData
+			body: JSON.stringify(updatePayload)
 		});
 
 		if (!response.ok) {
-			let message = `Upload failed (HTTP ${response.status})`;
-			try {
-				const contentType = response.headers.get('content-type');
-				if (contentType && contentType.includes('application/json')) {
-					const errData = await response.json();
-					const detail = errData?.detail;
-					if (Array.isArray(detail)) {
-						message = detail.map(d => d?.msg || JSON.stringify(d)).join('; ');
-					} else if (detail && typeof detail === 'object') {
-						message = JSON.stringify(detail);
-					} else {
-						message = errData?.message || errData?.error || detail || message;
-					}
-					if (typeof message === 'object') message = JSON.stringify(message);
-				} else {
-					const text = await response.text();
-					message = text || message;
-				}
-			} catch {}
-			throw new Error(message);
+			const text = await response.text();
+			throw new Error(`HTTP ${response.status}: ${text}`);
 		}
 
 		const data = await response.json();
-		const urls = data?.urls || data?.data?.urls || [];
-		if (!Array.isArray(urls) || urls.length === 0) {
-			throw new Error('Backend dan URL lar qaytmadi');
-		}
-		return urls;
-	};
+		const serverSalon = data?.data || data;
 
-	// Upload salon photos function
-	// Upload salon photos function - FIXED VERSION
-const uploadSalonPhotos = async (salonId, files) => {
-    try {
-        console.log('=== UPLOAD SALON PHOTOS START ===');
+		setSalonProfile(prev => {
+			if (!prev || prev.id !== targetSalonId) return prev;
+			return { 
+				...prev, 
+				icon: logoUrl,
+				logo: logoUrl,
+				...serverSalon 
+			};
+		});
 
-        const targetSalonId = salonId || salonProfile?.id || user?.salon_id;
-        if (!targetSalonId) throw new Error('Salon ID topilmadi');
-
-        // 1) Rasm(lar)ni markaziy upload endpointiga yuborish va URL larni olish
-        const uploadedUrls = await uploadPhotosToServer(files);
-        console.log('Uploaded URLs:', uploadedUrls);
-
-        // 2) Salon maʼlumotiga URL larni biriktirish va kerak bo‘lsa icon qo‘yish
-        const currentPhotos = Array.isArray(salonProfile?.salon_photos) ? salonProfile.salon_photos : [];
-        const nextPhotos = [...currentPhotos, ...uploadedUrls];
-        const nextIcon = salonProfile?.icon || (uploadedUrls[0] ?? salonProfile?.icon);
-
-        const token = getAuthToken();
-        const response = await fetch(`${salonsUrl}/${targetSalonId}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ salon_photos: nextPhotos, icon: nextIcon })
-        });
-
-        if (!response.ok) {
-            const text = await response.text();
-            throw new Error(`HTTP ${response.status}: ${text}`);
-        }
-
-        const data = await response.json();
-        const serverSalon = data?.data || data;
-
-        setSalonProfile(prev => {
-            if (!prev || prev.id !== targetSalonId) return prev;
-            return { ...prev, salon_photos: nextPhotos, icon: nextIcon, ...serverSalon };
-        });
-
-        return serverSalon?.salon_photos ? serverSalon : nextPhotos;
-    } catch (error) {
-        console.error('=== UPLOAD SALON PHOTOS ERROR ===');
-        console.error('Error:', error);
-        throw error;
-    }
+		return logoUrl;
+		
+	} catch (error) {
+		console.error('=== UPLOAD SALON LOGO ERROR ===');
+		console.error('Error:', error);
+		throw error;
+	}
 };
 
+// Photos ni alohida yuklash (logosiz)
+const uploadSalonPhotos = async (salonId, files) => {
+	try {
+		console.log('=== UPLOAD SALON PHOTOS START ===');
+
+		const targetSalonId = salonId || salonProfile?.id || user?.salon_id;
+		if (!targetSalonId) throw new Error('Salon ID topilmadi');
+
+		const uploadedUrls = [];
+		
+		for (let i = 0; i < files.length; i++) {
+			const file = files[i];
+			console.log(`📤 Uploading file ${i + 1}/${files.length}:`, file.name);
+			
+			try {
+				const urls = await uploadPhotosToServer([file]);
+				
+				if (urls && urls.length > 0) {
+					uploadedUrls.push(urls[0]);
+					console.log(`✅ File ${i + 1} uploaded:`, urls[0]);
+				}
+			} catch (fileError) {
+				console.error(`❌ Error uploading file ${i + 1}:`, fileError);
+				throw fileError;
+			}
+		}
+
+		if (uploadedUrls.length === 0) {
+			throw new Error('Hech qanday rasm yuklanmadi');
+		}
+
+		console.log('✅ All uploaded URLs:', uploadedUrls);
+
+		const currentPhotos = Array.isArray(salonProfile?.salon_photos) 
+			? salonProfile.salon_photos 
+			: Array.isArray(salonProfile?.photos) 
+				? salonProfile.photos 
+				: [];
+		
+		const nextPhotos = [...currentPhotos, ...uploadedUrls];
+
+		const updatePayload = {
+			salon_photos: nextPhotos,
+			photos: nextPhotos
+		};
+
+		const token = getAuthToken();
+		console.log('📤 Updating salon with photos...');
+
+		const response = await fetch(`${salonsUrl}/${targetSalonId}`, {
+			method: 'PUT',
+			headers: {
+				'Authorization': `Bearer ${token}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(updatePayload)
+		});
+
+		if (!response.ok) {
+			const text = await response.text();
+			throw new Error(`HTTP ${response.status}: ${text}`);
+		}
+
+		const data = await response.json();
+		const serverSalon = data?.data || data;
+
+		setSalonProfile(prev => {
+			if (!prev || prev.id !== targetSalonId) return prev;
+			return { 
+				...prev, 
+				salon_photos: nextPhotos,
+				photos: nextPhotos,
+				...serverSalon 
+			};
+		});
+
+		return nextPhotos;
+		
+	} catch (error) {
+		console.error('=== UPLOAD SALON PHOTOS ERROR ===');
+		console.error('Error:', error);
+		throw error;
+	}
+};
 	// Delete salon photo function
 	const deleteSalonPhoto = async (salonId, photoIndex) => {
 		try {
-			const token = getAuthToken();
-            const response = await fetch(`${salonsUrl}/${salonId}/photos/${photoIndex}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+			const targetSalonId = salonId || salonProfile?.id || user?.salon_id;
+			if (!targetSalonId) throw new Error('Salon ID topilmadi');
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Salon photo deleted:', data);
-				
-				// Update salonProfile by removing deleted photo
-				setSalonProfile(prev => prev && prev.id === salonId ? { ...prev, salon_photos: data.data.salon_photos } : prev)
-				
-				return data.data;
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to delete salon photo');
+			// Mavjud salon ma'lumotlarini olish
+			const currentSalon = salonProfile;
+			if (!currentSalon) throw new Error('Salon ma\'lumotlari topilmadi');
+
+			// Mavjud rasmlar massivini olish (salon_photos yoki photos)
+			let currentPhotos = Array.isArray(currentSalon.salon_photos) 
+				? [...currentSalon.salon_photos] 
+				: Array.isArray(currentSalon.photos) 
+				? [...currentSalon.photos] 
+				: [];
+
+			// Index tekshiruvi
+			if (photoIndex < 0 || photoIndex >= currentPhotos.length) {
+				throw new Error('Noto\'g\'ri rasm indeksi');
 			}
+
+			// Rasmni massivdan o'chirish
+			const deletedPhotoUrl = currentPhotos[photoIndex];
+			currentPhotos.splice(photoIndex, 1);
+
+			// Logo ni boshqarish: agar o'chirilgan rasm birinchi bo'lsa va logo bo'lsa, uni null qilish
+			let updatePayload = {
+				salon_photos: currentPhotos,
+				photos: currentPhotos
+			};
+
+			const currentLogo = currentSalon.icon || currentSalon.logo;
+			if (photoIndex === 0 && currentLogo === deletedPhotoUrl) {
+				updatePayload.icon = null;
+				updatePayload.logo = null;
+			}
+
+			// Backend'ni yangilash
+			const token = getAuthToken();
+			const response = await fetch(`${salonsUrl}/${targetSalonId}`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(updatePayload)
+			});
+
+			if (!response.ok) {
+				const text = await response.text();
+				throw new Error(`Salon yangilashda xatolik (HTTP ${response.status}): ${text}`);
+			}
+
+			const data = await response.json();
+			console.log('✅ Rasm o\'chirildi va salon yangilandi:', data);
+
+			// State'ni yangilash
+			setSalonProfile(prev => {
+				if (!prev || prev.id !== targetSalonId) return prev;
+				return { 
+					...prev, 
+					salon_photos: currentPhotos,
+					photos: currentPhotos,
+					...(updatePayload.icon !== undefined ? { icon: updatePayload.icon, logo: updatePayload.logo } : {}),
+					... (data?.data || data)
+				};
+			});
+
+			return { photos: currentPhotos };
 		} catch (error) {
-			console.error('Error deleting salon photo:', error);
+			console.error('Rasm o\'chirishda xatolik:', error);
 			throw error;
 		}
 	};
@@ -682,51 +883,88 @@ const uploadSalonPhotos = async (salonId, files) => {
 
 	// Create new schedule
 	const createSchedule = async (scheduleData) => {
-		setSchedulesLoading(true);
-		setSchedulesError(null);
+    setSchedulesLoading(true);
+    setSchedulesError(null);
 
-		try {
-			const token = getAuthToken();
-			
-			// Add salon_id from current user if not provided
-			const dataToSend = {
-				...scheduleData,
-				salon_id: scheduleData.salon_id || user?.salon_id
-			};
+    try {
+        const token = getAuthToken();
+        
+        if (!token) {
+            throw new Error('Tizimga kirish tokeni topilmadi');
+        }
 
-			const response = await fetch(schedulesUrl, {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(dataToSend),
-			});
+        const dataToSend = {
+            ...scheduleData,
+            salon_id: scheduleData.salon_id || user?.salon_id
+        };
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Schedule created:', data);
-				
-				// Add new schedule to existing schedules
-				setSchedules(prevSchedules => [...prevSchedules, data]);
-				
-				// Refresh schedules to get updated list
-				await fetchSchedules();
-				
-				return data;
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to create schedule');
-			}
-		} catch (error) {
-			console.error('Error creating schedule:', error);
-			setSchedulesError(error.message);
-			throw error;
-		} finally {
-			setSchedulesLoading(false);
-		}
-	};
+        if (!dataToSend.salon_id) {
+            throw new Error('Salon ID topilmadi');
+        }
 
+        console.log('📮 Context.jsx - yuborilayotgan data:', dataToSend)
+        console.log('📮 JSON stringify:', JSON.stringify(dataToSend, null, 2))
+
+        const response = await fetch(schedulesUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSend),
+        });
+
+        console.log('Response status:', response.status);
+
+        if (!response.ok) {
+            const contentType = response.headers.get('content-type');
+            let errorMessage = `HTTP ${response.status}`;
+            
+            if (contentType?.includes('application/json')) {
+                const errorData = await response.json();
+                console.error('❌ Full error response:', JSON.stringify(errorData, null, 2));
+                
+                if (Array.isArray(errorData?.detail)) {
+                    const detailedErrors = errorData.detail.map((err, idx) => {
+                        const field = err.loc ? err.loc.join('.') : 'unknown';
+                        const msg = err.msg || 'unknown error';
+                        const inputValue = err.input;
+                        return `[${idx}] Field: ${field}, Error: ${msg}, Input: ${JSON.stringify(inputValue)}`;
+                    }).join('\n');
+                    
+                    console.error('Validation errors:\n', detailedErrors);
+                    errorMessage = errorData.detail[0]?.msg || errorMessage;
+                } else if (typeof errorData?.detail === 'string') {
+                    errorMessage = errorData.detail;
+                } else {
+                    errorMessage = errorData?.message || errorData?.error || errorMessage;
+                }
+            } else {
+                const errorText = await response.text();
+                errorMessage = errorText || errorMessage;
+            }
+
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        console.log('✅ Schedule yaratildi:', data);
+        
+        const newSchedule = data?.data || data;
+        setSchedules(prev => [...prev, newSchedule]);
+        
+        await fetchSchedules();
+        await fetchGroupedSchedules();
+        
+        return data;
+    } catch (error) {
+        console.error('❌ Schedule yaratishda xatolik:', error);
+        setSchedulesError(error.message);
+        throw error;
+    } finally {
+        setSchedulesLoading(false);
+    }
+};
 	// Fetch grouped schedules - schedules grouped by weekdays from production server
 	const fetchGroupedSchedules = async () => {
 		setGroupedSchedulesLoading(true);
@@ -739,44 +977,20 @@ const uploadSalonPhotos = async (salonId, files) => {
 				'Content-Type': 'application/json',
 			};
 
-			// Support both Node and Python backends:
-			// - Node:   /grouped-by-date
-			// - Python: /grouped/by-date
-			const candidateUrls = [
-				`${schedulesUrl}/grouped-by-date`,
-				`${schedulesUrl}/grouped/by-date`
-			];
-
-			let data = null;
-			let lastError = null;
-
-			for (const url of candidateUrls) {
-				try {
-					const resp = await fetch(url, { method: 'GET', headers });
-					if (resp.ok) {
-						data = await resp.json();
-						break;
-					} else {
-						// Try to extract useful error message
-						let errMsg = '';
-						try {
-							const errJson = await resp.json();
-							errMsg = errJson?.message || '';
-						} catch {
-							const errText = await resp.text();
-							errMsg = errText || `HTTP ${resp.status}`;
-						}
-						lastError = new Error(errMsg || 'Failed to fetch grouped schedules');
-					}
-				} catch (innerErr) {
-					// Network or parsing error
-					lastError = innerErr;
-				}
-			}
-
-			if (!data) {
-				throw lastError || new Error('Failed to fetch grouped schedules');
-			}
+    // Explicit backend endpoint requested
+    const resp = await fetch(scheduleGroupedUrl, { method: 'GET', headers });
+    if (!resp.ok) {
+        let errMsg = '';
+        try {
+            const errJson = await resp.json();
+            errMsg = errJson?.message || '';
+        } catch {
+            const errText = await resp.text();
+            errMsg = errText || `HTTP ${resp.status}`;
+        }
+        throw new Error(errMsg || 'Failed to fetch grouped schedules');
+    }
+    const data = await resp.json();
 
 			console.log('Grouped schedules fetched:', data);
 			
@@ -1198,7 +1412,7 @@ const uploadSalonPhotos = async (salonId, files) => {
 	const updateEmployee = async (employeeId, employeeData) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${employeeUrl}/${employeeId}`, {
+			const response = await fetch(`${employeesUrl}/${employeeId}`, {
 				method: 'PUT',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -1412,114 +1626,123 @@ const uploadSalonPhotos = async (salonId, files) => {
 
 	// ===== EXTENDED SCHEDULE API FUNCTIONS =====
 
-	// Get schedule by ID
-	const getScheduleById = async (scheduleId) => {
-		try {
-			const token = getAuthToken();
-			const response = await fetch(`${scheduleUrl}/${scheduleId}`, {
-				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
+	
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Schedule fetched:', data);
-				return data;
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to fetch schedule');
-			}
-		} catch (error) {
-			console.error('Error fetching schedule:', error);
-			throw error;
-		}
-	};
+	// Context.jsx - updateSchedule funksiyasini yangilash
+const updateSchedule = async (scheduleId, scheduleData) => {
+    try {
+        const token = getAuthToken();
+        
+        console.log('📤 Updating schedule with ID:', scheduleId);
+        console.log('📤 Schedule data:', JSON.stringify(scheduleData, null, 2));
+        
+        const response = await fetch(`${schedulesUrl}/${scheduleId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(scheduleData),
+        });
 
-	// Update schedule
-	const updateSchedule = async (scheduleId, scheduleData) => {
-		try {
-			const token = getAuthToken();
-			const response = await fetch(`${scheduleUrl}/${scheduleId}`, {
-				method: 'PUT',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(scheduleData),
-			});
+        console.log('📥 Response status:', response.status);
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Schedule updated:', data);
-				await fetchSchedules(); // Refresh schedules
-				return data;
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to update schedule');
-			}
-		} catch (error) {
-			console.error('Error updating schedule:', error);
-			throw error;
-		}
-	};
+        if (!response.ok) {
+            const contentType = response.headers.get('content-type');
+            let errorMessage = `HTTP ${response.status}`;
+            
+            if (contentType?.includes('application/json')) {
+                const errorData = await response.json();
+                console.error('❌ Full error response:', JSON.stringify(errorData, null, 2));
+                
+                // FastAPI validation errors
+                if (Array.isArray(errorData?.detail)) {
+                    const detailedErrors = errorData.detail.map((err, idx) => {
+                        const field = err.loc ? err.loc.join('.') : 'unknown';
+                        const msg = err.msg || 'unknown error';
+                        const inputValue = err.input;
+                        return `[${idx}] Field: ${field}, Error: ${msg}, Input: ${JSON.stringify(inputValue)}`;
+                    }).join('\n');
+                    
+                    console.error('❌ Validation errors:\n', detailedErrors);
+                    errorMessage = errorData.detail[0]?.msg || errorMessage;
+                } else if (typeof errorData?.detail === 'string') {
+                    errorMessage = errorData.detail;
+                } else {
+                    errorMessage = errorData?.message || errorData?.error || errorMessage;
+                }
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Error text:', errorText);
+                errorMessage = errorText || errorMessage;
+            }
 
-	// Delete schedule
-	const deleteSchedule = async (scheduleId) => {
-		try {
-			const token = getAuthToken();
-			const response = await fetch(`${scheduleUrl}/${scheduleId}`, {
-				method: 'DELETE',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
+            throw new Error(errorMessage);
+        }
 
-			if (response.ok) {
-				console.log('Schedule deleted successfully');
-				await fetchSchedules(); // Refresh schedules
-				return true;
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to delete schedule');
-			}
-		} catch (error) {
-			console.error('Error deleting schedule:', error);
-			throw error;
-		}
-	};
+        const data = await response.json();
+        console.log('✅ Schedule updated:', data);
+        await fetchSchedules();
+        await fetchGroupedSchedules();
+        return data;
+    } catch (error) {
+        console.error('❌ Error updating schedule:', error);
+        throw error;
+    }
+};
 
-	// ===== STATISTICS API FUNCTIONS =====
+// Delete schedule
+const deleteSchedule = async (scheduleId) => {
+    try {
+        const token = getAuthToken();
+        const response = await fetch(`${schedulesUrl}/${scheduleId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
 
-	// Get statistics
-	const getStatistics = async () => {
-		try {
-			const token = getAuthToken();
-			const response = await fetch(`${statisticsUrl}`, {
-				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
+        if (response.ok) {
+            console.log('Schedule deleted successfully');
+            await fetchSchedules(); // Refresh schedules
+            await fetchGroupedSchedules(); // Grouped schedules ham yangilansin
+            return true;
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to delete schedule');
+        }
+    } catch (error) {
+        console.error('Error deleting schedule:', error);
+        throw error;
+    }
+};
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Statistics fetched:', data);
-				return data;
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to fetch statistics');
-			}
-		} catch (error) {
-			console.error('Error fetching statistics:', error);
-			throw error;
-		}
-	};
+// Get schedule by ID
+const getScheduleById = async (scheduleId) => {
+    try {
+        const token = getAuthToken();
+        const response = await fetch(`${schedulesUrl}/${scheduleId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
 
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Schedule fetched:', data);
+            return data;
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to fetch schedule');
+        }
+    } catch (error) {
+        console.error('Error fetching schedule:', error);
+        throw error;
+    }
+};
 	// ===== CHAT API FUNCTIONS =====
 
 	// Fetch conversations for employee and admin2
@@ -1824,68 +2047,95 @@ const uploadSalonPhotos = async (salonId, files) => {
 
 	// Create new employee
 	const createEmployee = async (employeeData) => {
-		setEmployeesLoading(true);
-		setEmployeesError(null);
+    setEmployeesLoading(true);
+    setEmployeesError(null);
 
-		try {
-			const token = getAuthToken();
-			
-			// Add salon_id (forced or provided or from current user)
-			const idToUse = FORCE_SALON_ID || employeeData.salon_id || user?.salon_id;
-			const dataToSend = {
-				...employeeData,
-				salon_id: idToUse
-			};
+    try {
+        const token = getAuthToken();
+        
+        if (!token) {
+            throw new Error('Tizimga kirish tokeni topilmadi');
+        }
 
-			const response = await fetch(employeesUrl, {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(dataToSend),
-			});
+        // Salon ID tekshirish
+        const salonId = FORCE_SALON_ID || employeeData.salon_id || user?.salon_id;
+        if (!salonId) {
+            throw new Error('Salon ID topilmadi');
+        }
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Employee created:', data);
+        // Backend kutgan formatda data tayyorlash
+        const dataToSend = {
+            salon_id: salonId,
+            employee_name: employeeData.employee_name,
+            employee_phone: employeeData.employee_phone,
+            employee_email: employeeData.employee_email,
+            employee_password: employeeData.employee_password,
+            username: employeeData.username,
+            profession: employeeData.profession,
+            role: employeeData.role || 'employee'
+        };
 
-				// Add new employee to existing employees (prefer data.data shape)
-				setEmployees(prevEmployees => [...prevEmployees, (data && data.data) ? data.data : data]);
+        console.log('📤 Yuborilayotgan ma\'lumot:', dataToSend);
+        console.log('🔗 URL:', employeesUrl);
 
-				// Refresh employees to get updated list
-				await fetchEmployees();
+        const response = await fetch(employeesUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSend),
+        });
 
-				return data;
-			} else {
-				// Improved error parsing: prefer JSON, include FastAPI 'detail'
-				try {
-					const contentType = response.headers.get('content-type') || '';
-					let parsed = null;
-					let rawText = '';
-					if (contentType.includes('application/json')) {
-						parsed = await response.json();
-					} else {
-						rawText = await response.text();
-						try { parsed = JSON.parse(rawText); } catch { /* keep rawText */ }
-					}
+        console.log('📥 Response status:', response.status);
 
-					const messageDetail = parsed?.detail || parsed?.message || parsed?.error || (typeof parsed === 'string' ? parsed : undefined) || rawText || 'Xodim yaratishda xatolik yuz berdi';
-					console.error('Create employee failed:', { status: response.status, detail: messageDetail, raw: parsed ?? rawText, payload: dataToSend });
-					throw new Error(`HTTP ${response.status}: ${messageDetail}`);
-				} catch (parseErr) {
-					console.error('Create employee error (unparseable response):', { status: response.status, payload: dataToSend, error: parseErr?.message });
-					throw new Error('Failed to create employee');
-				}
-			}
-		} catch (error) {
-			console.error('Error creating employee:', error);
-			setEmployeesError(error.message);
-			throw error;
-		} finally {
-			setEmployeesLoading(false);
-		}
-	};
+        if (!response.ok) {
+            const contentType = response.headers.get('content-type');
+            let errorMessage = `HTTP ${response.status}`;
+            
+            if (contentType?.includes('application/json')) {
+                const errorData = await response.json();
+                console.error('❌ Error response:', errorData);
+                
+                // FastAPI validation errors
+                if (Array.isArray(errorData?.detail)) {
+                    errorMessage = errorData.detail.map(err => {
+                        const field = err.loc ? err.loc[err.loc.length - 1] : '';
+                        return `${field}: ${err.msg}`;
+                    }).join(', ');
+                } else if (typeof errorData?.detail === 'string') {
+                    errorMessage = errorData.detail;
+                } else {
+                    errorMessage = errorData?.message || errorData?.error || errorMessage;
+                }
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Error text:', errorText);
+                errorMessage = errorText || errorMessage;
+            }
+
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        console.log('✅ Xodim yaratildi:', data);
+
+        // State'ni yangilash
+        const newEmployee = data?.data || data;
+        setEmployees(prev => [...prev, newEmployee]);
+
+        // Ro'yxatni qayta yuklash
+        await fetchEmployees();
+
+        return data;
+    } catch (error) {
+        console.error('❌ Xodim yaratishda xatolik:', error);
+        setEmployeesError(error.message);
+        throw error;
+    } finally {
+        setEmployeesLoading(false);
+    }
+};
 
 	// Fetch services - all services from production server
 	const fetchServices = async () => {
@@ -2105,26 +2355,94 @@ const uploadSalonPhotos = async (salonId, files) => {
 
 
 
-	const handleAddWaitingEmp = (ids) => {
-    const selectedEmployees = employees.filter(
-      (employee) => ids.includes(employee.id) && !waitingEmp.some((emp) => emp.id === employee.id)
-    );
+	const handleAddWaitingEmp = async (ids) => {
+    try {
+      if (!Array.isArray(ids) || ids.length === 0) return;
 
-    setWaitingEmp((prev) => {
-      const newWaitingEmp = [...prev, ...selectedEmployees];
-      localStorage.setItem("waitingEmp", JSON.stringify(newWaitingEmp));
-      return newWaitingEmp;
-    });
-	location.reload()
-  };
+      const token = getAuthToken();
+      
+      // ✅ PUT ishlatamiz
+      const resp = await fetch(employeeBulkWaitingStatusUrl, {
+        method: 'PUT',  // PATCH → PUT
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ employee_ids: ids, is_waiting: true }),
+      });
 
-  	const handleRemoveWaitingEmp = (ids) => {
-    setWaitingEmp((prev) => {
-      const newWaitingEmp = prev.filter((emp) => !ids.includes(emp.id));
-      localStorage.setItem("waitingEmp", JSON.stringify(newWaitingEmp));
-      return newWaitingEmp;
-    });
-	location.reload()
+      if (!resp.ok) {
+        let msg = `HTTP ${resp.status}`;
+        try {
+          const err = await resp.json();
+          msg = err?.message || err?.detail || msg;
+        } catch {
+          try { msg = await resp.text(); } catch {}
+        }
+        throw new Error(msg);
+      }
+
+      console.log('✅ Backend muvaffaqiyatli yangilandi');
+
+      // State'larni yangilash
+      setEmployees((prev) => 
+        prev.map(e => ids.includes(e.id) ? { ...e, is_waiting: true } : e)
+      );
+
+      setWaitingEmp((prev) => {
+        const toAdd = employees.filter(
+          (employee) => ids.includes(employee.id) && !prev.some((emp) => emp.id === employee.id)
+        );
+        const newWaitingEmp = [...prev, ...toAdd];
+        localStorage.setItem('waitingEmp', JSON.stringify(newWaitingEmp));
+        return newWaitingEmp;
+      });
+
+      setIsCheckedItem([]);
+      console.log('✅ Xodimlar waiting holatiga o\'tkazildi:', ids);
+    } catch (error) {
+      console.error('❌ Xato:', error);
+      alert(`Xatolik: ${error.message}`);
+    }
+};
+
+	const handleRemoveWaitingEmp = async (ids) => {
+    try {
+      if (!Array.isArray(ids) || ids.length === 0) return;
+
+      const token = getAuthToken();
+      const resp = await fetch(employeeBulkWaitingStatusUrl, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ employee_ids: ids, is_waiting: false }),
+      });
+
+      if (!resp.ok) {
+        let msg = `HTTP ${resp.status}`;
+        try {
+          const err = await resp.json();
+          msg = err?.message || err?.detail || msg;
+        } catch {
+          try { msg = await resp.text(); } catch {}
+        }
+        throw new Error(msg);
+      }
+
+      // Backend muvaffaqiyatli yangilandi — UI state'ni sinxronlaymiz
+      setEmployees((prev) => prev.map(e => ids.includes(e.id) ? { ...e, is_waiting: false } : e));
+
+      // waitingEmp ro'yxatini yangilash (reloadsiz)
+      setWaitingEmp((prev) => {
+        const newWaitingEmp = prev.filter((emp) => !ids.includes(emp.id));
+        localStorage.setItem('waitingEmp', JSON.stringify(newWaitingEmp));
+        return newWaitingEmp;
+      });
+    } catch (error) {
+      console.error('❌ Waiting statusni yangilashda xato (remove):', error);
+    }
   };
 
 	const [isCheckedItem , setIsCheckedItem] = useState([])
@@ -2181,6 +2499,213 @@ const uploadSalonPhotos = async (salonId, files) => {
 	}
 
 
+
+// Bookings state
+const [bookings, setBookings] = useState([]);
+const [bookingsLoading, setBookingsLoading] = useState(false);
+const [bookingsError, setBookingsError] = useState(null);
+
+// GET bookings by salon_id
+const fetchBookings = async (salonId) => {
+  if (!salonId) {
+    console.error('Salon ID is required to fetch bookings');
+    return;
+  }
+
+  setBookingsLoading(true);
+  setBookingsError(null);
+
+  try {
+    const token = getAuthToken();
+    const response = await fetch(
+      `https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/book?salon_id=${salonId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Bookings fetched:', data);
+      setBookings(data.data || data || []);
+      return data;
+    } else {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch bookings');
+    }
+  } catch (error) {
+    console.error('❌ Error fetching bookings:', error);
+    setBookingsError(error.message);
+    setBookings([]);
+  } finally {
+    setBookingsLoading(false);
+  }
+};
+
+// POST new booking
+const createBooking = async (bookingData) => {
+  setBookingsLoading(true);
+  setBookingsError(null);
+
+  try {
+    const token = getAuthToken();
+    
+    if (!token) {
+      throw new Error('Token topilmadi');
+    }
+
+    // Salon ID tekshirish
+    const salonId = bookingData.salon_id || user?.salon_id;
+    if (!salonId) {
+      throw new Error('Salon ID topilmadi');
+    }
+
+    const dataToSend = {
+      salon_id: salonId,
+      full_name: bookingData.full_name,
+      phone: bookingData.phone,
+      time: bookingData.time, // ISO string
+      employee_id: bookingData.employee_id
+    };
+
+    console.log('📤 Creating booking:', dataToSend);
+
+    const response = await fetch(
+      'https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/book',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dataToSend),
+      }
+    );
+
+    console.log('📥 Response status:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('❌ Error response:', errorData);
+      
+      let errorMessage = 'Booking yaratishda xatolik';
+      if (Array.isArray(errorData?.detail)) {
+        errorMessage = errorData.detail.map(err => {
+          const field = err.loc ? err.loc[err.loc.length - 1] : '';
+          return `${field}: ${err.msg}`;
+        }).join(', ');
+      } else if (typeof errorData?.detail === 'string') {
+        errorMessage = errorData.detail;
+      } else {
+        errorMessage = errorData?.message || errorData?.error || errorMessage;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    console.log('✅ Booking created:', data);
+
+    // State'ni yangilash
+    const newBooking = data?.data || data;
+    setBookings(prev => [...prev, newBooking]);
+
+    // Bookinglar ro'yxatini qayta yuklash
+    if (salonId) {
+      await fetchBookings(salonId);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('❌ Booking yaratishda xatolik:', error);
+    setBookingsError(error.message);
+    throw error;
+  } finally {
+    setBookingsLoading(false);
+  }
+};
+
+
+// Context.jsx'ga qo'shish - Appointments va Bookings ni birlashtirish
+const [combinedAppointments, setCombinedAppointments] = useState([]);
+
+// Appointments va Bookings ni birlashtirish va sanaga ko'ra saralash
+const fetchCombinedAppointments = async (salonId) => {
+  if (!salonId) {
+    console.error('Salon ID is required');
+    return;
+  }
+
+  try {
+    // Parallel ravishda ikkala ma'lumotni olish
+    await Promise.all([
+      fetchAppointments(salonId),
+      fetchBookings(salonId)
+    ]);
+
+    // Appointments va Bookings ni birlashtirish
+    const combined = [
+      ...(appointments || []).map(app => ({
+        ...app,
+        type: 'appointment', // Type qo'shish - qaysi turligini bilish uchun
+        date: app.application_date,
+        time: app.application_time
+      })),
+      ...(bookings || []).map(book => ({
+        ...book,
+        type: 'booking',
+        date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
+        time: book.time ? new Date(book.time).toTimeString().split(' ')[0] : null
+      }))
+    ];
+
+    // Sanaga ko'ra saralash (eng yangi birinchi)
+    const sorted = combined.sort((a, b) => {
+      const dateA = new Date(`${a.date}T${a.time || '00:00:00'}`);
+      const dateB = new Date(`${b.date}T${b.time || '00:00:00'}`);
+      return dateB - dateA; // O'sish tartibi uchun dateA - dateB
+    });
+
+    setCombinedAppointments(sorted);
+    console.log('✅ Combined appointments:', sorted.length);
+    return sorted;
+  } catch (error) {
+    console.error('❌ Error fetching combined appointments:', error);
+    return [];
+  }
+};
+
+// useEffect - appointments yoki bookings o'zgarganda avtomatik birlashtirish
+useEffect(() => {
+  if (user?.salon_id) {
+    const combined = [
+      ...(appointments || []).map(app => ({
+        ...app,
+        type: 'appointment',
+        date: app.application_date,
+        time: app.application_time
+      })),
+      ...(bookings || []).map(book => ({
+        ...book,
+        type: 'booking',
+        date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
+        time: book.time ? new Date(book.time).toTimeString().split(' ')[0].substring(0, 5) : null
+      }))
+    ];
+
+    const sorted = combined.sort((a, b) => {
+      const dateA = new Date(`${a.date}T${a.time || '00:00:00'}`);
+      const dateB = new Date(`${b.date}T${b.time || '00:00:00'}`);
+      return dateB - dateA;
+    });
+
+    setCombinedAppointments(sorted);
+  }
+}, [appointments, bookings, user]);
 
 // Endi komponentlar appointments bilan bevosita ishlaydi
 	
@@ -2438,7 +2963,9 @@ useEffect(() => {
 			// Salons state va funksiyalari
 	salons, salonsLoading, salonsError, fetchSalons, updateSalon,
 	// Salon rasmlarini yuklash va o'chirish funksiyalari
-	uploadSalonPhotos, deleteSalonPhoto,
+	uploadSalonPhotos, 
+		uploadSalonLogo, // Yangi funksiya
+		deleteSalonPhoto, deleteSalonPhoto,
 
 	// ===== YANGI API FUNKSIYALARI =====
 	// Authentication functions (unUsed.jsx ga ko'chirildi)
@@ -2462,8 +2989,19 @@ useEffect(() => {
 	// Extended schedule functions
 	getScheduleById, updateSchedule, deleteSchedule,
 	// Statistics functions
-	getStatistics
+	getStatistics,
 
+// Bookings state va funksiyalari
+    bookings, 
+    bookingsLoading, 
+    bookingsError, 
+    fetchBookings, 
+    createBooking,
+
+
+	// Combined appointments
+    combinedAppointments,
+    fetchCombinedAppointments,
 }}>
 	{children}
 </AppContext.Provider>

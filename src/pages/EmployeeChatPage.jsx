@@ -1,242 +1,175 @@
-// TEST COMMENTS
-const testComments = Array.from({ length: 10 }, (_, i) => ({
-  id: i + 1,
-  author: `Foydalanuvchi ${i + 1}`,
-  text: `Bu test comment matni ${i + 1}`,
-  date: new Date(Date.now() - i * 86400000).toISOString(),
-  rating: (Math.random() * 5).toFixed(1),
-}));
-
-// TEST POSTS
-const testPosts = Array.from({ length: 10 }, (_, i) => ({
-  id: i + 1,
-  title: `Test Post ${i + 1}`,
-  content: `Bu test post matni ${i + 1}`,
-  image: 'Avatar.svg',
-  date: new Date(Date.now() - i * 43200000).toISOString(),
-}));
-
-// TEST SCHEDULES
-const testSchedules = Array.from({ length: 10 }, (_, i) => ({
-  id: i + 1,
-  day: `2025-10-${(i + 1).toString().padStart(2, '0')}`,
-  time: `${9 + (i % 8)}:00`,
-  client: `Mijoz ${i + 1}`,
-  service: `Xizmat turi ${i + 1}`,
-  status: i % 2 === 0 ? 'active' : 'completed',
-}));
-
-// testSchedules ni sanasiga (day) ko'ra group qilish
-let schedulesByDay = Object.values(
-  testSchedules.reduce((acc, sched) => {
-    if (!acc[sched.day]) acc[sched.day] = { day: sched.day, schedules: [] };
-    acc[sched.day].schedules.push(sched);
-    return acc;
-  }, {})
-);
-
 import { useState, useEffect, useRef } from 'react';
 import '../styles/ChatStyles.css'
-// import { UseGlobalContext } from '../Context';
+import { UseGlobalContext } from '../Context';
 import EmployeeProfileModal from '../components/EmployeeProfileModal';
 
-// TEST DATA (faqat test uchun, backend yo'q bo'lsa ishlatish mumkin)
-const testUser = {
-  id: 999,
-  name: 'Test Employee',
-  username: 'testemployee',
-  role: 'employee',
-};
-
-const testConversations = [
-  {
-    other_user_id: 1,
-    other_user_name: 'Ali',
-    other_user_avatar: 'Avatar.svg',
-    last_message: 'Salom, qanday yordam bera olaman?',
-    last_message_time: new Date().toISOString(),
-    unread_count: 2,
-  },
-  {
-    other_user_id: 2,
-    other_user_name: 'Vali',
-    other_user_avatar: 'Avatar.svg',
-    last_message: 'Rahmat!',
-    last_message_time: new Date().toISOString(),
-    unread_count: 0,
-  },
-];
-
-const testMessages = [
-  {
-    id: 1,
-    sender_id: 1,
-    message_text: 'Salom!',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    sender_id: 999, // user.id bo'lsa, o'zingizga tegishli
-    message_text: 'Salom, qanday yordam bera olaman?',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 1,
-    sender_id: 1,
-    message_text: 'Salom!',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    sender_id: 999, // user.id bo'lsa, o'zingizga tegishli
-    message_text: 'Salom, qanday yordam bera olaman?',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 1,
-    sender_id: 1,
-    message_text: 'Salom!',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    sender_id: 999, // user.id bo'lsa, o'zingizga tegishli
-    message_text: 'Salom, qanday yordam bera olaman?',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 1,
-    sender_id: 1,
-    message_text: 'Salom!',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    sender_id: 999, // user.id bo'lsa, o'zingizga tegishli
-    message_text: 'Salom, qanday yordam bera olaman?',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 1,
-    sender_id: 1,
-    message_text: 'Salom!',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    sender_id: 999, // user.id bo'lsa, o'zingizga tegishli
-    message_text: 'Salom, qanday yordam bera olaman?',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 1,
-    sender_id: 1,
-    message_text: 'Salom!',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    sender_id: 999, // user.id bo'lsa, o'zingizga tegishli
-    message_text: 'Salom, qanday yordam bera olaman?',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 1,
-    sender_id: 1,
-    message_text: 'Salom!',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    sender_id: 999, // user.id bo'lsa, o'zingizga tegishli
-    message_text: 'Salom, qanday yordam bera olaman?',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 1,
-    sender_id: 1,
-    message_text: 'Salom!',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    sender_id: 999, // user.id bo'lsa, o'zingizga tegishli
-    message_text: 'Salom, qanday yordam bera olaman?',
-    created_at: new Date().toISOString(),
-  },
-];
-
-
-
 const EmployeeChatPage = () => {
-  // BACKEND bilan ishlovchi kodlar commentga olindi:
-  // const { 
-  //   loginEmployee,
-  //   conversations,
-  //   conversationsLoading,
-  //   conversationsError,
-  //   fetchConversations,
-  //   currentConversation,
-  //   setCurrentConversation,
-  //   messages,
-  //   messagesLoading,
-  //   messagesError,
-  //   fetchMessages,
-  //   sendMessage,
-  //   getUnreadCount,
-  //   markConversationAsRead
-  // } = UseGlobalContext();
+  const {
+    user,
+    conversations,
+    conversationsLoading,
+    conversationsError,
+    fetchConversations,
+    messages,
+    messagesLoading,
+    messagesError,
+    fetchMessages,
+    sendMessage,
+    getUnreadCount,
+    markConversationAsRead
+  } = UseGlobalContext();
 
-  // TEST uchun state
-  const [user] = useState(testUser);
-  const [conversations, setConversations] = useState(testConversations);
-  const [messages, setMessages] = useState(testMessages);
-  const [conversationsLoading] = useState(false);
-  const [conversationsError] = useState(null);
-  const [messagesLoading] = useState(false);
-  const [messagesError] = useState(null);
-  const [unreadCount, setUnreadCount] = useState(2);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [selectedPageEmployee, setSelectedPageEmployee] = useState('chat'); // 'comments', 'posts', 'schedule', 'chat'
+  const [selectedPageEmployee, setSelectedPageEmployee] = useState('chat');
   const chatBodyRef = useRef(null);
   const [newMessage, setNewMessage] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
 
+  // Schedule state
+  const [groupedSchedules, setGroupedSchedules] = useState({});
+  const [schedulesLoading, setSchedulesLoading] = useState(false);
+  const [schedulesError, setSchedulesError] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
 
+  useEffect(() => {
+    if (user && (user.role === 'employee' || user.role === 'private_admin' || user.role === 'private_salon_admin')) {
+      fetchConversations();
+    }
+  }, [user]);
 
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      try {
+        const count = await getUnreadCount();
+        setUnreadCount(count);
+      } catch (error) {
+        console.error('Error loading unread count:', error);
+      }
+    };
 
+    if (user && (user.role === 'employee' || user.role === 'private_admin' || user.role === 'private_salon_admin')) {
+      loadUnreadCount();
+    }
+  }, [user, conversations]);
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (chatBodyRef.current && messages.length > 0) {
       chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // Conversation tanlash (test uchun local messages)
-  const handleSelectConversation = (userId, userName, userAvatar) => {
-    handleChangeEmployeePage('chat'); // Chat sahifasiga o'tish
-    setSelectedUser({ id: userId, name: userName, avatar: userAvatar });
-    // TEST: har doim testMessages ni ko'rsatamiz
-    setMessages(testMessages);
-    setUnreadCount(0);
+  // Fetch grouped schedules when page changes to schedule
+  useEffect(() => {
+    if (selectedPageEmployee === 'schedule' && user) {
+      fetchGroupedSchedules();
+    }
+  }, [selectedPageEmployee, user]);
+
+  // Fetch grouped schedules from /api/schedules/grouped/by-date
+  const fetchGroupedSchedules = async () => {
+    setSchedulesLoading(true);
+    setSchedulesError(null);
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(
+        'https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/grouped/by-date',
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Jadval yuklanmadi');
+      }
+
+      const data = await response.json();
+      console.log('Grouped schedules response:', data);
+
+      // Data struktura: { "2025-10-05": [...schedules], "2025-10-06": [...schedules] }
+      const schedulesData = data.data || data;
+
+      // Employee role bo'lsa, faqat o'z schedule'larini filter qilamiz
+      let filteredSchedules = {};
+
+      if (user.role === 'employee') {
+        // Employee faqat o'z appointment'larini ko'radi
+        Object.keys(schedulesData).forEach(date => {
+          const employeeSchedules = schedulesData[date].filter(
+            schedule => schedule.employee_id === user.id
+          );
+          if (employeeSchedules.length > 0) {
+            filteredSchedules[date] = employeeSchedules;
+          }
+        });
+      } else {
+        // Admin yoki private_admin barcha schedule'larni ko'radi (salon filter backend'da)
+        filteredSchedules = schedulesData;
+      }
+
+      setGroupedSchedules(filteredSchedules);
+
+      // Birinchi sanani tanlash
+      const dates = Object.keys(filteredSchedules).sort();
+      if (dates.length > 0 && !selectedDate) {
+        setSelectedDate(dates[0]);
+      }
+
+    } catch (error) {
+      console.error('Error fetching grouped schedules:', error);
+      setSchedulesError(error.message);
+      setGroupedSchedules({});
+    } finally {
+      setSchedulesLoading(false);
+    }
   };
 
-  // Xabar yuborish (test uchun local messages)
-  const handleSendMessage = (e) => {
+  // Get schedules for selected date
+  const getSchedulesForDate = () => {
+    if (!selectedDate || !groupedSchedules[selectedDate]) return [];
+    return groupedSchedules[selectedDate];
+  };
+
+  // Get available dates
+  const getAvailableDates = () => {
+    return Object.keys(groupedSchedules).sort();
+  };
+
+  const handleSelectConversation = async (userId, userName, userAvatar) => {
+    handleChangeEmployeePage('chat');
+    setSelectedUser({ id: userId, name: userName, avatar: userAvatar });
+
+    try {
+      await fetchMessages(userId);
+      await markConversationAsRead(userId);
+
+      const count = await getUnreadCount();
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+    }
+  };
+
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser) return;
-    const newMsg = {
-      id: messages.length + 1,
-      sender_id: user.id,
-      message_text: newMessage.trim(),
-      created_at: new Date().toISOString(),
-    };
-    setMessages([...messages, newMsg]);
-    setNewMessage('');
+
+    try {
+      await sendMessage(selectedUser.id, newMessage.trim());
+      setNewMessage('');
+
+      const count = await getUnreadCount();
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Xabar yuborishda xatolik yuz berdi!');
+    }
   };
 
-  // Profile modal ochish funksiyasi
   const handleOpenProfileModal = () => {
     setIsProfileModalOpen(true);
   };
@@ -247,85 +180,98 @@ const EmployeeChatPage = () => {
 
   const handleChangeEmployeePage = (page) => {
     setSelectedPageEmployee(page);
-    handleCloseProfileModal(); // Modalni yopish
-  }
+    handleCloseProfileModal();
+  };
 
+  // Format date for display (DD.MM)
+  const formatDisplayDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('uz-UZ', {
+      day: '2-digit',
+      month: '2-digit'
+    });
+  };
 
-  /*
-  // Conversation tanlash (BACKEND bilan ishlovchi kod)
-  const handleSelectConversation = async (userId, userName, userAvatar) => {
-    setSelectedUser({ id: userId, name: userName, avatar: userAvatar });
-    await fetchMessages(userId);
-    // Suhbatni tanlanganda barcha xabarlarni o'qilgan deb belgilash
-    try {
-      await markConversationAsRead(userId);
-      // Unread count ni yangilash
-      await loadUnreadCount();
-    } catch (error) {
-      console.error('Error marking conversation as read:', error);
+  // Format date with day name
+  const formatDateWithDay = (dateString) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Bugun';
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return 'Ertaga';
+    } else {
+      return date.toLocaleDateString('uz-UZ', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+      });
     }
   };
-  */
 
-  /*
-  // Xabar yuborish (BACKEND bilan ishlovchi kod)
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedUser) return;
+  // Format time
+  const formatTime = (timeString) => {
+    if (!timeString) return '';
     try {
-      await sendMessage(selectedUser.id, newMessage.trim());
-      setNewMessage('');
-      // Unread count ni yangilash
-      await loadUnreadCount();
-    } catch (error) {
-      console.error('Error sending message:', error);
-      alert('Xabar yuborishda xatolik yuz berdi!');
+      const date = new Date(timeString);
+      return date.toLocaleTimeString('uz-UZ', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return timeString;
     }
   };
-  */
 
-  /*
-  // Profile modal ochish funksiyasi (BACKEND bilan ishlovchi kod)
-  const handleOpenProfileModal = () => {
-    setIsProfileModalOpen(true);
+  // Status text
+  const getStatusText = (status) => {
+    const statusMap = {
+      'pending': 'Kutilmoqda',
+      'confirmed': 'Tasdiqlangan',
+      'completed': 'Bajarilgan',
+      'cancelled': 'Bekor qilingan'
+    };
+    return statusMap[status] || status;
   };
 
-  const handleCloseProfileModal = () => {
-    setIsProfileModalOpen(false);
-  };
-  */
-
-  // Test funksiyalari
-  const testEmployeeLogin1 = async () => {
-    const result = await loginEmployee('employee1_1', 'password123');
-  };
-
-  const testEmployeeLogin2 = async () => {
-    const result = await loginEmployee('employee123', 'password123');
+  // Status color
+  const getStatusColor = (status) => {
+    const colorMap = {
+      'pending': '#FF9800',
+      'confirmed': '#4CAF50',
+      'completed': '#2196F3',
+      'cancelled': '#F44336'
+    };
+    return colorMap[status] || '#757575';
   };
 
-  // Global obyektga test funksiyalarini qo'shish
-  if (typeof window !== 'undefined') {
-    window.testEmployeeLogin1 = testEmployeeLogin1;
-    window.testEmployeeLogin2 = testEmployeeLogin2;
-    window.currentUser = user;
-    window.conversations = conversations;
-    window.messages = messages;
-  }
-
-  // Agar employee, private_admin yoki private_salon_admin login qilmagan bo'lsa
   if (!user || (user.role !== "private_admin" && user.role !== 'employee' && user.role !== "private_salon_admin")) {
     return (
       <div className="chat-container">
-        <div style={{ padding: '20px', textAlign: 'center' }}>
+        <div style={{
+          padding: '20px',
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '50vh'
+        }}>
           <h2>Employee Chat</h2>
           <p>Iltimos, employee sifatida login qiling.</p>
-          <button onClick={testEmployeeLogin1} style={{ margin: '10px', padding: '10px 20px' }}>
-            Test employee1_1 Login
-          </button>
-          <button onClick={testEmployeeLogin2} style={{ margin: '10px', padding: '10px 20px' }}>
-            Test employee123 Login
-          </button>
+          <a href="/login" style={{
+            padding: '10px 20px',
+            backgroundColor: '#9C2BFF',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '5px'
+          }}>
+            Login sahifasiga o'tish
+          </a>
         </div>
       </div>
     );
@@ -340,21 +286,21 @@ const EmployeeChatPage = () => {
             <img className="chatSidebarLogo" src="sidebarLogo.svg" alt="Logo" />
             <img src="Avatar.svg" alt="User" className="profile-avatar" />
 
-            {
-              user.role !== 'private_admin'
-                ?
-                <button style={{ marginLeft: "15%" }} onClick={() => {
+            {user.role !== 'private_admin' && (
+              <button
+                style={{ marginLeft: "15%" }}
+                onClick={() => {
                   localStorage.removeItem('authToken');
+                  localStorage.removeItem('userData');
                   localStorage.removeItem('whiteBoxPos');
-                  window.location.reload();
+                  window.location.href = '/login';
                 }}
-                >
-                  <img src="/images/exit.png" alt="" style={{ width: "3vw" }} />
-                </button>
-                :
-                null
-            }
+              >
+                <img src="/images/exit.png" alt="" style={{ width: "3vw" }} />
+              </button>
+            )}
           </div>
+
           <div className="chat-profile-card">
             <span className="chat-profile-info">
               <h2 className="chat-profile-name">{user.name || user.username}</h2>
@@ -367,7 +313,7 @@ const EmployeeChatPage = () => {
             <div className="chat-stats">
               <div className="chat-stat-item">
                 <span className="chat-stats-label">Чаты</span>
-                <span className="chat-stats-number">{conversations.length}</span>
+                <span className="chat-stats-number">{conversations?.length || 0}</span>
               </div>
               <span>
                 <img src="chatline.svg" alt="" />
@@ -381,19 +327,70 @@ const EmployeeChatPage = () => {
 
           <div className="chat-list">
             {conversationsLoading ? (
-              <div style={{ padding: '20px', textAlign: 'center' }}>
-                <p>Suhbatlar yuklanmoqda...</p>
+              <div style={{
+                width: "100%",
+                padding: '20px',
+                textAlign: 'center',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                flexDirection: 'column',
+                gap: '1vw'
+              }}>
+                <div style={{
+                  width: "2vw",
+                  height: "2vw",
+                  border: "3px solid #f3f3f3",
+                  borderTop: "3px solid #9C2BFF",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite"
+                }}></div>
+                <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
+                  Suhbatlar yuklanmoqda...
+                </p>
               </div>
             ) : conversationsError ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: 'red' }}>
-                <p>Xatolik: {conversationsError}</p>
-                <button onClick={fetchConversations} style={{ marginTop: '10px', padding: '5px 10px' }}>
+              <div style={{
+                padding: '20px',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px',
+                alignItems: 'center'
+              }}>
+                <p style={{ color: '#A8A8B3', fontSize: '0.9vw' }}>
+                  Yozishmalar mavjud emas
+                </p>
+                <p style={{ color: '#FF6B6B', fontSize: '0.8vw' }}>
+                  {conversationsError}
+                </p>
+                <button
+                  onClick={() => fetchConversations()}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#9C2BFF',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontSize: '0.8vw'
+                  }}
+                >
                   Qayta urinish
                 </button>
               </div>
-            ) : conversations.length === 0 ? (
-              <div style={{ padding: '20px', textAlign: 'center' }}>
-                <p>Hozircha suhbatlar yo'q</p>
+            ) : !conversations || conversations.length === 0 ? (
+              <div style={{
+                padding: '40px 20px',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px',
+                alignItems: 'center'
+              }}>
+                <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
+                  Yozishmalar mavjud emas
+                </p>
               </div>
             ) : (
               <>
@@ -402,7 +399,11 @@ const EmployeeChatPage = () => {
                   <div
                     key={conversation.other_user_id || index}
                     className={`chat-item ${selectedUser?.id === conversation.other_user_id ? 'selected' : ''}`}
-                    onClick={() => handleSelectConversation(conversation.other_user_id, conversation.other_user_name, conversation.other_user_avatar)}
+                    onClick={() => handleSelectConversation(
+                      conversation.other_user_id,
+                      conversation.other_user_name,
+                      conversation.other_user_avatar
+                    )}
                     style={{ cursor: 'pointer' }}
                   >
                     <div className="chat-avatar-wrapper">
@@ -415,8 +416,14 @@ const EmployeeChatPage = () => {
                     </div>
                     <div className="chat-info">
                       <span className="chat-info-logo">
-                        <img className="chat-info-logo-img" src={conversation.other_user_avatar || "ChatAvatar.svg"} alt={conversation.other_user_name || "User"} />
-                        <p className="chat-name">{conversation.other_user_name || `User ${conversation.other_user_id}`}</p>
+                        <img
+                          className="chat-info-logo-img"
+                          src={conversation.other_user_avatar || "ChatAvatar.svg"}
+                          alt={conversation.other_user_name || "User"}
+                        />
+                        <p className="chat-name">
+                          {conversation.other_user_name || `User ${conversation.other_user_id}`}
+                        </p>
                       </span>
                       <p className="chat-msg">
                         {conversation.last_message || 'Xabar yo\'q'}
@@ -431,8 +438,7 @@ const EmployeeChatPage = () => {
                           new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
                             hour: '2-digit',
                             minute: '2-digit'
-                          }) :
-                          ''
+                          }) : ''
                         }
                       </span>
                     </div>
@@ -443,275 +449,412 @@ const EmployeeChatPage = () => {
           </div>
         </aside>
 
-        {/* CHAT WINDOW */}
-
-        {
-          selectedPageEmployee === 'chat'
-            ?
-            <main className="chat-window">
-              {selectedUser ? (
-                <>
-                  <div className="chat-header">
-                    <div className="chat-partner-info">
-                      <div className="avatar-container">
-                        <img
-                          src={selectedUser.avatar || "ChatAvatar.svg"}
-                          alt={selectedUser.name || "User"}
-                          className="chat-header-avatar"
-                        />
-                      </div>
-                      <div className="partner-details">
-                        <span className="chat-header-name">{selectedUser.name}</span>
-                        <span className="online-status-wrapper">
-                          <span className="online-status"></span>
-                          <span className="chat-header-status">онлайн</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="chat-body" ref={chatBodyRef}>
-                    {messagesLoading ? (
-                      <div style={{ padding: '20px', textAlign: 'center' }}>
-                        <p>Xabarlar yuklanmoqda...</p>
-                      </div>
-                    ) : messagesError ? (
-                      <div style={{ padding: '20px', textAlign: 'center', color: 'red' }}>
-                        <p>Xatolik: {messagesError}</p>
-                      </div>
-                    ) : messages.length === 0 ? (
-                      <div style={{ padding: '20px', textAlign: 'center' }}>
-                        <p>Hozircha xabarlar yo'q</p>
-                      </div>
-                    ) : (
-                      <div style={{ position: "relative" }}>
-                        {(() => {
-                          // Xabarlarni sanalar bo'yicha guruhlash
-                          const groupedMessages = {};
-                          messages.forEach(message => {
-                            const messageDate = new Date(message.created_at);
-                            const dateKey = messageDate.toDateString();
-                            if (!groupedMessages[dateKey]) {
-                              groupedMessages[dateKey] = [];
-                            }
-                            groupedMessages[dateKey].push(message);
-                          });
-
-                          // Sanalarni formatlash funksiyasi
-                          const formatDate = (dateString) => {
-                            const date = new Date(dateString);
-                            const today = new Date();
-                            const yesterday = new Date(today);
-                            yesterday.setDate(yesterday.getDate() - 1);
-
-                            if (date.toDateString() === today.toDateString()) {
-                              return 'Bugun';
-                            } else if (date.toDateString() === yesterday.toDateString()) {
-                              return 'Kecha';
-                            } else {
-                              return date.toLocaleDateString('uz-UZ', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
-                              });
-                            }
-                          };
-
-                          return Object.entries(groupedMessages)
-                            .sort(([a], [b]) => new Date(a) - new Date(b))
-                            .map(([dateKey, dayMessages]) => (
-                              <div key={dateKey}>
-                                <div className="chat-date">{formatDate(dateKey)}</div>
-                                {dayMessages.map((message, index) => (
-                                  <div
-                                    key={message.id || index}
-                                    className={`message ${message.sender_id === user.id ? 'send' : 'receive'}`}
-                                  >
-                                    <div className={message.sender_id === user.id ? 'message-content-sent' : 'message-content'}>
-                                      <p className={message.sender_id === user.id ? 'message-send-text' : 'message-receive-text'}>
-                                        {message.message_text}
-                                      </p>
-                                      <span className={message.sender_id === user.id ? 'message-time-sent' : 'message-time'}>
-                                        {new Date(message.created_at).toLocaleTimeString('uz-UZ', {
-                                          hour: '2-digit',
-                                          minute: '2-digit'
-                                        })}
-                                      </span>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ));
-                        })()}
-                      </div>
-                    )}
-                  </div>
-
-                  <form onSubmit={handleSendMessage} className="chat-input-container">
-                    <img className="message-pdf" src="pdff.svg" alt="" />
-                    <div className="chat-input">
-                      <input
-                        type="text"
-                        placeholder="Xabar yozing..."
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-
+        {/* MAIN CONTENT AREA */}
+        {selectedPageEmployee === 'chat' ? (
+          <main className="chat-window" >
+            {selectedUser ? (
+              <>
+                <div className="chat-header">
+                  <div className="chat-partner-info">
+                    <div className="avatar-container">
+                      <img
+                        src={selectedUser.avatar || "ChatAvatar.svg"}
+                        alt={selectedUser.name || "User"}
+                        className="chat-header-avatar"
                       />
                     </div>
-                    <button type="submit" className="send-button" style={{ background: 'none', border: 'none' }}>
-                      <img src="telegram.svg" alt="Send" />
-                    </button>
-                  </form>
-                </>
-              ) : (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%',
-                  color: '#666'
-                }}>
-                  <p>Suhbatni tanlang</p>
+                    <div className="partner-details">
+                      <span className="chat-header-name">{selectedUser.name}</span>
+                      <span className="online-status-wrapper">
+                        <span className="online-status"></span>
+                        <span className="chat-header-status">онлайн</span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </main>
-            :
-            selectedPageEmployee === 'posts'
-              ?
-              <div className='chat-posts'>
-                <div className='posts employee-header'>
-                  <h1>
-                    {testPosts.length} Posts
-                  </h1>
-                  <button className='add-post-button'>
-                    + Yangi post
-                  </button>
-                </div>
-                <div className='posts-body' style={{ overflowY: "auto" }}>
-                  {
-                    testPosts?.map((item, index) => {
-                      return (
-                        <div className='posts-list-item' key={index}>
-                          <div className='posts-list-item-info'>
-                            <p>
-                              Bu yerda postning qisqacha mazmuni yoki tavsifi bo'lishi mumkin. Bu post haqida umumiy ma'lumot beradi va o'quvchini qiziqtiradi. Postning to'liq matni alohida sahifada ko'rsatiladi.
-                            </p>
-                            <span>12.10.2025</span>
-                          </div>
-                        </div>
-                      )
-                    })
-                  }
 
-                </div>
-              </div>
-              :
-              selectedPageEmployee === 'schedule'
-                ?
-                <div className='chat-schedule'>
-                  <div className='schedule-cont'>
-                    <div className='schedule-header'>
-                      <button className='schedule-back-button' onClick={() => handleChangeEmployeePage('chat')}>
-                        <img src="/images/arrowLeft.png" alt="" />
-                      </button>
-                      <p>
-                        Расписание
+                <div className="chat-body" ref={chatBodyRef}>
+                  {messagesLoading ? (
+                    <div style={{
+                      padding: '20px',
+                      textAlign: 'center',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      flexDirection: 'column',
+                      gap: '1vw',
+                      minHeight: '50vh'
+                    }}>
+                      <div style={{
+                        width: "2vw",
+                        height: "2vw",
+                        border: "3px solid #f3f3f3",
+                        borderTop: "3px solid #9C2BFF",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite"
+                      }}></div>
+                      <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
+                        Xabarlar yuklanmoqda...
                       </p>
                     </div>
-                    <div className='schedule-nav'>
-                      {
-                        testSchedules.map((item, index) => {
-                          return (
-                            <button
-                              key={index}
-                              className='schedule-nav-item'
-                            >
-                              {item.day.split('-').reverse().join('.')}
-                            </button>
-                          )
-                        })
-                      }
+                  ) : messagesError ? (
+                    <div style={{
+                      padding: '20px',
+                      textAlign: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '15px',
+                      alignItems: 'center',
+                      minHeight: '50vh',
+                      justifyContent: 'center'
+                    }}>
+                      <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
+                        Xabarlar yuklanmadi
+                      </p>
+                      <p style={{ color: '#FF6B6B', fontSize: '0.8vw' }}>
+                        {messagesError}
+                      </p>
                     </div>
-                    <div className='scheduleEmployee-body'>
-                      {
-                        testSchedules?.map((item, index) => {
-                          return (
-                            <div className='scheduleEmployee-list-item' key={index}>
-                              <img src="" alt="" />
-                              <p>
-                                {item.day} - {item.time} - {item.client} - {item.service} - {item.status === 'active' ? 'Активный' : 'Завершённый'}
-                              </p>
-                            </div>
-                          )
-                        })
-                      }
+                  ) : !messages || messages.length === 0 ? (
+                    <div style={{
+                      padding: '20px',
+                      textAlign: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '15px',
+                      alignItems: 'center',
+                      minHeight: '50vh',
+                      justifyContent: 'center'
+                    }}>
+                      <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
+                        Hozircha xabarlar yo'q
+                      </p>
+                      <p style={{ color: '#A8A8B3', fontSize: '0.8vw' }}>
+                        Birinchi bo'lib xabar yozing
+                      </p>
                     </div>
-                  </div>
-                </div>
-                :
-                <div className='chat-comments'>
-                  <div className='comments employee-header'>
-                    <h1>
-                      {testComments.length} Comments
-                    </h1>
-                  </div>
-                  <div className='comments-body'>
-                    {
-                      testComments?.map((item, index) => {
-                        return (
-                          <div className='comments-list-item' key={index}>
-                            <div className='comments-list-item-info'>
-                              <div className='comments-list-item-user'>
-                                <img src="" alt="user-photo" />
-                                <h2>
-                                  Foydalanuvchi 1
-                                </h2>
-                              </div>
+                  ) : (
+                    <div style={{ position: "relative" }}>
+                      {(() => {
+                        const groupedMessages = {};
+                        messages.forEach(message => {
+                          const messageDate = new Date(message.created_at);
+                          const dateKey = messageDate.toDateString();
+                          if (!groupedMessages[dateKey]) {
+                            groupedMessages[dateKey] = [];
+                          }
+                          groupedMessages[dateKey].push(message);
+                        });
 
-                              <p>
-                                Bu yerda foydalanuvchining izohi yoki fikri bo'lishi mumkin. Foydalanuvchi o'z tajribasini yoki mulohazasini bu yerda qoldiradi.
-                              </p>
-                              <div className='comments-list-item-rating'>
+                        const formatDate = (dateString) => {
+                          const date = new Date(dateString);
+                          const today = new Date();
+                          const yesterday = new Date(today);
+                          yesterday.setDate(yesterday.getDate() - 1);
 
-                                
+                          if (date.toDateString() === today.toDateString()) {
+                            return 'Bugun';
+                          } else if (date.toDateString() === yesterday.toDateString()) {
+                            return 'Kecha';
+                          } else {
+                            return date.toLocaleDateString('uz-UZ', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+                            });
+                          }
+                        };
+
+                        return Object.entries(groupedMessages)
+                          .sort(([a], [b]) => new Date(a) - new Date(b))
+                          .map(([dateKey, dayMessages]) => (
+                            <div key={dateKey}>
+                              <div className="chat-date">{formatDate(dateKey)}</div>
+                              {dayMessages.map((message, index) => (
                                 <div
-                                  className="stars"
-                                  style={{ '--rating': item.rating }}
-                                  aria-label={`Rating: ${item.rating} out of 5 stars`}
+                                  key={message.id || index}
+                                  className={`message ${message.sender_id === user.id ? 'send' : 'receive'}`}
                                 >
+                                  <div className={message.sender_id === user.id ? 'message-content-sent' : 'message-content'}>
+                                    <p className={message.sender_id === user.id ? 'message-send-text' : 'message-receive-text'}>
+                                      {message.message_text}
+                                    </p>
+                                    <span className={message.sender_id === user.id ? 'message-time-sent' : 'message-time'}>
+                                      {new Date(message.created_at).toLocaleTimeString('uz-UZ', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </span>
+                                  </div>
                                 </div>
-                                <p>
-                                  ({item.rating})
-                                </p>
-                                <span>12.10.2025</span>
-                              </div>
+                              ))}
                             </div>
-                          </div>
-                        )
-                      }
-
-                      )}
-
-                  </div>
+                          ));
+                      })()}
+                    </div>
+                  )}
                 </div>
-        }
 
+                <form onSubmit={handleSendMessage} className="chat-input-container">
+                  <img className="message-pdf" src="pdff.svg" alt="" />
+                  <div className="chat-input">
+                    <input
+                      type="text"
+                      placeholder="Xabar yozing..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                    />
+                  </div>
+                  <button type="submit" className="send-button" style={{ background: 'none', border: 'none' }}>
+                    <img src="telegram.svg" alt="Send" />
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                flexDirection: 'column',
+                gap: '15px'
+              }}>
+                <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
+                  Suhbatni tanlang
+                </p>
+              </div>
+            )}
+          </main>
+        ) : selectedPageEmployee === 'schedule' ? (
+          <div className='chat-schedule'>
+            <div className='schedule-cont'>
+              <div className='schedule-header'>
+                <button className='schedule-back-button' onClick={() => handleChangeEmployeePage('chat')}>
+                  <img src="/images/arrowLeft.png" alt="" />
+                </button>
+                <p>Расписание</p>
+              </div>
 
+              {schedulesLoading ? (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexDirection: 'column',
+                  gap: '1vw',
+                  padding: '2vw'
+                }}>
+                  <div style={{
+                    width: "2vw",
+                    height: "2vw",
+                    border: "3px solid #f3f3f3",
+                    borderTop: "3px solid #9C2BFF",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite"
+                  }}></div>
+                  <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
+                    Jadval yuklanmoqda...
+                  </p>
+                </div>
+              ) : schedulesError ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '1vw',
+                  padding: '2vw'
+                }}>
+                  <p style={{ color: '#FF6B6B', fontSize: '0.9vw' }}>
+                    {schedulesError}
+                  </p>
+                  <button
+                    onClick={fetchGroupedSchedules}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#9C2BFF',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Qayta urinish
+                  </button>
+                </div>
+              ) : Object.keys(groupedSchedules).length === 0 ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '1vw',
+                  padding: '2vw'
+                }}>
+                  <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
+                    Jadval mavjud emas
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className='schedule-nav' style={{
+                    display: 'flex',
+                    gap: '0.5vw',
+                    overflowX: 'auto',
+                    padding: '1vw',
+                    scrollbarWidth: 'thin'
+                  }}>
+                    {getAvailableDates().map((date, index) => (
+                      <button
+                        key={index}
+                        className={`schedule-nav-item ${selectedDate === date ? 'active' : ''}`}
+                        onClick={() => setSelectedDate(date)}
+                        style={{
+                          padding: '10px 16px',
+                          border: selectedDate === date ? '2px solid #9C2BFF' : '1px solid #ddd',
+                          backgroundColor: selectedDate === date ? '#f0e6ff' : 'white',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          fontSize: '0.85vw',
+                          fontWeight: selectedDate === date ? 'bold' : 'normal',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {formatDisplayDate(date)}
+                      </button>
+                    ))}
+                  </div>
 
+                  <div className='scheduleEmployee-body' style={{
+                    padding: '1vw',
+                    overflowY: 'auto',
+                    maxHeight: '60vh'
+                  }}>
+                    {selectedDate && (
+                      <h3 style={{
+                        fontSize: '1.2vw',
+                        marginBottom: '1vw',
+                        color: '#333'
+                      }}>
+                        {formatDateWithDay(selectedDate)}
+                      </h3>
+                    )}
 
+                    {getSchedulesForDate().length === 0 ? (
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '2vw',
+                        color: '#A8A8B3'
+                      }}>
+                        Bu kunda jadval yo'q
+                      </div>
+                    ) : (
+                      getSchedulesForDate().map((item, index) => (
+                        <div
+                          className='scheduleEmployee-list-item'
+                          key={index}
+                          style={{
+                            padding: '1.2vw',
+                            marginBottom: '0.8vw',
+                            border: '1px solid #eee',
+                            borderRadius: '8px',
+                            backgroundColor: 'white',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.5vw'
+                          }}
+                        >
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}>
+                            <span style={{
+                              fontSize: '1.1vw',
+                              fontWeight: 'bold',
+                              color: '#333'
+                            }}>
+                              {formatTime(item.appointment_time || item.time)}
+                            </span>
+                            <span style={{
+                              padding: '4px 12px',
+                              borderRadius: '12px',
+                              fontSize: '0.75vw',
+                              fontWeight: 'bold',
+                              color: 'white',
+                              backgroundColor: getStatusColor(item.status)
+                            }}>
+                              {getStatusText(item.status)}
+                            </span>
+                          </div>
 
+                          <div style={{ fontSize: '0.9vw', color: '#666' }}>
+                            <div style={{ marginBottom: '0.3vw' }}>
+                              <strong>Mijoz:</strong> {item.client_name || item.client || 'Noma\'lum'}
+                            </div>
+                            <div style={{ marginBottom: '0.3vw' }}>
+                              <strong>Xizmat:</strong> {item.service_name || item.service || 'Noma\'lum'}
+                            </div>
+                            {item.employee_name && (
+                              <div>
+                                <strong>Xodim:</strong> {item.employee_name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        ) : selectedPageEmployee === 'posts' ? (
+          <div className='chat-posts'>
+            <div className='posts employee-header' style={user.role == "private_admin" ? {left:"10vw" , zIndex:"-10"}:null}>
+              <h1>Postlar</h1>
+              <button className='add-post-button'>+ Yangi post</button>
+            </div>
+            <div className='posts-body' style={{ overflowY: "auto", padding: '1vw' }}>
+              <div style={{
+                textAlign: 'center',
+                padding: '3vw',
+                color: '#A8A8B3'
+              }}>
+                <p style={{ fontSize: '1vw' }}>
+                  Postlar tez orada qo'shiladi
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className='chat-comments'>
+            <div className='comments employee-header' style={user.role == "private_admin" ? {left:"10vw" , zIndex:"0"}:null}>
+              <h1>Izohlar</h1>
+            </div>
+            <div className='comments-body' style={{ padding: '1vw' }}>
+              <div style={{
+                textAlign: 'center',
+                padding: '3vw',
+                color: '#A8A8B3'
+              }}>
+                <p style={{ fontSize: '1vw' }}>
+                  Izohlar tez orada qo'shiladi
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Profile Modal */}
       <EmployeeProfileModal
         isOpen={isProfileModalOpen}
         onClose={handleCloseProfileModal}
         user={user}
         handleChangeEmployeePage={handleChangeEmployeePage}
-
       />
     </div>
-  )
-}
 
-export default EmployeeChatPage
+  );
+};
+export default EmployeeChatPage;

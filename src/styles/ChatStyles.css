@@ -57,6 +57,7 @@ header{
   overflow-y: auto;
   flex-shrink: 0;
   position: fixed;
+  z-index: 5;
 }
 
 .chat-profile-card {
@@ -597,6 +598,13 @@ header{
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* styles/ChatStyles.css yoki global CSS ga qo'shing */
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* RESPONSIVE DESIGN */

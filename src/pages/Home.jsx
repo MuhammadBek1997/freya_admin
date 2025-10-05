@@ -12,28 +12,35 @@ const Home = () => {
         openRightSidebar,
         selectedFilter,
         setSelectedFilter,
-        appointments,
+        combinedAppointments, // ✅ appointments o'rniga
         appointmentsError,
-        appointmentsLoading
+        appointmentsLoading,
+        bookingsLoading, // ✅ bookings loading ham kerak
+        fetchCombinedAppointments, // ✅ yangi funksiya
+        user
       } = UseGlobalContext()
 
-  // Sahifa yuklanganda, localStorage'dan filterni olish
+  // Sahifa yuklanganda ma'lumotlarni olish
   useEffect(() => {
-    // localStorage'dan filterni olish
     const savedFilter = localStorage.getItem('selectedFilter');
     if (savedFilter) {
       setSelectedFilter(parseInt(savedFilter));
     }
-  }, []);
+
+    // Combined appointments'ni olish
+    if (user?.salon_id) {
+      fetchCombinedAppointments(user.salon_id);
+    }
+  }, [user]);
 
   const filteredAppointments = useMemo(() => {
-    if (!appointments) return [];
+    if (!combinedAppointments || combinedAppointments.length === 0) return [];
     const now = new Date();
 
     const startOfWeek = (() => {
       const d = new Date(now);
       const day = d.getDay();
-      const diff = day === 0 ? -6 : 1 - day; // Monday as start
+      const diff = day === 0 ? -6 : 1 - day;
       d.setDate(d.getDate() + diff);
       d.setHours(0, 0, 0, 0);
       return d;
@@ -46,8 +53,9 @@ const Home = () => {
       return d;
     })();
 
-    return appointments.filter((item) => {
-      const d = new Date(item?.application_date);
+    return combinedAppointments.filter((item) => {
+      // ✅ date field ishlatish (appointment va booking uchun umumiy)
+      const d = new Date(item?.date);
       if (Number.isNaN(d.getTime())) return false;
 
       switch (selectedFilter) {
@@ -66,7 +74,10 @@ const Home = () => {
           return true;
       }
     });
-  }, [appointments, selectedFilter]);
+  }, [combinedAppointments, selectedFilter]);
+
+  // ✅ Loading state - ikkala loading ham tekshiriladi
+  const isLoading = appointmentsLoading || bookingsLoading;
 
   return (
     <section className='home'>
@@ -84,7 +95,6 @@ const Home = () => {
         <div className="home-nav-filter">
           <button
             onClick={() => {
-              // Agar tugma tanlangan bo'lsa, uni o'chirish
               if (selectedFilter === 1) {
                 setSelectedFilter(null);
                 localStorage.removeItem('selectedFilter');
@@ -94,12 +104,8 @@ const Home = () => {
               }
             }}
             style={{
-              backgroundColor: selectedFilter == 1
-                ? "#9C2BFF"
-                : "white",
-              color: selectedFilter == 1
-                ? "white"
-                : "#2C2C2C99"
+              backgroundColor: selectedFilter == 1 ? "#9C2BFF" : "white",
+              color: selectedFilter == 1 ? "white" : "#2C2C2C99"
             }}
           >
             <img src={selectedFilter == 1 ? "/images/activesIcon.png" : "/images/activesIconG.png"} alt="" />
@@ -107,7 +113,6 @@ const Home = () => {
           </button>
           <button
             onClick={() => {
-              // Agar tugma tanlangan bo'lsa, uni o'chirish
               if (selectedFilter === 2) {
                 setSelectedFilter(null);
                 localStorage.removeItem('selectedFilter');
@@ -117,19 +122,14 @@ const Home = () => {
               }
             }}
             style={{
-              backgroundColor: selectedFilter == 2
-                ? "#9C2BFF"
-                : "white",
-              color: selectedFilter == 2
-                ? "white"
-                : "#2C2C2C99"
+              backgroundColor: selectedFilter == 2 ? "#9C2BFF" : "white",
+              color: selectedFilter == 2 ? "white" : "#2C2C2C99"
             }}
           >
             {t('homeFlThsWk')}
           </button>
           <button
             onClick={() => {
-              // Agar tugma tanlangan bo'lsa, uni o'chirish
               if (selectedFilter === 3) {
                 setSelectedFilter(null);
                 localStorage.removeItem('selectedFilter');
@@ -139,19 +139,14 @@ const Home = () => {
               }
             }}
             style={{
-              backgroundColor: selectedFilter == 3
-                ? "#9C2BFF"
-                : "white",
-              color: selectedFilter == 3
-                ? "white"
-                : "#2C2C2C99"
+              backgroundColor: selectedFilter == 3 ? "#9C2BFF" : "white",
+              color: selectedFilter == 3 ? "white" : "#2C2C2C99"
             }}
           >
             {t('homeFlThsMth')}
           </button>
           <button
             onClick={() => {
-              // Agar tugma tanlangan bo'lsa, uni o'chirish
               if (selectedFilter === 4) {
                 setSelectedFilter(null);
                 localStorage.removeItem('selectedFilter');
@@ -161,40 +156,24 @@ const Home = () => {
               }
             }}
             style={{
-              backgroundColor: selectedFilter == 4
-                ? "#9C2BFF"
-                : "white",
-              color: selectedFilter == 4
-                ? "white"
-                : "#2C2C2C99"
+              backgroundColor: selectedFilter == 4 ? "#9C2BFF" : "white",
+              color: selectedFilter == 4 ? "white" : "#2C2C2C99"
             }}
           >
             {t('homeFlThsYr')}
           </button>
         </div>
         <div className="home-nav-columns">
-          <a href="">
-            {t('homeCmnNm')}
-          </a>
-          <a href="">
-            {t('homeCmnNmbrApp')}
-          </a>
-          <a href="">
-            {t('homeCmnNmbr')}
-          </a>
-          <a href="">
-            {t('homeCmnWn')}
-          </a>
-          <a href="">
-            {t('homeCmnTime')}
-          </a>
-          <a href="">
-            {t('homeCmnWhm')}
-          </a>
+          <a href="">{t('homeCmnNm')}</a>
+          <a href="">{t('homeCmnNmbrApp')}</a>
+          <a href="">{t('homeCmnNmbr')}</a>
+          <a href="">{t('homeCmnWn')}</a>
+          <a href="">{t('homeCmnTime')}</a>
+          <a href="">{t('homeCmnWhm')}</a>
         </div>
       </nav>
       <div className="home-body">
-        {appointmentsLoading ? (
+        {isLoading ? (
           <div style={{
             width: "100%",
             height: "60vh",
@@ -212,18 +191,19 @@ const Home = () => {
               borderRadius: "50%",
               animation: "spin 1s linear infinite"
             }}></div>
-            <p style={{
-              color: "#A8A8B3",
-              fontSize: "1vw"
-            }}>
-              {t("loading") || "Loading appointments..."}
+            <p style={{ color: "#A8A8B3", fontSize: "1vw" }}>
+              {t("loading") || "Loading..."}
             </p>
           </div>
-        ) : filteredAppointments.length > 0 ? filteredAppointments.map((item) => {
-          
-          return <AppointCard key={item.id} {...item} openRightSidebar={openRightSidebar} />
-        })
-          :
+        ) : filteredAppointments.length > 0 ? (
+          filteredAppointments.map((item) => (
+            <AppointCard 
+              key={`${item.type}-${item.id}`} 
+              {...item} 
+              openRightSidebar={openRightSidebar} 
+            />
+          ))
+        ) : (
           <div style={{
             width: "100%",
             height: "60vh",
@@ -234,29 +214,22 @@ const Home = () => {
             gap: "1vw"
           }}>
             <img style={{ width: "6vw" }} src="/images/homeDashImg.png" alt="" />
-            <p style={{
-              color: "#A8A8B3",
-              fontSize: "1vw"
-            }}>
+            <p style={{ color: "#A8A8B3", fontSize: "1vw" }}>
               {t("homeNone")}
             </p>
           </div>
-        }
+        )}
       </div>
       <div className="right-sidebar-cont" style={{
         transform: isRightSidebarOpen ? "translateX(0vw)" : "translateX(100vw)"
       }}>
         <RightSidebar />
       </div>
-      {
-        !confirmModal
-          ?
-          <div className="confirm-modal">
-            <ConfirmModal />
-          </div>
-          :
-          null
-      }
+      {!confirmModal && (
+        <div className="confirm-modal">
+          <ConfirmModal />
+        </div>
+      )}
     </section>
   )
 }

@@ -18,8 +18,8 @@ const EmployeeProfileModal = ({ isOpen, onClose, user, handleChangeEmployeePage 
 
     return (
       <div className="employee-profile-modal-overlay" style={{ background: "#38383866", backdropFilter: "blur(4px)" }}>
-        <div className="employee-profile-modal" style={{ background: "#E9EDEE", borderRadius: "1vw"}}>
-          <div className='employee-profile-modal-top' style={{ width:"100%",height:"10vh",display: "flex" , background: "#9C2BFF", borderTopLeftRadius:"1vw", borderTopRightRadius:"1vw"}}>
+        <div className="employee-profile-modal" style={{ background: "#E9EDEE", borderRadius: "1vw" }}>
+          <div className='employee-profile-modal-top' style={{ width: "100%", height: "10vh", display: "flex", background: "#9C2BFF", borderTopLeftRadius: "1vw", borderTopRightRadius: "1vw" }}>
             {
               user.role == 'employee' &&
               <div style={{ display: "flex", alignItems: "center", gap: "1vw", padding: "1vw" }}>
@@ -29,7 +29,7 @@ const EmployeeProfileModal = ({ isOpen, onClose, user, handleChangeEmployeePage 
                 </h2>
               </div>
             }
-            <button className="employee-profile-modal-close" onClick={onClose} style={{color: "white", background: "#9C2BFF", border: "none", fontSize: "1.5vw", fontWeight: "bold"}}>
+            <button className="employee-profile-modal-close" onClick={onClose} style={{ color: "white", background: "#9C2BFF", border: "none", fontSize: "1.5vw", fontWeight: "bold" }}>
               ×
             </button>
           </div>
@@ -58,12 +58,23 @@ const EmployeeProfileModal = ({ isOpen, onClose, user, handleChangeEmployeePage 
             </button>
           </div>
           <div className='employee-profile-modal-details'>
-            <button className='employee-profile-modal-button' onClick={() => handleChangeEmployeePage('schedule')}>
-              <img src="/images/edit-admin.png" alt="" />
-              <p>
-                Расписание (12)
-              </p>
-            </button>
+            {user.role == "private_admin"
+              ?
+              <button className='employee-profile-modal-button' onClick={() => handleChangeEmployeePage('schedule')}>
+                <img src="/images/edit-admin.png" alt="" />
+                <p>
+                  Редактировать
+                </p>
+              </button>
+              :
+              <button className='employee-profile-modal-button' onClick={() => handleChangeEmployeePage('schedule')}>
+                <img src="/images/schedule-light.png" alt="" />
+                <p>
+                  Расписание (12)
+                </p>
+              </button>}
+
+
             <button className='employee-profile-modal-button' onClick={() => handleChangeEmployeePage('comments')}>
               <img src="/images/chat-light.png" alt="" />
               <p>

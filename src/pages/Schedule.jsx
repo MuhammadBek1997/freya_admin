@@ -203,7 +203,7 @@ const Schedule = () => {
                       <BookScheduleModal {...item} setEditModal={setEditModal}/>
                       :
                       <EditScheduleModal {...item} setEditModal={setEditModal} />
-                      }
+                    }
                       </>
                       :
                       null

@@ -42,7 +42,12 @@ const SelectEmployeeModal = ({ setSelectEmploy, onEmployeeSelect }) => {
             Выберите обслуживающего
           </h3>
         </div>
-        <div className='select-employModal-body'>
+        <div className='select-employModal-body' style={{
+                  alignItems:"start",
+                  rowGap:"0",
+                  columnGap:"0",
+                  gap:"1vw",
+                }}>
           {
             employees && employees.length > 0 ? employees.map((employee) => {
               const isSelected = selectedEmployees.includes(employee.id)

@@ -15,7 +15,7 @@ const AboutEmployeeBar = ({ employee,onClose }) => {
         <img src="/images/masterImage.png" alt="Employee" className='aboutEmployeeBar-cont-img' />
         <div className='aboutEmployeeBar-masterJob'>
           <p>
-            Бровист
+            {employee.profession}
           </p>
         </div>
         <div className="aboutEmployeeBar-cont-info">

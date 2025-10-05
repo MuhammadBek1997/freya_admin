@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { UseGlobalContext } from "../Context";
 
 
-const EmployeeCard = ({ id, name,spec,isMenuOpen,setIsMenuOpen, bio, is_verified, salon, isOpen, handleToggleMenu , isCheckedItem , setIsCheckedItem , handleAddWaitingEmp }) => {
+const EmployeeCard = ({ id, name,profession,isMenuOpen,setIsMenuOpen, bio, is_verified, salon, isOpen, handleToggleMenu , isCheckedItem , setIsCheckedItem , handleAddWaitingEmp }) => {
   
 
 
@@ -13,6 +13,21 @@ const EmployeeCard = ({ id, name,spec,isMenuOpen,setIsMenuOpen, bio, is_verified
     });
   };
   
+  let employeeColor
+
+  if(profession == "Hair"){
+    employeeColor = "#CA940099"
+  }else if(profession == "Hair"){
+    employeeColor = "#00CA1E99"
+  }else
+    if(profession == "Hair"){
+    employeeColor = "#CA940099"
+  }else
+    if(profession == "Hair"){
+    employeeColor = "#CA940099"
+  }else{
+
+  }
 
   return (
     <div className="employCard">
@@ -29,10 +44,10 @@ const EmployeeCard = ({ id, name,spec,isMenuOpen,setIsMenuOpen, bio, is_verified
             }
           }}
         />
-        <div className="employCard-masterJob">
+        <div className="employCard-masterJob" style={{backgroundColor:employeeColor}}>
           <p>
             {
-              spec
+              profession
             }
           </p>
         </div>

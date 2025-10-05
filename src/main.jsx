@@ -7,6 +7,20 @@ import { BrowserRouter } from 'react-router-dom'
 import './i18n.jsx'
 import { AppProvider } from './Context.jsx'
 
+// Optional: clear storage when ?clearStorage=1 is present
+if (typeof window !== 'undefined') {
+  try {
+    const qs = new URLSearchParams(window.location.search)
+    if (qs.has('clearStorage') || qs.get('clearStorage') === '1') {
+      localStorage.clear()
+      sessionStorage.clear()
+      console.log('✅ LocalStorage va SessionStorage tozalandi')
+    }
+  } catch (e) {
+    console.warn('Storage tozalashda xatolik:', e)
+  }
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>

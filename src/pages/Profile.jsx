@@ -12,7 +12,7 @@ const Profile = () => {
   const {
     t, language, handleChange, salonProfile, commentsArr, user,
     adminSalonLoading, adminSalonError, fetchAdminSalon, updateSalon,
-    uploadSalonPhotos, deleteSalonPhoto, logout
+    uploadSalonPhotos, deleteSalonPhoto, logout, uploadSalonLogo
   } = UseGlobalContext()
 
   const [changeMode, setChangeMode] = useState(false)
@@ -143,153 +143,138 @@ const Profile = () => {
   }
 
   // Formik submit handler'ini to'g'ri yozish
-const handleFormikSubmit = async (values, { setSubmitting }) => {
-  try {
-    if (!salonProfile) return;
+  const handleFormikSubmit = async (values, { setSubmitting }) => {
+    try {
+      if (!salonProfile) return;
 
-    const salonId = salonProfile.id;
-    const updateData = {};
+      const salonId = salonProfile.id;
+      const updateData = {};
 
-    // Formik values'dan ma'lumotlarni olish
-    if (values.salon_name && values.salon_name !== getSalonData(salonProfile, 'salon_name')) {
-      updateData['salon_name'] = values.salon_name;
-      updateData[`salon_name_${language}`] = values.salon_name;
-    }
-
-    if (values.work_hours && values.work_hours !== salonProfile?.work_schedule?.hours) {
-      updateData['work_schedule'] = {
-        ...salonProfile?.work_schedule,
-        hours: values.work_hours,
-        dates: values.work_dates || salonProfile?.work_schedule?.dates || ''
-      };
-    } else if (values.work_dates && values.work_dates !== salonProfile?.work_schedule?.dates) {
-      updateData['work_schedule'] = {
-        ...salonProfile?.work_schedule,
-        hours: values.work_hours || salonProfile?.work_schedule?.hours || '',
-        dates: values.work_dates
-      };
-    }
-
-    if (values.salon_type && Array.isArray(salonProfile?.salon_types)) {
-      const currentType = salonProfile?.salon_types?.find(t => t?.selected)?.type;
-      if (values.salon_type !== currentType) {
-        const updatedTypes = salonProfile.salon_types.map(t => ({
-          ...t,
-          selected: t.type === values.salon_type
-        }));
-        updateData['salon_types'] = updatedTypes;
+      // Formik values'dan ma'lumotlarni olish
+      if (values.salon_name && values.salon_name !== getSalonData(salonProfile, 'salon_name')) {
+        updateData['salon_name'] = values.salon_name;
+        updateData[`salon_name_${language}`] = values.salon_name;
       }
-    }
 
-    if (values.salon_format && values.salon_format !== salonProfile?.salon_format?.format) {
-      updateData['salon_format'] = { selected: true, format: values.salon_format };
-    }
-
-    // Description va boshqa manual state'lar
-    if (editDescription && editDescription !== getSalonData(salonProfile, 'salon_description')) {
-      updateData['salon_description'] = editDescription;
-    }
-
-    if (editAdditionals && editAdditionals !== (salonProfile?.salon_additionals || []).join('\n')) {
-      const additionalsArray = editAdditionals.split('\n').filter(item => item.trim() !== '');
-      updateData['salon_additionals'] = additionalsArray;
-    }
-
-    if (editComfort.length > 0) {
-      const comfortChanged = JSON.stringify(editComfort) !== JSON.stringify(salonProfile?.salon_comfort || []);
-      if (comfortChanged) {
-        updateData['salon_comfort'] = editComfort;
-      }
-    }
-
-    if (editSale.amount || editSale.date) {
-      const saleChanged = (
-        editSale.amount !== (salonProfile?.salon_sale?.amount || '') ||
-        editSale.date !== (salonProfile?.salon_sale?.date || '')
-      );
-      if (saleChanged) {
-        updateData['salon_sale'] = {
-          amount: editSale.amount,
-          date: editSale.date
+      if (values.work_hours && values.work_hours !== salonProfile?.work_schedule?.hours) {
+        updateData['work_schedule'] = {
+          ...salonProfile?.work_schedule,
+          hours: values.work_hours,
+          dates: values.work_dates || salonProfile?.work_schedule?.dates || ''
+        };
+      } else if (values.work_dates && values.work_dates !== salonProfile?.work_schedule?.dates) {
+        updateData['work_schedule'] = {
+          ...salonProfile?.work_schedule,
+          hours: values.work_hours || salonProfile?.work_schedule?.hours || '',
+          dates: values.work_dates
         };
       }
-    }
 
-    console.log('=== UPDATE DEBUG ===');
-    console.log('Salon ID:', salonId);
-    console.log('Update Data:', updateData);
-    console.log('Has changes:', Object.keys(updateData).length > 0);
-
-    // Agar o'zgarishlar bo'lsa, update qilish
-    if (Object.keys(updateData).length > 0) {
-      console.log('Sending update request...');
-      const result = await updateSalon(salonId, updateData);
-      console.log('Update result:', result);
-      alert('Ma\'lumotlar muvaffaqiyatli yangilandi!');
-    } else {
-      console.log('No changes detected');
-    }
-
-    // Rasmlarni yuklash (agar bor bo'lsa)
-    const maxBytes = 4 * 1024 * 1024;
-    const filesToUpload = [];
-    
-    if (pendingLogo?.file) {
-      if (pendingLogo.file.size > maxBytes) {
-        alert('Logo fayli 4MB dan katta');
-        setSubmitting(false);
-        return;
+      if (values.salon_type && Array.isArray(salonProfile?.salon_types)) {
+        const currentType = salonProfile?.salon_types?.find(t => t?.selected)?.type;
+        if (values.salon_type !== currentType) {
+          const updatedTypes = salonProfile.salon_types.map(t => ({
+            ...t,
+            selected: t.type === values.salon_type
+          }));
+          updateData['salon_types'] = updatedTypes;
+        }
       }
-      filesToUpload.push(pendingLogo.file);
-    }
-    
-    if (pendingImages.length > 0) {
-      const validImages = pendingImages.filter(img => img?.file && img.file.size <= maxBytes);
-      if (validImages.length < pendingImages.length) {
-        alert('Ba\'zi rasmlar juda katta (4MB dan katta)');
+
+      if (values.salon_format && values.salon_format !== salonProfile?.salon_format?.format) {
+        updateData['salon_format'] = { selected: true, format: values.salon_format };
       }
-      validImages.forEach(img => filesToUpload.push(img.file));
-    }
 
-    if (filesToUpload.length > 0) {
-      console.log('Uploading', filesToUpload.length, 'photos...');
-      const uploaded = await uploadSalonPhotos(salonId, filesToUpload);
-      console.log('Photos uploaded:', uploaded);
-      
-      if (uploaded?.salon_photos) {
-        setCompanyImages(uploaded.salon_photos);
-      } else if (Array.isArray(uploaded)) {
-        setCompanyImages(uploaded);
+      // Description va boshqa manual state'lar
+      if (editDescription && editDescription !== getSalonData(salonProfile, 'salon_description')) {
+        updateData['salon_description'] = editDescription;
       }
-      
-      // Pending'larni tozalash
-      if (pendingLogo?.preview) URL.revokeObjectURL(pendingLogo.preview);
-      pendingImages.forEach(img => img?.preview && URL.revokeObjectURL(img.preview));
-      setPendingLogo(null);
-      setPendingImages([]);
-      
-      alert('Rasmlar muvaffaqiyatli yuklandi!');
+
+      if (editAdditionals && editAdditionals !== (salonProfile?.salon_additionals || []).join('\n')) {
+        const additionalsArray = editAdditionals.split('\n').filter(item => item.trim() !== '');
+        updateData['salon_additionals'] = additionalsArray;
+      }
+
+      if (editComfort.length > 0) {
+        const comfortChanged = JSON.stringify(editComfort) !== JSON.stringify(salonProfile?.salon_comfort || []);
+        if (comfortChanged) {
+          updateData['salon_comfort'] = editComfort;
+        }
+      }
+
+      if (editSale.amount || editSale.date) {
+        const saleChanged = (
+          editSale.amount !== (salonProfile?.salon_sale?.amount || '') ||
+          editSale.date !== (salonProfile?.salon_sale?.date || '')
+        );
+        if (saleChanged) {
+          updateData['salon_sale'] = {
+            amount: editSale.amount,
+            date: editSale.date
+          };
+        }
+      }
+
+      console.log('=== UPDATE DEBUG ===');
+      console.log('Salon ID:', salonId);
+      console.log('Update Data:', updateData);
+
+      // Matn ma'lumotlarini yangilash
+      if (Object.keys(updateData).length > 0) {
+        console.log('Sending update request...');
+        const result = await updateSalon(salonId, updateData);
+        console.log('Update result:', result);
+      }
+
+      const maxBytes = 4 * 1024 * 1024;
+
+      // Logo yuklash (alohida)
+      if (pendingLogo?.file) {
+        if (pendingLogo.file.size > maxBytes) {
+          setSubmitting(false);
+          return;
+        }
+        console.log('Uploading logo...');
+        await uploadSalonLogo(salonId, pendingLogo.file);
+
+        if (pendingLogo?.preview) URL.revokeObjectURL(pendingLogo.preview);
+        setPendingLogo(null);
+        console.log('✅ Logo muvaffaqiyatli yuklandi');
+      }
+
+      // Photos yuklash (alohida)
+      if (pendingImages.length > 0) {
+        const validImages = pendingImages.filter(img => img?.file && img.file.size <= maxBytes);
+
+        if (validImages.length > 0) {
+          const photoFiles = validImages.map(img => img.file);
+          console.log('Uploading', photoFiles.length, 'photos...');
+          await uploadSalonPhotos(salonId, photoFiles);
+
+          pendingImages.forEach(img => img?.preview && URL.revokeObjectURL(img.preview));
+          setPendingImages([]);
+          console.log('✅ Rasmlar muvaffaqiyatli yuklandi');
+        }
+      }
+
+      // Salonni qayta yuklash
+      await fetchAdminSalon(salonId);
+
+      // Edit mode'dan chiqish
+      setChangeMode(false);
+      setEditDescription('');
+      setEditAdditionals('');
+      setEditComfort([]);
+      setEditSale({ amount: '', date: '' });
+
+    } catch (error) {
+      console.error('=== UPDATE ERROR ===');
+      console.error('Error:', error);
+      console.error('Error message:', error.message);
+    } finally {
+      setSubmitting(false);
     }
-
-    // Salonni qayta yuklash
-    await fetchAdminSalon(salonId);
-
-    // Edit mode'dan chiqish
-    setChangeMode(false);
-    setEditDescription('');
-    setEditAdditionals('');
-    setEditComfort([]);
-    setEditSale({ amount: '', date: '' });
-
-  } catch (error) {
-    console.error('=== UPDATE ERROR ===');
-    console.error('Error:', error);
-    console.error('Error message:', error.message);
-    alert('Xatolik: ' + error.message);
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
 
   // SMS verifikatsiya uchun state
   const [smsCode, setSmsCode] = useState('')
@@ -298,6 +283,7 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
   const [isSmsVerified, setIsSmsVerified] = useState(false)
   const [smsError, setSmsError] = useState('')
   const [cardPhoneNumber, setCardPhoneNumber] = useState('')
+
 
   // Komponent yuklanganda admin salon ma'lumotlarini olish
   useEffect(() => {
@@ -364,7 +350,7 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
       setCurrentSale({ ...saleData });
 
       // Salon photos ni yuklash
-      const images = salonProfile?.salon_photos || [];
+      const images = salonProfile?.photos || salonProfile?.salon_photos || [];
       setCompanyImages(Array.isArray(images) ? images : []);
     }
   }, [salonProfile]);
@@ -416,12 +402,7 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
     }
   };
 
-  const prevSlide = () => {
-    const totalImages = companyImages.length + pendingImages.length;
-    if (totalImages > 0) {
-      setCurrentSlide((prev) => (prev - 1 + totalImages) % totalImages);
-    }
-  };
+
 
   const goToSlide = (index) => {
     const totalImages = companyImages.length + pendingImages.length;
@@ -449,7 +430,7 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
     setPendingImages(prev => [...prev, ...newImagePreviews])
 
     // Input ni tozalash
-    try { event.target.value = '' } catch {}
+    try { event.target.value = '' } catch { }
   };
 
   // Rasmni o'chirish funksiyasi
@@ -475,9 +456,8 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
         console.log('Photo deleted successfully:', result);
 
         // Local state ni yangilash (server javobidan)
-        if (result.salon_photos) {
-          setCompanyImages(result.salon_photos);
-        }
+        const deletedImages = result?.photos || result?.salon_photos || [];
+        setCompanyImages(Array.isArray(deletedImages) ? deletedImages : []);
 
         alert('Rasm muvaffaqiyatli o\'chirildi!');
       } catch (error) {
@@ -623,11 +603,8 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
       }
       if (filesToUpload.length > 0) {
         const uploaded = await uploadSalonPhotos(salonId, filesToUpload);
-        if (uploaded?.salon_photos) {
-          setCompanyImages(uploaded.salon_photos);
-        } else if (Array.isArray(uploaded)) {
-          setCompanyImages(uploaded);
-        }
+        const freshImages = uploaded?.photos || uploaded?.salon_photos || (Array.isArray(uploaded) ? uploaded : []);
+        setCompanyImages(Array.isArray(freshImages) ? freshImages : []);
         console.log('Salon rasmlari muvaffaqiyatli yuklandi');
         // Pending previewlarni tozalash
         if (pendingLogo?.preview) URL.revokeObjectURL(pendingLogo.preview);
@@ -896,15 +873,58 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
           </div>
           <div className='profile-nav-bottom'>
             <div className="profile-nav-left">
-              <div className='company-image' style={{
-                background: (salonProfile.icon || (companyImages && companyImages[0]))
-                  ? `url(${salonProfile.icon || companyImages[0]})`
-                  : `url(/images/ForCompanyImage.png)`,
+              {(() => {
+                const staged = pendingLogo?.preview || null;
+                // ✅ Logo ni to'g'ri joydan olish
+                const currentLogo = !staged ? (salonProfile?.icon || salonProfile?.logo) : null;
+
+                if (staged) {
+                  return (
+                    <div className='company-image' style={{
+                backgroundImage: `url(${staged})`,
                 backgroundSize: (salonProfile.icon || (companyImages && companyImages[0])) ? "cover" : "30%",
-                backgroundPosition: "center center"
+                backgroundPosition: "center center",
+                backgroundRepeat: "no-repeat"
               }}>
 
               </div>
+                  )
+                }
+                // return <img src={staged} alt="Yangi logo (saqlanmagan)" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                if (currentLogo) {
+                  return(
+                    <div className='company-image' style={{
+                backgroundImage:  `url(${currentLogo})`,
+                backgroundSize: (salonProfile.icon || (companyImages && companyImages[0])) ? "cover" : "30%",
+                backgroundPosition: "center center",
+                backgroundRepeat: "no-repeat"
+              }}>
+
+              </div>
+                  )
+                }
+                // return <img src={currentLogo} alt="Salon logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                return (
+                  <div className='company-image' style={{
+                backgroundImage: `url(/images/ForCompanyImage.png)`,
+                backgroundSize: (salonProfile.icon || (companyImages && companyImages[0])) ? "cover" : "30%",
+                backgroundPosition: "center center",
+                backgroundRepeat: "no-repeat"
+              }}>
+
+              </div>
+                )
+              })()}
+              {/* <div className='company-image' style={{
+                backgroundImage: (salonProfile.icon || (companyImages && companyImages[0]))
+                  ? `url(${salonProfile.icon || companyImages[0]})`
+                  : `url(/images/ForCompanyImage.png)`,
+                backgroundSize: (salonProfile.icon || (companyImages && companyImages[0])) ? "cover" : "30%",
+                backgroundPosition: "center center",
+                backgroundRepeat: "no-repeat"
+              }}>
+
+              </div> */}
               <div className='profile-nav-info'>
                 <div className='profile-salon-name'>
                   <h2>
@@ -1026,8 +1046,6 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
                     {/* Navigation arrows */}
                     {[...companyImages, ...pendingImages].length > 1 && (
                       <>
-
-
                         <button
                           onClick={nextSlide}
                           className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
@@ -1171,25 +1189,25 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
                   }
                 </div>
               </div>
-              { currentSale.amount 
-              ?
+              {currentSale.amount
+                ?
 
-              <div className='company-sale'>
-                <div className='company-sale-amount'>
-                  <h3>Скидка</h3>
-                  <div className='sale-info'>
-                    {currentSale?.amount ? `${currentSale.amount}%` : 'Скидка не установлена'}
+                <div className='company-sale'>
+                  <div className='company-sale-amount'>
+                    <h3>Скидка</h3>
+                    <div className='sale-info'>
+                      {currentSale?.amount ? `${currentSale.amount}%` : 'Скидка не установлена'}
+                    </div>
+                  </div>
+                  <div className='company-sale-date'>
+                    <h3>Срок действия</h3>
+                    <div className='sale-info'>
+                      {currentSale?.date ? new Date(currentSale.date).toLocaleDateString('ru-RU') : 'Не указан'}
+                    </div>
                   </div>
                 </div>
-                <div className='company-sale-date'>
-                  <h3>Срок действия</h3>
-                  <div className='sale-info'>
-                    {currentSale?.date ? new Date(currentSale.date).toLocaleDateString('ru-RU') : 'Не указан'}
-                  </div>
-                </div>
-              </div>
-              :
-              null  
+                :
+                null
               }
               {
                 salonProfile?.social_media?.length > 0
@@ -1313,7 +1331,7 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
                 </h3>
               </div>
               <div className='company-location-map'>
-            <YandexMap lat={salonProfile?.location?.lat} long={salonProfile?.location?.long} />
+                <YandexMap lat={salonProfile?.location?.lat} long={salonProfile?.location?.long} />
               </div>
               <div className='company-location-bottom'>
                 <div className='company-location-address'>
@@ -1511,11 +1529,11 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
                     <h3 style={{ fontSize: "1vw", marginBottom: "0.3vw", marginLeft: "1vw", marginTop: "1vw" }}>
                       Название
                     </h3>
-                    <Field name='salon_name' type="text" style={{ width: "95%", margin:" 0 0 0 1vw", padding: '0.5vw 1vw', border: '0.1vw solid #ddd', borderRadius: '0.5vw', fontSize: '1.1vw' }} />
+                    <Field name='salon_name' type="text" style={{ width: "95%", margin: " 0 0 0 1vw", padding: '0.5vw 1vw', border: '0.1vw solid #ddd', borderRadius: '0.5vw', fontSize: '1.1vw' }} />
                     <div style={{ color: '#d32f2f', marginLeft: '1vw', fontSize: '0.9vw' }}>
                       <ErrorMessage name='salon_name' />
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1vw", padding:"1vw" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1vw", padding: "1vw" }}>
                       <div>
                         <h3>время работы</h3>
                         <Field name='work_hours' type="text" style={{ width: '100%', padding: '0.5vw 1vw', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }} />
@@ -1541,141 +1559,130 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
                           <ErrorMessage name='salon_type' />
                         </div>
                       </div>
-                      <div>
-                        <h3>Формат конторы</h3>
-                        <Field as='select' name='salon_format' style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }}>
-                          <option value="corporative">Корпоративный</option>
-                          <option value="private">Частный</option>
-                        </Field>
-                        <div style={{ color: '#d32f2f', fontSize: '0.8vw' }}>
-                          <ErrorMessage name='salon_format' />
-                        </div>
-                      </div>
                     </div>
                   </Form>
                 )}
               </Formik>
             </div>
             <div className={getSalonData(salonProfile, 'salon_name') == "" ? 'company-title-empty' : 'company-title-full'}>
-                {/* <img src="/images/titleIcon.png" alt="" /> */}
-                <h3>
-                  {getSalonData(salonProfile, 'salon_name') == "" ? t('profileTitle2') : getSalonData(salonProfile, 'salon_name')}
-                </h3>
-              </div>
-              <div className='company-about'>
-                <h3>
-                  {t('profileAbout')}
-                </h3>
-                <div className={getSalonData(salonProfile, 'salon_description') == "" ? 'empty' : 'info'}>
-                  {changeMode ? (
-                    <textarea
-                      value={editDescription ?? ''}
-                      onChange={(e) => setEditDescription(e.target.value)}
-                      placeholder={t('profileAboutPlaceholder')}
-                      rows={6}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #ddd',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        fontFamily: 'inherit',
-                        resize: 'vertical'
-                      }}
+              {/* <img src="/images/titleIcon.png" alt="" /> */}
+              <h3>
+                {getSalonData(salonProfile, 'salon_name') == "" ? t('profileTitle2') : getSalonData(salonProfile, 'salon_name')}
+              </h3>
+            </div>
+            <div className='company-about'>
+              <h3>
+                {t('profileAbout')}
+              </h3>
+              <div className={getSalonData(salonProfile, 'salon_description') == "" ? 'empty' : 'info'}>
+                {changeMode ? (
+                  <textarea
+                    value={editDescription ?? ''}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder={t('profileAboutPlaceholder')}
+                    rows={6}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'inherit',
+                      resize: 'vertical'
+                    }}
+                  />
+                ) : (
+                  getSalonData(salonProfile, 'salon_description') == ""
+                    ?
+                    t('profileEmpty')
+                    :
+                    <ReadMoreReact
+                      text={getSalonData(salonProfile, 'salon_description')}
+                      min={120}
+                      ideal={350}
+                      max={770}
+                      readMoreText={<span style={{
+                        cursor: "pointer",
+                        color: "#0060CE",
+                        fontSize: "1.1vw",
+                        textDecoration: "underline"
+                      }}>
+                        {t('profileReadMore')}
+                      </span>}
                     />
-                  ) : (
-                    getSalonData(salonProfile, 'salon_description') == ""
-                      ?
-                      t('profileEmpty')
-                      :
-                      <ReadMoreReact
-                        text={getSalonData(salonProfile, 'salon_description')}
-                        min={120}
-                        ideal={350}
-                        max={770}
-                        readMoreText={<span style={{
-                          cursor: "pointer",
-                          color: "#0060CE",
-                          fontSize: "1.1vw",
-                          textDecoration: "underline"
-                        }}>
-                          {t('profileReadMore')}
-                        </span>}
-                      />
-                  )}
-                </div>
+                )}
               </div>
-              <div className='company-add'>
-                <h3>
-                  {t('profileNote')}
-                </h3>
-                <div className={salonProfile?.salon_additionals?.length == 0 ? 'empty' : 'info'}>
-                  {changeMode ? (
-                    <textarea
-                      value={editAdditionals ?? ''}
-                      onChange={(e) => setEditAdditionals(e.target.value)}
-                      placeholder={t('profileNotePlaceholder')}
-                      rows={4}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #ddd',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        fontFamily: 'inherit',
-                        resize: 'vertical'
-                      }}
-                    />
-                  ) : (
-                    salonProfile?.salon_additionals?.length == 0
-                      ?
-                      t('profileEmpty')
-                      :
+            </div>
+            <div className='company-add'>
+              <h3>
+                {t('profileNote')}
+              </h3>
+              <div className={salonProfile?.salon_additionals?.length == 0 ? 'empty' : 'info'}>
+                {changeMode ? (
+                  <textarea
+                    value={editAdditionals ?? ''}
+                    onChange={(e) => setEditAdditionals(e.target.value)}
+                    placeholder={t('profileNotePlaceholder')}
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'inherit',
+                      resize: 'vertical'
+                    }}
+                  />
+                ) : (
+                  salonProfile?.salon_additionals?.length == 0
+                    ?
+                    t('profileEmpty')
+                    :
                     salonProfile?.salon_additionals?.map((item, index) => {
-                        return (
-                          <p key={index}>
-                            ✨ {item}
-                          </p>
-                        )
-                      })
-                  )}
-                </div>
+                      return (
+                        <p key={index}>
+                          ✨ {item}
+                        </p>
+                      )
+                    })
+                )}
               </div>
-              <div className='company-sale'>
-                <div className='company-sale-amount'>
-                  <h4>Скидка (%)</h4>
-                  <input
-                    type="text"
-                      value={editSale.amount ?? ''}
-                    onChange={(e) => setEditSale({ ...editSale, amount: e.target.value })}
-                    placeholder="28 (%)"
-                    min="0"
-                    max="100"
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #ddd',
-                      borderRadius: '8px',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
-                <div className='company-sale-date'>
-                  <h4>Срок действия</h4>
-                  <input
-                    type="text"
-                      value={editSale.date ?? ''}
-                    onChange={(e) => setEditSale({ ...editSale, date: e.target.value })}
-                    placeholder='7 (дней)'
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #ddd',
-                      borderRadius: '8px',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
+            </div>
+            <div className='company-sale'>
+              <div className='company-sale-amount'>
+                <h4>Скидка (%)</h4>
+                <input
+                  type="text"
+                  value={editSale.amount ?? ''}
+                  onChange={(e) => setEditSale({ ...editSale, amount: e.target.value })}
+                  placeholder="28 (%)"
+                  min="0"
+                  max="100"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+              <div className='company-sale-date'>
+                <h4>Срок действия</h4>
+                <input
+                  type="text"
+                  value={editSale.date ?? ''}
+                  onChange={(e) => setEditSale({ ...editSale, date: e.target.value })}
+                  placeholder='7 (дней)'
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    fontSize: '14px'
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -1791,7 +1798,7 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
                     {changeMode ? (
                       <input
                         type="text"
-                      value={editContacts.phone1 ?? ''}
+                        value={editContacts.phone1 ?? ''}
                         onChange={(e) => setEditContacts(prev => ({ ...prev, phone1: e.target.value }))}
                         placeholder="+998901234567"
                         style={{
@@ -1835,7 +1842,7 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
                     {changeMode ? (
                       <input
                         type="text"
-                      value={editContacts.phone2 ?? ''}
+                        value={editContacts.phone2 ?? ''}
                         onChange={(e) => setEditContacts(prev => ({ ...prev, phone2: e.target.value }))}
                         placeholder="+998901234567"
                         style={{
@@ -1914,7 +1921,7 @@ const handleFormikSubmit = async (values, { setSubmitting }) => {
               </div>
             </div>
           </div>
-        
+        </div>
       </section>
     )
   }

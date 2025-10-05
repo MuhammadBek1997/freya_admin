@@ -165,7 +165,9 @@
   align-items: center;
   gap: 1vw;
   padding-top: 1vw;
+  padding-bottom: 12vh;
   position: relative;
+  overflow-y: auto;
 }
 .schedule-modal-cont h4{
   font-size: 1.2vw;
@@ -278,10 +280,11 @@
   font-size: 0.7vw;
 }
 .schedule-modal-btns{
-  width: 100%;
+  width: 35vw;
   height: 4vw;
-  position: absolute;
-  bottom: 0;
+  position: fixed;
+  left: 32.5vw;
+  bottom: 5vh;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -445,6 +448,7 @@
   gap: 1vw;
   padding-top: 1vw;
   position: relative;
+  overflow-y: auto;
 }
 .editSchedule-modal-cont h2{
   font-size: 1.1vw;
