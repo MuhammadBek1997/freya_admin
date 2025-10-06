@@ -696,116 +696,208 @@ const uploadSalonPhotos = async (salonId, files) => {
 	
 
 	// Admin login function
-	const loginAdmin = async (username, password) => {
-		try {
-			console.log('Login attempt:', { username, password, API_BASE_URL });
+	// const loginAdmin = async (username, password) => {
+	// 	try {
+	// 		console.log('Login attempt:', { username, password, API_BASE_URL });
 			
-			const response = await fetch(adminLoginUrl, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ username, password }),
-			});
+	// 		const response = await fetch(adminLoginUrl, {
+	// 			method: 'POST',
+	// 			headers: {
+	// 				'Content-Type': 'application/json',
+	// 			},
+	// 			body: JSON.stringify({ username, password }),
+	// 		});
 
-			console.log('Response status:', response.status);
-			console.log('Response ok:', response.ok);
-			console.log('Response headers:', response.headers.get('content-type'));
+	// 		console.log('Response status:', response.status);
+	// 		console.log('Response ok:', response.ok);
+	// 		console.log('Response headers:', response.headers.get('content-type'));
 
-			// Check if response has content before parsing JSON
-			const responseText = await response.text();
-			console.log('Response text:', responseText);
+	// 		// Check if response has content before parsing JSON
+	// 		const responseText = await response.text();
+	// 		console.log('Response text:', responseText);
 
-			let data;
-			try {
-				data = responseText ? JSON.parse(responseText) : {};
-			} catch (jsonError) {
-				console.error('JSON parse error:', jsonError);
-				console.error('Response text that failed to parse:', responseText);
-				throw new Error('Server response is not valid JSON');
-			}
+	// 		let data;
+	// 		try {
+	// 			data = responseText ? JSON.parse(responseText) : {};
+	// 		} catch (jsonError) {
+	// 			console.error('JSON parse error:', jsonError);
+	// 			console.error('Response text that failed to parse:', responseText);
+	// 			throw new Error('Server response is not valid JSON');
+	// 		}
 
-			console.log('Response data:', data);
-			console.log('Backend user data:', data.user);
+	// 		console.log('Response data:', data);
+	// 		console.log('Backend user data:', data.user);
 
-			if (response.ok) {
-				const userData = {
-					id: data.user.id,
-					username: data.user.username,
-					email: data.user.email,
-					full_name: data.user.full_name,
-					role: data.user.role,
-					salon_id: data.user.salon_id || null
-				};
+	// 		if (response.ok) {
+	// 			const userData = {
+	// 				id: data.user.id,
+	// 				username: data.user.username,
+	// 				email: data.user.email,
+	// 				full_name: data.user.full_name,
+	// 				role: data.user.role,
+	// 				salon_id: data.user.salon_id || null
+	// 			};
 
-				console.log('Created userData:', userData);
+	// 			console.log('Created userData:', userData);
 				
-				localStorage.setItem('authToken', data.token);
-				localStorage.setItem('userData', JSON.stringify(userData));
+	// 			localStorage.setItem('authToken', data.token);
+	// 			localStorage.setItem('userData', JSON.stringify(userData));
 				
-				setUser(userData);
-				setIsAuthenticated(true);
+	// 			setUser(userData);
+	// 			setIsAuthenticated(true);
 				
-				console.log('Login successful, userData set:', userData);
-				return userData;
-			} else {
-				console.error('Login failed with data:', data);
-				throw new Error(data.message || 'Admin login failed');
-			}
-		} catch (error) {
-			console.error('Admin login error:', error);
-			throw new Error(error.message || 'Network error occurred');
-		}
-	};
+	// 			console.log('Login successful, userData set:', userData);
+	// 			return userData;
+	// 		} else {
+	// 			console.error('Login failed with data:', data);
+	// 			throw new Error(data.message || 'Admin login failed');
+	// 		}
+	// 	} catch (error) {
+	// 		console.error('Admin login error:', error);
+	// 		throw new Error(error.message || 'Network error occurred');
+	// 	}
+	// };
 
 	// Employee login function
-	const loginEmployee = async (username, password) => {
-		try {
-			const response = await fetch(employeeLoginUrl, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ username, password }),
-			});
+	// const loginEmployee = async (username, password) => {
+	// 	try {
+	// 		const response = await fetch(employeeLoginUrl, {
+	// 			method: 'POST',
+	// 			headers: {
+	// 				'Content-Type': 'application/json',
+	// 			},
+	// 			body: JSON.stringify({ username, password }),
+	// 		});
 
-			const data = await response.json();
-			console.log('🔍 LOGIN DEBUG: Backend response:', data);
+	// 		const data = await response.json();
+	// 		console.log('🔍 LOGIN DEBUG: Backend response:', data);
 
-			if (response.ok) {
-				console.log('🔍 LOGIN DEBUG: Backend user data:', data.user);
+	// 		if (response.ok) {
+	// 			console.log('🔍 LOGIN DEBUG: Backend user data:', data.user);
 				
-				const userData = {
-					id: data.user.id,
-					username: data.user.username || data.user.name,
-					email: data.user.email,
-					// Backend'dan name kelmaydi, shuning uchun username ishlatamiz
-					name: data.user.username || data.user.name,
-					role: 'employee',
-					salon_id: data.user.salon_id
-				};
+	// 			const userData = {
+	// 				id: data.user.id,
+	// 				username: data.user.username || data.user.name,
+	// 				email: data.user.email,
+	// 				// Backend'dan name kelmaydi, shuning uchun username ishlatamiz
+	// 				name: data.user.username || data.user.name,
+	// 				role: 'employee',
+	// 				salon_id: data.user.salon_id
+	// 			};
 
-				console.log('🔍 LOGIN DEBUG: Created userData:', userData);
-				console.log('🔍 LOGIN DEBUG: userData.role:', userData.role);
+	// 			console.log('🔍 LOGIN DEBUG: Created userData:', userData);
+	// 			console.log('🔍 LOGIN DEBUG: userData.role:', userData.role);
 
-				localStorage.setItem('authToken', data.token);
-				localStorage.setItem('userData', JSON.stringify(userData));
+	// 			localStorage.setItem('authToken', data.token);
+	// 			localStorage.setItem('userData', JSON.stringify(userData));
 				
-				console.log('🔍 LOGIN DEBUG: Saved to localStorage');
-				console.log('🔍 LOGIN DEBUG: localStorage userData:', localStorage.getItem('userData'));
+	// 			console.log('🔍 LOGIN DEBUG: Saved to localStorage');
+	// 			console.log('🔍 LOGIN DEBUG: localStorage userData:', localStorage.getItem('userData'));
 				
-				setUser(userData);
-				setIsAuthenticated(true);
+	// 			setUser(userData);
+	// 			setIsAuthenticated(true);
 				
-				return userData;
-			} else {
-				throw new Error(data.message || 'Employee login failed');
-			}
-		} catch (error) {
-			console.error('Employee login error:', error);
-			throw new Error(error.message || 'Network error occurred');
-		}
-	};
+	// 			return userData;
+	// 		} else {
+	// 			throw new Error(data.message || 'Employee login failed');
+	// 		}
+	// 	} catch (error) {
+	// 		console.error('Employee login error:', error);
+	// 		throw new Error(error.message || 'Network error occurred');
+	// 	}
+	// };
+
+	// Universal login function - avval admin, keyin employee
+const login = async (username, password) => {
+    try {
+        console.log('🔐 Attempting login for:', username);
+        
+        // 1. Avval admin login'ni sinab ko'ramiz
+        try {
+            console.log('🔍 Trying admin login...');
+            const response = await fetch(adminLoginUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+            });
+
+            const responseText = await response.text();
+            let data;
+            try {
+                data = responseText ? JSON.parse(responseText) : {};
+            } catch {
+                throw new Error('Server response is not valid JSON');
+            }
+
+            if (response.ok) {
+                console.log('✅ Admin login successful');
+                const userData = {
+                    id: data.user.id,
+                    username: data.user.username,
+                    email: data.user.email,
+                    full_name: data.user.full_name,
+                    role: data.user.role,
+                    salon_id: data.user.salon_id || null
+                };
+
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('userData', JSON.stringify(userData));
+                
+                setUser(userData);
+                setIsAuthenticated(true);
+                
+                return { success: true, user: userData, role: 'admin' };
+            } else {
+                // Admin login failed, try employee
+                throw new Error('Admin login failed');
+            }
+        } catch (adminError) {
+            console.log('⚠️ Admin login failed, trying employee login...');
+            
+            // 2. Employee login'ni sinab ko'ramiz
+            const response = await fetch(employeeLoginUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+            });
+
+            const responseText = await response.text();
+            let data;
+            try {
+                data = responseText ? JSON.parse(responseText) : {};
+            } catch {
+                throw new Error('Server response is not valid JSON');
+            }
+
+            if (response.ok) {
+                console.log('✅ Employee login successful');
+                const userData = {
+                    id: data.user.id,
+                    username: data.user.username || data.user.name,
+                    email: data.user.email,
+                    name: data.user.username || data.user.name,
+                    role: 'employee',
+                    salon_id: data.user.salon_id
+                };
+
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('userData', JSON.stringify(userData));
+                
+                setUser(userData);
+                setIsAuthenticated(true);
+                
+                return { success: true, user: userData, role: 'employee' };
+            } else {
+                // Ikkalasi ham muvaffaqiyatsiz
+                throw new Error(data.detail || data.message || 'Username yoki parol noto\'g\'ri');
+            }
+        }
+    } catch (error) {
+        console.error('❌ Login error:', error);
+        throw error;
+    }
+};
+
 
 	// Logout function
 	const logout = () => {
@@ -3002,7 +3094,10 @@ useEffect(() => {
 			adminSalonLoading, adminSalonError, fetchAdminSalon,
 			// Authentication state va funksiyalari
 			user, isAuthenticated, authLoading, setUser, setIsAuthenticated,
-			loginAdmin, loginEmployee, logout, getAuthToken,
+
+			// loginAdmin, loginEmployee,
+			login,
+			logout, getAuthToken,
 			// Appointments state va funksiyalari
 			appointments, appointmentsLoading, appointmentsError, fetchAppointments,
 			// Schedules state va funksiyalari

@@ -13,7 +13,7 @@ import showPsw from '/images/showPsw.png';
 import hidePsw from '/images/hidePsw.png';
 
 const Login = () => {
-  const { t, handleChange, language, loginAdmin, loginEmployee } = UseGlobalContext();
+  const { t, handleChange, language, loginAdmin, loginEmployee , login} = UseGlobalContext();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [checkPsw, setCheckPsw] = useState(true);
@@ -52,44 +52,33 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-  
     
     if (!username || !password) {
-      setErrorMessage('Username va password kiritish majburiy!');
-      return;
+        setErrorMessage('Username va password kiritish majburiy!');
+        return;
     }
     
     setLoading(true);
     setErrorMessage('');
+    setCheckPsw(true);
+    
     try {
-      // Employee username'larini aniqlash (employee bilan boshlanadi yoki employee1_1 kabi)
-      const isEmployeeUsername = username.toLowerCase().includes('employee');
-      
-      if (isEmployeeUsername) {
-        // Agar employee username bo'lsa, faqat employee endpoint orqali login qilish
-        console.log('🔍 LOGIN FORM DEBUG: Detected employee username, trying employee login only...');
-        try {
-          const employeeUser = await loginEmployee(username, password);
-          navigate('/employee-chat');
-        } catch (employeeError) {
-          throw new Error('Employee username yoki password noto\'g\'ri!');
+        const result = await login(username, password);
+        
+        // Role'ga qarab yo'naltirish
+        if (result.role === 'employee') {
+            navigate('/employee-chat');
+        } else {
+            navigate('/');
         }
-      } else {
-        // Agar admin username bo'lsa, faqat admin endpoint orqali login qilish
-        try {
-          const adminUser = await loginAdmin(username, password);
-          navigate('/');
-        } catch (adminError) {
-          setCheckPsw(false);
-          // throw new Error('Admin username yoki password noto\'g\'ri!');
-        }
-      }
     } catch (error) {
-      setErrorMessage(error.message || 'Login xatolik yuz berdi!');
+        console.error('Login xato:', error);
+        setErrorMessage(error.message || 'Login muvaffaqiyatsiz');
+        setCheckPsw(false);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   return (
     <div className="login-page">
