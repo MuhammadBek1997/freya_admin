@@ -1,10 +1,9 @@
 import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import { UseGlobalContext } from "../Context";
 
 
-const EmployeeCard = ({ id, name,surname,profession,email,phone,isMenuOpen,setIsMenuOpen, bio, is_verified, salon, isOpen, handleToggleMenu , isCheckedItem , setIsCheckedItem , handleAddWaitingEmp }) => {
-  const { t } = useTranslation();
+const EmployeeCard = ({ id, name,surname,profession,email,avg_rating,comment_count,phone,isMenuOpen,setIsMenuOpen, bio, is_verified, salon, isOpen, handleToggleMenu , isCheckedItem , setIsCheckedItem , handleAddWaitingEmp }) => {
+  const { t } = UseGlobalContext();
 
 
   const handleToggleEmployMenu = (ID , type) => {
@@ -61,7 +60,7 @@ const EmployeeCard = ({ id, name,surname,profession,email,phone,isMenuOpen,setIs
       <h2>{name} {surname}</h2>
       <div className="employCard-rating">
         <img src="/images/Star1.png" alt="" />
-        <p>4.8 (13 отзывов)</p>
+        <p>{avg_rating} ({comment_count} {t("profileReviews")})</p>
       </div>
       <div className="employCard-bottom">
         <div className="employCard-email">
@@ -74,9 +73,9 @@ const EmployeeCard = ({ id, name,surname,profession,email,phone,isMenuOpen,setIs
         </div>
         <div className="employCard-workedTimes">
           <h1>24</h1>
-          <p>Работы</p>
+          <p>{t("workHour")}</p>
           <button className="employCard-workedTimesBtn" onClick={()=>handleToggleEmployMenu(id , 'see')}>
-            Посмотреть
+            {t("look")}
           </button>
         </div>
       </div>
@@ -84,11 +83,11 @@ const EmployeeCard = ({ id, name,surname,profession,email,phone,isMenuOpen,setIs
         <div className="employCard-menu">
           <div onClick={()=>handleToggleEmployMenu(id , 'edit')}>
             <img src="/images/editEmploy.png" alt="" />
-            <p>Изменить профиль</p>
+            <p>{t("changePsw")}</p>
           </div>
           <div onClick={()=>handleAddWaitingEmp([id])}>
             <img src="/images/sendWaitEmploy.png" alt="" />
-            <p>Отправить в ожидание</p>
+            <p>{t("setWaiting")}</p>
           </div>
         </div>
       )}
