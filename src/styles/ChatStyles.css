@@ -726,7 +726,21 @@ header{
 }
 .posts-body{
   padding-top: 12vh;
-  margin-left: 21vw;
+  padding-left: 20vw;
+  margin-left: 22vw;
+  overflow-y: auto;
+}
+.add-post-button{
+  display: flex;
+  background-color: #9c2bff;
+  padding: 1vw 2vw;
+  font-size: 0.8vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5vw;
+  border-radius: 2vw;
+  cursor: pointer;
 }
 .comments-body{
   padding-top: 12vh;

@@ -3062,6 +3062,233 @@ useEffect(() => {
 
 
 
+
+// ===== EMPLOYEE POSTS API FUNCTIONS =====
+
+// Employee uchun post yaratish
+const createEmployeePost = async (employeeId, postData) => {
+    try {
+        const token = getAuthToken();
+        
+        if (!token) {
+            throw new Error('Tizimga kirish tokeni topilmadi');
+        }
+
+        console.log('📤 Creating employee post:', { employeeId, postData });
+
+        const response = await fetch(`${employeesUrl}/${employeeId}/posts`, {
+            method: 'POST',
+            headers: getHeaders(true),
+            body: JSON.stringify(postData),
+        });
+
+        console.log('📥 Response status:', response.status);
+
+        if (!response.ok) {
+            const contentType = response.headers.get('content-type');
+            let errorMessage = `HTTP ${response.status}`;
+            
+            if (contentType?.includes('application/json')) {
+                const errorData = await response.json();
+                console.error('❌ Error response:', errorData);
+                
+                // FastAPI validation errors
+                if (Array.isArray(errorData?.detail)) {
+                    errorMessage = errorData.detail.map(err => {
+                        const field = err.loc ? err.loc[err.loc.length - 1] : '';
+                        return `${field}: ${err.msg}`;
+                    }).join(', ');
+                } else if (typeof errorData?.detail === 'string') {
+                    errorMessage = errorData.detail;
+                } else {
+                    errorMessage = errorData?.message || errorData?.error || errorMessage;
+                }
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Error text:', errorText);
+                errorMessage = errorText || errorMessage;
+            }
+
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        console.log('✅ Employee post created:', data);
+
+        return data;
+    } catch (error) {
+        console.error('❌ Employee post yaratishda xatolik:', error);
+        throw error;
+    }
+};
+
+// Employee postlarini olish (pagination bilan)
+const fetchEmployeePosts = async (employeeId, page = 1, limit = 10) => {
+    try {
+        const token = getAuthToken();
+        
+        if (!token) {
+            throw new Error('Tizimga kirish tokeni topilmadi');
+        }
+
+        console.log('📤 Fetching employee posts:', { employeeId, page, limit });
+
+        const response = await fetch(
+            `${employeesUrl}/${employeeId}/posts?page=${page}&limit=${limit}`,
+            {
+                method: 'GET',
+                headers: getHeaders(true),
+            }
+        );
+
+        console.log('📥 Response status:', response.status);
+
+        if (!response.ok) {
+            const contentType = response.headers.get('content-type');
+            let errorMessage = `HTTP ${response.status}`;
+            
+            if (contentType?.includes('application/json')) {
+                const errorData = await response.json();
+                console.error('❌ Error response:', errorData);
+                
+                if (Array.isArray(errorData?.detail)) {
+                    errorMessage = errorData.detail.map(err => {
+                        const field = err.loc ? err.loc[err.loc.length - 1] : '';
+                        return `${field}: ${err.msg}`;
+                    }).join(', ');
+                } else if (typeof errorData?.detail === 'string') {
+                    errorMessage = errorData.detail;
+                } else {
+                    errorMessage = errorData?.message || errorData?.error || errorMessage;
+                }
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Error text:', errorText);
+                errorMessage = errorText || errorMessage;
+            }
+
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        console.log('✅ Employee posts fetched:', data);
+
+        return data.data || data || [];
+    } catch (error) {
+        console.error('❌ Employee postlarni olishda xatolik:', error);
+        throw error;
+    }
+};
+
+// Employee postini yangilash
+const updateEmployeePost = async (employeeId, postId, postData) => {
+    try {
+        const token = getAuthToken();
+        
+        if (!token) {
+            throw new Error('Tizimga kirish tokeni topilmadi');
+        }
+
+        console.log('📤 Updating employee post:', { employeeId, postId, postData });
+
+        const response = await fetch(`${employeesUrl}/${employeeId}/posts/${postId}`, {
+            method: 'PUT',
+            headers: getHeaders(true),
+            body: JSON.stringify(postData),
+        });
+
+        console.log('📥 Response status:', response.status);
+
+        if (!response.ok) {
+            const contentType = response.headers.get('content-type');
+            let errorMessage = `HTTP ${response.status}`;
+            
+            if (contentType?.includes('application/json')) {
+                const errorData = await response.json();
+                console.error('❌ Error response:', errorData);
+                
+                if (Array.isArray(errorData?.detail)) {
+                    errorMessage = errorData.detail.map(err => {
+                        const field = err.loc ? err.loc[err.loc.length - 1] : '';
+                        return `${field}: ${err.msg}`;
+                    }).join(', ');
+                } else if (typeof errorData?.detail === 'string') {
+                    errorMessage = errorData.detail;
+                } else {
+                    errorMessage = errorData?.message || errorData?.error || errorMessage;
+                }
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Error text:', errorText);
+                errorMessage = errorText || errorMessage;
+            }
+
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        console.log('✅ Employee post updated:', data);
+
+        return data;
+    } catch (error) {
+        console.error('❌ Employee post yangilashda xatolik:', error);
+        throw error;
+    }
+};
+
+// Employee postini o'chirish
+const deleteEmployeePost = async (employeeId, postId) => {
+    try {
+        const token = getAuthToken();
+        
+        if (!token) {
+            throw new Error('Tizimga kirish tokeni topilmadi');
+        }
+
+        console.log('📤 Deleting employee post:', { employeeId, postId });
+
+        const response = await fetch(`${employeesUrl}/${employeeId}/posts/${postId}`, {
+            method: 'DELETE',
+            headers: getHeaders(true),
+        });
+
+        console.log('📥 Response status:', response.status);
+
+        if (!response.ok) {
+            const contentType = response.headers.get('content-type');
+            let errorMessage = `HTTP ${response.status}`;
+            
+            if (contentType?.includes('application/json')) {
+                const errorData = await response.json();
+                console.error('❌ Error response:', errorData);
+                
+                if (typeof errorData?.detail === 'string') {
+                    errorMessage = errorData.detail;
+                } else {
+                    errorMessage = errorData?.message || errorData?.error || errorMessage;
+                }
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Error text:', errorText);
+                errorMessage = errorText || errorMessage;
+            }
+
+            throw new Error(errorMessage);
+        }
+
+        console.log('✅ Employee post deleted successfully');
+        return true;
+    } catch (error) {
+        console.error('❌ Employee post o\'chirishda xatolik:', error);
+        throw error;
+    }
+};
+
+
+
+
+
+
 	return (
 		<AppContext.Provider value={{
 			t, handleChange, language, sidebarTop,
@@ -3156,6 +3383,16 @@ useEffect(() => {
 	// Combined appointments
     combinedAppointments,
     fetchCombinedAppointments,
+
+
+	// Employee Posts functions
+        createEmployeePost,
+        fetchEmployeePosts,
+        updateEmployeePost,
+        deleteEmployeePost,
+
+
+
 }}>
 	{children}
 </AppContext.Provider>

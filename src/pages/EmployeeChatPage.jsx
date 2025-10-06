@@ -16,7 +16,11 @@ const EmployeeChatPage = () => {
     fetchMessages,
     sendMessage,
     getUnreadCount,
-    markConversationAsRead
+    markConversationAsRead,
+    createEmployeePost, 
+    fetchEmployeePosts,
+    updateEmployeePost,
+    deleteEmployeePost
   } = UseGlobalContext();
 
   const [selectedUser, setSelectedUser] = useState(null);
@@ -31,6 +35,47 @@ const EmployeeChatPage = () => {
   const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [schedulesError, setSchedulesError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
+
+  // Posts state and carousel indices
+  const [employeePosts, setEmployeePosts] = useState([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postsError, setPostsError] = useState(null);
+  const [postSlideIndex, setPostSlideIndex] = useState({}); // { [postId]: currentIndex }
+
+  // Load posts when switching to Posts tab
+  useEffect(() => {
+    const loadPosts = async () => {
+      if (!user) return;
+      setPostsLoading(true);
+      setPostsError(null);
+      try {
+        const employeeIdToUse = user?.id || user?.employee_id;
+        const data = await fetchEmployeePosts(employeeIdToUse, 1, 10);
+        const list = data?.data || data || [];
+        setEmployeePosts(list);
+      } catch (e) {
+        setPostsError(e?.message || 'Postlarni olishda xatolik');
+      } finally {
+        setPostsLoading(false);
+      }
+    };
+
+    if (selectedPageEmployee === 'posts' && user) {
+      loadPosts();
+    }
+  }, [selectedPageEmployee, user]);
+
+  // Carousel helpers per post
+  const nextPostSlide = (postId, total) => {
+    setPostSlideIndex(prev => {
+      const current = prev[postId] || 0;
+      const next = (current + 1) % Math.max(total, 1);
+      return { ...prev, [postId]: next };
+    });
+  };
+  const goToPostSlide = (postId, index) => {
+    setPostSlideIndex(prev => ({ ...prev, [postId]: index }));
+  };
 
   useEffect(() => {
     if (user && (user.role === 'employee' || user.role === 'private_admin' || user.role === 'private_salon_admin')) {
@@ -222,6 +267,62 @@ const EmployeeChatPage = () => {
     }
   };
 
+
+  // 1. Post yaratish
+const handleCreatePost = async () => {
+    try {
+        const newPost = await createEmployeePost('employee-uuid-here', {
+            title: 'Yangi post',
+            content: 'Post matni',
+            image_url: 'https://example.com/image.jpg' // ixtiyoriy
+        });
+        console.log('Post yaratildi:', newPost);
+    } catch (error) {
+        console.error('Xato:', error.message);
+    }
+};
+
+
+// 2. Postlarni olish
+const handleFetchPosts = async () => {
+    try {
+        const posts = await fetchEmployeePosts('employee-uuid-here', 1, 10);
+        console.log('Postlar:', posts);
+    } catch (error) {
+        console.error('Xato:', error.message);
+    }
+};
+
+
+// 3. Post yangilash
+const handleUpdatePost = async () => {
+    try {
+        const updated = await updateEmployeePost(
+            'employee-uuid-here',
+            'post-uuid-here',
+            {
+                title: 'Yangilangan sarlavha',
+                content: 'Yangilangan matn'
+            }
+        );
+        console.log('Post yangilandi:', updated);
+    } catch (error) {
+        console.error('Xato:', error.message);
+    }
+};
+
+
+// 4. Post o'chirish
+const handleDeletePost = async () => {
+    try {
+        await deleteEmployeePost('employee-uuid-here', 'post-uuid-here');
+        console.log('Post o\'chirildi');
+    } catch (error) {
+        console.error('Xato:', error.message);
+    }
+};
+
+
   // Status text
   const getStatusText = (status) => {
     const statusMap = {
@@ -232,6 +333,8 @@ const EmployeeChatPage = () => {
     };
     return statusMap[status] || status;
   };
+
+
 
   // Status color
   const getStatusColor = (status) => {
@@ -244,34 +347,10 @@ const EmployeeChatPage = () => {
     return colorMap[status] || '#757575';
   };
 
-  if (!user || (user.role !== "private_admin" && user.role !== 'employee' && user.role !== "private_salon_admin")) {
-    return (
-      <div className="chat-container">
-        <div style={{
-          padding: '20px',
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '20px',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '50vh'
-        }}>
-          <h2>Employee Chat</h2>
-          <p>Iltimos, employee sifatida login qiling.</p>
-          <a href="/login" style={{
-            padding: '10px 20px',
-            backgroundColor: '#9C2BFF',
-            color: 'white',
-            textDecoration: 'none',
-            borderRadius: '5px'
-          }}>
-            Login sahifasiga o'tish
-          </a>
-        </div>
-      </div>
-    );
-  }
+
+
+
+
 
   return (
     <div>
@@ -809,18 +888,156 @@ const EmployeeChatPage = () => {
           <div className='chat-posts'>
             <div className='posts employee-header' style={user.role == "private_admin" ? {left:"10vw" , zIndex:"-10"}:null}>
               <h1>Postlar</h1>
-              <button className='add-post-button'>+ Yangi post</button>
+              <button className='add-post-button'>
+                <img src="/images/addPostImg.png" alt="" />
+                Добавить пост
+              </button>
             </div>
-            <div className='posts-body' style={{ overflowY: "auto", padding: '1vw' }}>
-              <div style={{
-                textAlign: 'center',
-                padding: '3vw',
-                color: '#A8A8B3'
-              }}>
-                <p style={{ fontSize: '1vw' }}>
-                  Postlar tez orada qo'shiladi
-                </p>
-              </div>
+            <div className='posts-body'>
+              {postsLoading ? (
+                <div style={{
+                  width: "100%",
+                  padding: '20px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexDirection: 'column',
+                  gap: '1vw'
+                }}>
+                  <div style={{
+                    width: "2vw",
+                    height: "2vw",
+                    border: "3px solid #f3f3f3",
+                    borderTop: "3px solid #9C2BFF",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite"
+                  }}></div>
+                  <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
+                    Postlar yuklanmoqda...
+                  </p>
+                </div>
+              ) : postsError ? (
+                <div style={{
+                  padding: '20px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '15px',
+                  alignItems: 'center'
+                }}>
+                  <p style={{ color: '#FF6B6B', fontSize: '0.9vw' }}>
+                    {postsError}
+                  </p>
+                </div>
+              ) : employeePosts.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '3vw',
+                  color: '#A8A8B3'
+                }}>
+                  <p style={{ fontSize: '1vw', marginTop: '1vw' }}>
+                    Postlar tez orada qo'shiladi
+                  </p>
+                </div>
+              ) : (
+                employeePosts.map((post) => {
+                  const files = post.media_files || [];
+                  const currentIndex = postSlideIndex[post.id] || 0;
+                  const currentFile = files[currentIndex];
+                  const isVideo = typeof currentFile === 'string' && /\.(mp4|webm|ogg)$/i.test(currentFile);
+
+                  return (
+                    <div key={post.id} style={{
+                      width:"32vw",
+                      marginBottom: '2vw',
+                      backgroundColor: '#fff',
+                      borderRadius: '1vw',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+
+                    }}>
+
+                      <div className="relative w-full" style={{width:"30vw", padding: '1vw' }}>
+                        <div className="relative overflow-hidden" style={{width:"30vw", height: "50vh", borderRadius: "1vw" }}>
+                          {files.length > 0 ? (
+                            <div className="w-full h-full">
+                              {isVideo ? (
+                                <video
+                                  src={currentFile}
+                                  className="w-full h-full object-cover"
+                                  style={{ borderRadius: '1vw' }}
+                                  controls
+                                />
+                              ) : (
+                                <img
+                                  src={currentFile}
+                                  className="w-full h-full object-cover"
+                                  alt={`Slide ${currentIndex + 1}`}
+                                  style={{ borderRadius: '1vw' }}
+                                />
+                              )}
+
+                              {files.length > 1 && (
+                                <button
+                                  onClick={() => nextPostSlide(post.id, files.length)}
+                                  className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
+                                >
+                                  <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="w-full h-full" style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: '#f7f7f7',
+                              borderRadius: '1vw',
+                              color: '#A8A8B3'
+                            }}>
+                              Media fayllar mavjud emas
+                            </div>
+                          )}
+                        </div>
+
+                        {files.length > 1 && (
+                          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                            {files.map((_, index) => (
+                              <button
+                                key={index}
+                                onClick={() => goToPostSlide(post.id, index)}
+                                className={`w-3 h-3 rounded-full transition-all ${index === currentIndex
+                                  ? 'bg-white'
+                                  : 'bg-white/50 hover:bg-white/75'
+                                  }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div style={{ padding: '1vw' }}>
+                        <h2 style={{ fontSize: '1.2vw', margin: 0 }}>{post.title}</h2>
+                        <p style={{ color: '#666', fontSize: '0.9vw', marginTop: '0.5vw' }}>{post.description}</p>
+                        <div style={{ color: '#999', fontSize: '0.8vw', marginTop: '0.5vw' }}>
+                          <span>{new Date(post.created_at).toLocaleString('uz-UZ')}</span>
+                          {post.employee_name && (
+                            <span> · {post.employee_name} {post.employee_surname || ''}</span>
+                          )}
+                          {post.employee_profession && (
+                            <span> · {post.employee_profession}</span>
+                          )}
+                          {post.salon_name && (
+                            <span> · {post.salon_name}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         ) : (
