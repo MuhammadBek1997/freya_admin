@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import '../styles/ChatStyles.css'
-import { UseGlobalContext } from '../Context';
+import { UseGlobalContext, getHeaders } from '../Context';
 import EmployeeProfileModal from '../components/EmployeeProfileModal';
 
 const EmployeeChatPage = () => {
-  const { t } = useTranslation();
   const {
     user,
     conversations,
@@ -74,14 +72,10 @@ const EmployeeChatPage = () => {
     setSchedulesError(null);
 
     try {
-      const token = localStorage.getItem('authToken');
       const response = await fetch(
         'https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/grouped/by-date',
         {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          headers: getHeaders(true)
         }
       );
 
@@ -348,7 +342,7 @@ const EmployeeChatPage = () => {
                   animation: "spin 1s linear infinite"
                 }}></div>
                 <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
-                  {t('chat.loading_conversations', 'Suhbatlar yuklanmoqda...')}
+                  Suhbatlar yuklanmoqda...
                 </p>
               </div>
             ) : conversationsError ? (
@@ -361,7 +355,7 @@ const EmployeeChatPage = () => {
                 alignItems: 'center'
               }}>
                 <p style={{ color: '#A8A8B3', fontSize: '0.9vw' }}>
-                  {t('chat.no_conversations', 'Yozishmalar mavjud emas')}
+                  Yozishmalar mavjud emas
                 </p>
                 <p style={{ color: '#FF6B6B', fontSize: '0.8vw' }}>
                   {conversationsError}
@@ -378,7 +372,7 @@ const EmployeeChatPage = () => {
                     fontSize: '0.8vw'
                   }}
                 >
-                  {t('actions.retry', 'Qayta urinish')}
+                  Qayta urinish
                 </button>
               </div>
             ) : !conversations || conversations.length === 0 ? (
@@ -391,12 +385,12 @@ const EmployeeChatPage = () => {
                 alignItems: 'center'
               }}>
                 <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
-                  {t('chat.no_conversations', 'Yozishmalar mavjud emas')}
+                  Yozishmalar mavjud emas
                 </p>
               </div>
             ) : (
               <>
-                <h3 className="chat-section-title">{t('chat.title', 'Suhbatlar')} ({conversations.length})</h3>
+                <h3 className="chat-section-title">Suhbatlar ({conversations.length})</h3>
                 {conversations.map((conversation, index) => (
                   <div
                     key={conversation.other_user_id || index}
@@ -428,7 +422,7 @@ const EmployeeChatPage = () => {
                         </p>
                       </span>
                       <p className="chat-msg">
-                        {conversation.last_message || t('chat.no_last_message', "Xabar yo'q")}
+                        {conversation.last_message || 'Xabar yo\'q'}
                       </p>
                     </div>
                     <div className="chat-header-info">
@@ -496,7 +490,7 @@ const EmployeeChatPage = () => {
                         animation: "spin 1s linear infinite"
                       }}></div>
                       <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
-                        {t('chat.loading_messages', 'Xabarlar yuklanmoqda...')}
+                        Xabarlar yuklanmoqda...
                       </p>
                     </div>
                   ) : messagesError ? (
@@ -511,7 +505,7 @@ const EmployeeChatPage = () => {
                       justifyContent: 'center'
                     }}>
                       <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
-                        {t('chat.messages_error', 'Xabarlar yuklanmadi')}
+                        Xabarlar yuklanmadi
                       </p>
                       <p style={{ color: '#FF6B6B', fontSize: '0.8vw' }}>
                         {messagesError}
@@ -529,10 +523,10 @@ const EmployeeChatPage = () => {
                       justifyContent: 'center'
                     }}>
                       <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
-                        {t('chat.no_messages', "Hozircha xabarlar yo'q")}
+                        Hozircha xabarlar yo'q
                       </p>
                       <p style={{ color: '#A8A8B3', fontSize: '0.8vw' }}>
-                        {t('chat.write_first', "Birinchi bo'lib xabar yozing")}
+                        Birinchi bo'lib xabar yozing
                       </p>
                     </div>
                   ) : (
@@ -602,7 +596,7 @@ const EmployeeChatPage = () => {
                   <div className="chat-input">
                     <input
                       type="text"
-                      placeholder={t('chat.input_placeholder', 'Xabar yozing...')}
+                      placeholder="Xabar yozing..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                     />
@@ -622,7 +616,7 @@ const EmployeeChatPage = () => {
                 gap: '15px'
               }}>
                 <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
-                  {t('chat.select_conversation', 'Suhbatni tanlang')}
+                  Suhbatni tanlang
                 </p>
               </div>
             )}
@@ -634,7 +628,7 @@ const EmployeeChatPage = () => {
                 <button className='schedule-back-button' onClick={() => handleChangeEmployeePage('chat')}>
                   <img src="/images/arrowLeft.png" alt="" />
                 </button>
-                <p>{t('schedule.title', 'Расписание')}</p>
+                <p>Расписание</p>
               </div>
 
               {schedulesLoading ? (
@@ -655,7 +649,7 @@ const EmployeeChatPage = () => {
                     animation: "spin 1s linear infinite"
                   }}></div>
                   <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
-                    {t('schedule.loading', 'Jadval yuklanmoqda...')}
+                    Jadval yuklanmoqda...
                   </p>
                 </div>
               ) : schedulesError ? (
@@ -680,7 +674,7 @@ const EmployeeChatPage = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    {t('actions.retry', 'Qayta urinish')}
+                    Qayta urinish
                   </button>
                 </div>
               ) : Object.keys(groupedSchedules).length === 0 ? (
@@ -692,7 +686,7 @@ const EmployeeChatPage = () => {
                   padding: '2vw'
                 }}>
                   <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
-                    {t('schedule.empty', 'Jadval mavjud emas')}
+                    Jadval mavjud emas
                   </p>
                 </div>
               ) : (
@@ -747,7 +741,7 @@ const EmployeeChatPage = () => {
                         padding: '2vw',
                         color: '#A8A8B3'
                       }}>
-                        {t('schedule.no_schedule_day', "Bu kunda jadval yo'q")}
+                        Bu kunda jadval yo'q
                       </div>
                     ) : (
                       getSchedulesForDate().map((item, index) => (
@@ -792,14 +786,14 @@ const EmployeeChatPage = () => {
 
                           <div style={{ fontSize: '0.9vw', color: '#666' }}>
                             <div style={{ marginBottom: '0.3vw' }}>
-                              <strong>{t('schedule.client', 'Mijoz')}:</strong> {item.client_name || item.client || t('common.unknown', "Noma'lum")}
+                              <strong>Mijoz:</strong> {item.client_name || item.client || 'Noma\'lum'}
                             </div>
                             <div style={{ marginBottom: '0.3vw' }}>
-                              <strong>{t('schedule.service', 'Xizmat')}:</strong> {item.service_name || item.service || t('common.unknown', "Noma'lum")}
+                              <strong>Xizmat:</strong> {item.service_name || item.service || 'Noma\'lum'}
                             </div>
                             {item.employee_name && (
                               <div>
-                                <strong>{t('schedule.employee', 'Xodim')}:</strong> {item.employee_name}
+                                <strong>Xodim:</strong> {item.employee_name}
                               </div>
                             )}
                           </div>
@@ -814,8 +808,8 @@ const EmployeeChatPage = () => {
         ) : selectedPageEmployee === 'posts' ? (
           <div className='chat-posts'>
             <div className='posts employee-header' style={user.role == "private_admin" ? {left:"10vw" , zIndex:"-10"}:null}>
-              <h1>{t('posts.title', 'Postlar')}</h1>
-              <button className='add-post-button'>+ {t('posts.add', 'Yangi post')}</button>
+              <h1>Postlar</h1>
+              <button className='add-post-button'>+ Yangi post</button>
             </div>
             <div className='posts-body' style={{ overflowY: "auto", padding: '1vw' }}>
               <div style={{
@@ -824,7 +818,7 @@ const EmployeeChatPage = () => {
                 color: '#A8A8B3'
               }}>
                 <p style={{ fontSize: '1vw' }}>
-                  {t('posts.soon', "Postlar tez orada qo'shiladi")}
+                  Postlar tez orada qo'shiladi
                 </p>
               </div>
             </div>
@@ -832,7 +826,7 @@ const EmployeeChatPage = () => {
         ) : (
           <div className='chat-comments'>
             <div className='comments employee-header' style={user.role == "private_admin" ? {left:"10vw" , zIndex:"0"}:null}>
-              <h1>{t('comments.title', 'Izohlar')}</h1>
+              <h1>Izohlar</h1>
             </div>
             <div className='comments-body' style={{ padding: '1vw' }}>
               <div style={{
@@ -841,7 +835,7 @@ const EmployeeChatPage = () => {
                 color: '#A8A8B3'
               }}>
                 <p style={{ fontSize: '1vw' }}>
-                  {t('comments.soon', "Izohlar tez orada qo'shiladi")}
+                  Izohlar tez orada qo'shiladi
                 </p>
               </div>
             </div>

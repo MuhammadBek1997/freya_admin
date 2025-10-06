@@ -77,85 +77,46 @@
     "modalTitle": "Sarlavha",
     "modalTitlePlh": "Sarlavha 1",
     "modalDate": "Sana",
-    "cancel": "Bekor qilish",
-    "save": "Saqlash",
-    "actions": {
-        "add": "qo'shish",
-        "retry": "Qayta urinish"
-    },
-    "common": {
-        "unknown": "Noma'lum"
-    },
-    "chat": {
-        "title": "Suhbatlar",
-        "loading_conversations": "Suhbatlar yuklanmoqda...",
-        "no_conversations": "Yozishmalar mavjud emas",
-        "no_last_message": "Xabar yo'q",
-        "loading_messages": "Xabarlar yuklanmoqda...",
-        "messages_error": "Xabarlar yuklanmadi",
-        "no_messages": "Hozircha xabarlar yo'q",
-        "write_first": "Birinchi bo'lib xabar yozing",
-        "input_placeholder": "Xabar yozing...",
-        "select_conversation": "Suhbatni tanlang"
-    },
-    "schedule": {
-        "title": "Jadval",
-        "loading": "Jadval yuklanmoqda...",
-        "empty": "Jadval mavjud emas",
-        "no_schedule_day": "Bu kunda jadval yo'q",
-        "client": "Mijoz",
-        "service": "Xizmat",
-        "employee": "Xodim",
-        "selected_employees": "Tanlangan xodimlar:",
-        "employee_placeholder": "Xodim",
-        "add_title": "Qo'shish",
-        "edit_title": "Tahrirlash",
-        "create_success": "Jadval muvaffaqiyatli yaratildi!",
-        "create_error": "Jadval saqlashda xatolik yuz berdi",
-        "update_success": "Jadval muvaffaqiyatli yangilandi!",
-        "update_error": "Jadval yangilashda xatolik yuz berdi",
-        "field": {
-            "name": "Mashg'ulot *",
-            "title": "Sarlavha *",
-            "date": "Sana *",
-            "start_time": "Boshlanish vaqti *",
-            "end_time": "Tugash vaqti *",
-            "repeat": "Takrorlash",
-            "repeat_value": "Har...",
-            "employees": "Xodimlar"
-        },
-        "placeholder": {
-            "name": "Mashg'ulot 1",
-            "title": "Sarlavha 1",
-            "repeat_value": "masalan: 1 hafta"
-        },
-        "validation": {
-            "name_required": "Mashg'ulot majburiy",
-            "title_required": "Sarlavha majburiy",
-            "date_required": "Sana majburiy",
-            "start_time_required": "Boshlanish vaqti majburiy",
-            "end_time_required": "Tugash vaqti majburiy",
-            "salon_missing": "Salon ID topilmadi"
-        }
-    },
-    "posts": {
-        "title": "Postlar",
-        "add": "Yangi post",
-        "soon": "Postlar tez orada qo'shiladi"
-    },
-    "comments": {
-        "title": "Izohlar",
-        "soon": "Izohlar tez orada qo'shiladi"
-    },
-    "map": {
-        "hint": "Joy",
-        "balloon": "Belgilangan joy"
-    },
-    "auth": {
-        "forbidden": "Bu sahifaga kirish uchun sizda ruxsat yo'q!"
-    },
-    "common": {
-        "loading": "Yuklanmoqda...",
-        "unknown": "Noma'lum"
-    }
+  "cancel": "Bekor qilish",
+  "save": "Saqlash"
+  ,
+  "saving": "Saqlanmoqda...",
+  "employee": {
+    "nameLabel": "Ism *",
+    "namePlaceholder": "Ism kiriting",
+    "usernameLabel": "Username *",
+    "usernamePlaceholder": "employee_username",
+    "phoneLabel": "Telefon *",
+    "phonePlaceholder": "+998901234567",
+    "emailLabel": "Email *",
+    "emailPlaceholder": "employee@example.com",
+    "positionLabel": "Lavozim *",
+    "chooseProfession": "Kasb tanlang",
+    "passwordLabel": "Parol *",
+    "passwordPlaceholder": "Kamida 8 ta belgi"
+  },
+  "profession": {
+    "stylist": "Stilist",
+    "cosmetologist": "Kosmetolog",
+    "makeup": "Vizajist",
+    "brow": "Brovist",
+    "lash": "Lashmaker",
+    "masseur": "Massajchi"
+  },
+  "alerts": {
+    "employeeAdded": "Xodim muvaffaqiyatli qo'shildi!"
+  },
+  "errors": {
+    "employeeCreateFailed": "Xodim yaratishda xatolik yuz berdi",
+    "salonIdMissing": "Salon ID topilmadi. Iltimos, qaytadan login qiling."
+  },
+  "validation": {
+    "required": "Majburiy",
+    "min2": "Kamida 2 belgi",
+    "max100": "Ko‘pi bilan 100 belgi",
+    "emailInvalid": "Email noto‘g‘ri",
+    "min3": "Kamida 3 belgi",
+    "min8": "Kamida 8 belgi",
+    "invalidProfession": "Noto‘g‘ri kasb"
+  }
 }

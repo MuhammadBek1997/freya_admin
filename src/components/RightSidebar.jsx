@@ -1,4 +1,4 @@
-import { UseGlobalContext } from '../Context';
+import { UseGlobalContext, getHeaders } from '../Context';
 import { useState, useEffect } from 'react';
 
 const RightSidebar = () => {
@@ -24,15 +24,11 @@ const RightSidebar = () => {
 
             setScheduleLoading(true);
             try {
-                const token = getAuthToken();
                 const response = await fetch(
                     `https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/${selectedElement.schedule_id}`,
                     {
                         method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                        },
+                        headers: getHeaders(true),
                     }
                 );
 

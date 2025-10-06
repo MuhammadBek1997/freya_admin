@@ -71,6 +71,7 @@ export const appointmentCancelUrl = `${BASE_URL}/appointments`;
 export const appointmentStatusUrl = `${BASE_URL}/appointments`;
 export const appointmentSalonUrl = `${BASE_URL}/appointments/salon`;
 export const appointmentUserUrl = `${BASE_URL}/appointments/user/my-appointments`;
+export const bookingsUrl     = `${BASE_URL}/schedules/book`;
 
 // Schedule endpoints
 export const schedulesUrl    = `${BASE_URL}/schedules`;

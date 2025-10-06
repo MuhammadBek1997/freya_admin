@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getHeaders } from '../Context';
 
 const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
     const [formData, setFormData] = useState({
@@ -19,9 +20,8 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
 
     const fetchPostLimits = async () => {
         try {
-            const token = localStorage.getItem('authToken');
             const response = await axios.get(`/api/payments/employee/limits`, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: getHeaders(true)
             });
             setPostLimits(response.data.data);
         } catch (error) {
@@ -43,9 +43,8 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
         setError('');
 
         try {
-            const token = localStorage.getItem('authToken');
             const response = await axios.post(`/api/employees/${employeeId}/posts`, formData, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: getHeaders(true)
             });
 
             if (response.data.success) {
@@ -66,10 +65,9 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
 
     const handleBuyPosts = async (postCount = 4) => {
         try {
-            const token = localStorage.getItem('authToken');
             const response = await axios.post('/api/payments/employee/posts', 
                 { postCount }, 
-                { headers: { Authorization: `Bearer ${token}` } }
+                { headers: getHeaders(true) }
             );
 
             if (response.data.success) {

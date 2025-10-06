@@ -8,21 +8,24 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
   const { t, createEmployee, user } = UseGlobalContext();
   
   const professionOptions = [
-    'Стилист',
-    'Косметолог',
-    'Визажист',
-    'Бровист',
-    'Лэшмейкер',
-    'Массажист'
+    { value: 'Стилист', label: t('profession.stylist', { defaultValue: 'Stilist' }) },
+    { value: 'Косметолог', label: t('profession.cosmetologist', { defaultValue: 'Kosmetolog' }) },
+    { value: 'Визажист', label: t('profession.makeup', { defaultValue: 'Vizajist' }) },
+    { value: 'Бровист', label: t('profession.brow', { defaultValue: 'Brovist' }) },
+    { value: 'Лэшмейкер', label: t('profession.lash', { defaultValue: 'Lashmaker' }) },
+    { value: 'Массажист', label: t('profession.masseur', { defaultValue: 'Massajchi' }) }
   ];
 
   const validationSchema = Yup.object({
-    employee_name: Yup.string().min(2, 'Kamida 2 belgi').max(100, 'Ko‘pi bilan 100 belgi').required('Majburiy'),
-    employee_phone: Yup.string().required('Majburiy'),
-    employee_email: Yup.string().email('Email noto‘g‘ri').required('Majburiy'),
-    username: Yup.string().min(3, 'Kamida 3 belgi').required('Majburiy'),
-    employee_password: Yup.string().min(8, 'Kamida 8 belgi').required('Majburiy'),
-    profession: Yup.string().oneOf(professionOptions, 'Noto‘g‘ri kasb').required('Majburiy')
+    employee_name: Yup.string()
+      .min(2, t('validation.min2', { defaultValue: 'Kamida 2 belgi' }))
+      .max(100, t('validation.max100', { defaultValue: 'Ko‘pi bilan 100 belgi' }))
+      .required(t('validation.required', { defaultValue: 'Majburiy' })),
+    employee_phone: Yup.string().required(t('validation.required', { defaultValue: 'Majburiy' })),
+    employee_email: Yup.string().email(t('validation.emailInvalid', { defaultValue: 'Email noto‘g‘ri' })).required(t('validation.required', { defaultValue: 'Majburiy' })),
+    username: Yup.string().min(3, t('validation.min3', { defaultValue: 'Kamida 3 belgi' })).required(t('validation.required', { defaultValue: 'Majburiy' })),
+    employee_password: Yup.string().min(8, t('validation.min8', { defaultValue: 'Kamida 8 belgi' })).required(t('validation.required', { defaultValue: 'Majburiy' })),
+    profession: Yup.string().oneOf(professionOptions.map(p => p.value), t('validation.invalidProfession', { defaultValue: 'Noto‘g‘ri kasb' })).required(t('validation.required', { defaultValue: 'Majburiy' }))
   });
 
   const initialValues = {
@@ -55,7 +58,7 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
     setError('');
     try {
       if (!user?.salon_id) {
-        throw new Error('Salon ID topilmadi. Iltimos, qaytadan login qiling.');
+        throw new Error(t('errors.salonIdMissing', { defaultValue: 'Salon ID topilmadi. Iltimos, qaytadan login qiling.' }));
       }
 
       const employeeData = {
@@ -70,13 +73,13 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
       };
 
       await createEmployee(employeeData);
-      alert('Xodim muvaffaqiyatli qo\'shildi!');
+      alert(t('alerts.employeeAdded', { defaultValue: "Xodim muvaffaqiyatli qo'shildi!" }));
       if (onEmployeeAdded) onEmployeeAdded();
       resetForm();
       onClose();
     } catch (error) {
       console.error('Xodim yaratishda xatolik:', error);
-      setError(error.message || 'Xodim yaratishda xatolik yuz berdi');
+      setError(error.message || t('errors.employeeCreateFailed', { defaultValue: 'Xodim yaratishda xatolik yuz berdi' }));
     } finally {
       setLoading(false);
       setSubmitting(false);
@@ -92,7 +95,7 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
     <div className="add-employee-modal" onClick={handleClose}>
       <div className="add-employee-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Yangi Xodim Qo'shish</h3>
+          <h3>{t('employAddBtn')}</h3>
           <button onClick={handleClose} className="close-btn">×</button>
         </div>
 
@@ -107,24 +110,24 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
             <Form className="add-employee-form">
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="employee_name">Ism *</label>
+                  <label htmlFor="employee_name">{t('employee.nameLabel', { defaultValue: 'Ism *' })}</label>
                   <Field
                     type="text"
                     id="employee_name"
                     name="employee_name"
-                    placeholder="Ism kiriting"
+                    placeholder={t('employee.namePlaceholder', { defaultValue: 'Ism kiriting' })}
                     className="form-input"
                   />
                   <div className="error-message" style={{backgroundColor:"white",border:"none"}} ><ErrorMessage name="employee_name" /></div>
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="username">Username *</label>
+                  <label htmlFor="username">{t('employee.usernameLabel', { defaultValue: 'Username *' })}</label>
                   <Field
                     type="text"
                     id="username"
                     name="username"
-                    placeholder="employee_username"
+                    placeholder={t('employee.usernamePlaceholder', { defaultValue: 'employee_username' })}
                     className="form-input"
                   />
                   <div className="error-message" style={{backgroundColor:"white",border:"none"}}><ErrorMessage name="username" /></div>
@@ -133,24 +136,24 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="employee_phone">Telefon *</label>
+                  <label htmlFor="employee_phone">{t('employee.phoneLabel', { defaultValue: 'Telefon *' })}</label>
                   <Field
                     type="tel"
                     id="employee_phone"
                     name="employee_phone"
-                    placeholder="+998901234567"
+                    placeholder={t('employee.phonePlaceholder', { defaultValue: '+998901234567' })}
                     className="form-input"
                   />
                   <div className="error-message" style={{backgroundColor:"white",border:"none"}}><ErrorMessage name="employee_phone" /></div>
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="employee_email">Email *</label>
+                  <label htmlFor="employee_email">{t('employee.emailLabel', { defaultValue: 'Email *' })}</label>
                   <Field
                     type="email"
                     id="employee_email"
                     name="employee_email"
-                    placeholder="employee@example.com"
+                    placeholder={t('employee.emailPlaceholder', { defaultValue: 'employee@example.com' })}
                     className="form-input"
                   />
                   <div className="error-message" style={{backgroundColor:"white",border:"none"}}><ErrorMessage name="employee_email" /></div>
@@ -159,23 +162,23 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="profession">Lavozim *</label>
+                  <label htmlFor="profession">{t('employee.positionLabel', { defaultValue: 'Lavozim *' })}</label>
                   <Field as="select" id="profession" name="profession" className="form-input">
-                    <option value="">Kasb tanlang</option>
+                    <option value="">{t('employee.chooseProfession', { defaultValue: 'Kasb tanlang' })}</option>
                     {professionOptions.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </Field>
                   <div className="error-message" style={{backgroundColor:"white",border:"none"}}><ErrorMessage name="profession" /></div>
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="employee_password">Parol *</label>
+                  <label htmlFor="employee_password">{t('employee.passwordLabel', { defaultValue: 'Parol *' })}</label>
                   <Field
                     type="password"
                     id="employee_password"
                     name="employee_password"
-                    placeholder="Kamida 8 ta belgi"
+                    placeholder={t('employee.passwordPlaceholder', { defaultValue: 'Kamida 8 ta belgi' })}
                     className="form-input"
                   />
                   <div className="error-message" style={{backgroundColor:"white",border:"none"}}><ErrorMessage name="employee_password" /></div>
@@ -184,10 +187,10 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
 
               <div className="form-actions">
                 <button type="button" onClick={handleClose} className="cancel-btn" disabled={loading}>
-                  Bekor qilish
+                  {t('cancel')}
                 </button>
                 <button type="submit" className="submit-btn" disabled={loading || isSubmitting}>
-                  {loading ? 'Saqlanmoqda...' : 'Xodim Qo\'shish'}
+                  {loading ? t('saving', { defaultValue: 'Saqlanmoqda...' }) : t('employAddBtn')}
                 </button>
               </div>
             </Form>

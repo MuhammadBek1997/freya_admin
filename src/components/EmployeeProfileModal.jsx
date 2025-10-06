@@ -60,12 +60,13 @@ const EmployeeProfileModal = ({ isOpen, onClose, user, handleChangeEmployeePage 
           <div className='employee-profile-modal-details'>
             {user.role == "private_admin"
               ?
-              <button className='employee-profile-modal-button' onClick={() => handleChangeEmployeePage('schedule')}>
-                <img src="/images/edit-admin.png" alt="" />
-                <p>
-                  Редактировать
-                </p>
-              </button>
+              null
+              // <button className='employee-profile-modal-button' onClick={() => handleChangeEmployeePage('schedule')}>
+              //   <img src="/images/edit-admin.png" alt="" />
+              //   <p>
+              //     Редактировать
+              //   </p>
+              // </button>
               :
               <button className='employee-profile-modal-button' onClick={() => handleChangeEmployeePage('schedule')}>
                 <img src="/images/schedule-light.png" alt="" />

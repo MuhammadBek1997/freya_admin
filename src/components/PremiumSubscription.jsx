@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getHeaders } from '../Context';
 import './PremiumSubscription.css';
 
 const PremiumSubscription = ({ onClose }) => {
@@ -13,9 +14,8 @@ const PremiumSubscription = ({ onClose }) => {
 
     const fetchSubscriptionStatus = async () => {
         try {
-            const token = localStorage.getItem('authToken');
             const response = await axios.get('/api/payments/user/subscription', {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: getHeaders(true)
             });
             setSubscriptionStatus(response.data.data);
         } catch (error) {
@@ -28,10 +28,9 @@ const PremiumSubscription = ({ onClose }) => {
         setError('');
 
         try {
-            const token = localStorage.getItem('authToken');
             const response = await axios.post('/api/payments/user/premium', 
                 { duration }, 
-                { headers: { Authorization: `Bearer ${token}` } }
+                { headers: getHeaders(true) }
             );
 
             if (response.data.success) {

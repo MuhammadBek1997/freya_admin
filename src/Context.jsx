@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import i18n from "./i18n";
 import {
     authUrl,
     adminLoginUrl,
@@ -26,7 +27,8 @@ import {
     smsUrl,
     translationUrl,
     messagesUrl,
-    photoUploadUrl
+    photoUploadUrl,
+	bookingsUrl 
 } from "./apiUrls"
 
 
@@ -101,6 +103,31 @@ const seedLocalData = () => {
   }
 };
 
+// Top-level helpers for headers and auth
+export const getAuthToken = () => {
+  return localStorage.getItem('authToken');
+};
+
+export const getHeaders = (includeAuth = true, contentType = 'application/json') => {
+  const headers = {};
+  if (contentType) headers['Content-Type'] = contentType;
+
+  if (includeAuth) {
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  const currentLanguage =
+    localStorage.getItem('i18nextLng') ||
+    localStorage.getItem('language') ||
+    'uz';
+  headers['X-User-Language'] = currentLanguage;
+
+  return headers;
+};
+
 export const AppProvider = ({ children }) => {
     // Track currently loaded admin salon ID to compare with requests
     const currentSalonIdRef = useRef(null);
@@ -143,6 +170,9 @@ export const AppProvider = ({ children }) => {
 	const [messages, setMessages] = useState([]);
 	const [messagesLoading, setMessagesLoading] = useState(false);
 	const [messagesError, setMessagesError] = useState(null);
+
+
+
 
 
 
@@ -327,11 +357,7 @@ const updateSalon = async (salonId, updateData) => {
         
         const response = await fetch(`${salonsUrl}/${targetId}`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                // 'X-User-Language': (localStorage.getItem('language') || localStorage.getItem('i18nextLng') || 'ru'),
-            },
+            headers: getHeaders(true),
             body: JSON.stringify(updateData),
         });
 
@@ -475,14 +501,11 @@ const uploadSalonLogo = async (salonId, logoFile) => {
 			logo: logoUrl
 		};
 
-		const response = await fetch(`${salonsUrl}/${targetSalonId}`, {
-			method: 'PUT',
-			headers: {
-				'Authorization': `Bearer ${token}`,
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(updatePayload)
-		});
+            const response = await fetch(`${salonsUrl}/${targetSalonId}`, {
+                method: 'PUT',
+                headers: getHeaders(true),
+                body: JSON.stringify(updatePayload)
+            });
 
 		if (!response.ok) {
 			const text = await response.text();
@@ -797,10 +820,7 @@ const uploadSalonPhotos = async (salonId, files) => {
 		setEmployees([]);
 	};
 
-	// Get auth token for API requests
-	const getAuthToken = () => {
-		return localStorage.getItem('authToken');
-	};
+
 
 	// Fetch appointments by salon ID using the new filter endpoint
 	const fetchAppointments = async (salonId) => {
@@ -813,13 +833,9 @@ const uploadSalonPhotos = async (salonId, files) => {
 		setAppointmentsError(null);
 
 		try {
-			const token = getAuthToken();
 			const response = await fetch(`${appointmentsUrl}/salon/${salonId}`, {
 				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
+				headers: getHeaders(true),
 			});
 
 			if (response.ok) {
@@ -846,13 +862,9 @@ const uploadSalonPhotos = async (salonId, files) => {
 		setSchedulesError(null);
 
 		try {
-			const token = getAuthToken();
 			const response = await fetch(schedulesUrl, {
 				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
+				headers: getHeaders(true),
 			});
 
 			if (response.ok) {
@@ -1402,10 +1414,7 @@ const cancelAppointment = async (appointmentId, cancellationReason) => {
 
         const response = await fetch(`${appointmentsUrl}/${appointmentId}/cancel`, {
             method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
+            headers: getHeaders(true),
             body: JSON.stringify({ cancellation_reason: cancellationReason }),
         });
 
@@ -1600,13 +1609,10 @@ const cancelAppointment = async (appointmentId, cancellationReason) => {
 	const deleteSalon = async (salonId) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${salonUrl}/${salonId}`, {
-				method: 'DELETE',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
+            const response = await fetch(`${salonUrl}/${salonId}`, {
+                method: 'DELETE',
+                headers: getHeaders(true),
+            });
 
 			if (response.ok) {
 				console.log('Salon deleted successfully');
@@ -1718,10 +1724,7 @@ const updateSchedule = async (scheduleId, scheduleData) => {
         
         const response = await fetch(`${schedulesUrl}/${scheduleId}`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
+            headers: getHeaders(true),
             body: JSON.stringify(scheduleData),
         });
 
@@ -2051,11 +2054,7 @@ const getScheduleById = async (scheduleId) => {
       setEmployeesError(null);
 
       try {
-        const token = getAuthToken();
-        const headers = {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        };
+        const headers = getHeaders(true);
 
         // UUID formatni tekshirish (backend UUID talab qiladi)
         const isValidUUID = (v) => typeof v === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v);
@@ -2160,10 +2159,7 @@ const getScheduleById = async (scheduleId) => {
 
         const response = await fetch(employeesUrl, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
+            headers: getHeaders(true),
             body: JSON.stringify(dataToSend),
         });
 
@@ -2324,10 +2320,7 @@ const getScheduleById = async (scheduleId) => {
                 console.log('[fetchAdminSalon] Trying GET /admin/my-salon');
                 const mySalonResp = await fetch(adminMySalonUrl, {
                     method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
+                    headers: getHeaders(true),
                 });
 
                 if (mySalonResp.ok) {
@@ -2369,10 +2362,7 @@ const getScheduleById = async (scheduleId) => {
             console.log('[fetchAdminSalon] Fallback GET /salons/:id id=', targetId);
             const detailResponse = await fetch(`${salonDetailUrl}/${targetId}`, {
                 method: 'GET',
-                headers: {
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-                    'Content-Type': 'application/json',
-                },
+                headers: getHeaders(true),
             });
 
             if (detailResponse.ok) {
@@ -2511,10 +2501,11 @@ const getScheduleById = async (scheduleId) => {
 
 	const { t, i18n } = useTranslation();
 	const language = localStorage.getItem("i18nextLng")
-	const handleChange = (event) => {
-		const selectedLang = event.target.value;
-		i18n.changeLanguage(selectedLang)
-	}
+const handleChange = (event) => {
+    const selectedLang = event.target.value;
+    i18n.changeLanguage(selectedLang);
+    localStorage.setItem('language', selectedLang);
+}
 
 	// RightSidebar ochish funksiyasi
 	const openRightSidebar = (element) => {
@@ -2580,7 +2571,7 @@ const fetchBookings = async (salonId) => {
   try {
     const token = getAuthToken();
     const response = await fetch(
-      `https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/book?salon_id=${salonId}`,
+      `${bookingsUrl}?salon_id=${salonId}`,
       {
         method: 'GET',
         headers: {
@@ -2637,7 +2628,7 @@ const createBooking = async (bookingData) => {
     console.log('📤 Creating booking:', dataToSend);
 
     const response = await fetch(
-      'https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/book',
+      bookingsUrl,
       {
         method: 'POST',
         headers: {
@@ -2967,6 +2958,10 @@ const setDefaultWhiteBoxPosition = () => {
 		localStorage.setItem("selectedSidebarIndex", "0");
 	}
 };
+
+
+
+
 
 // Icons localStorage'ga saqlash
 useEffect(() => {

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { UseGlobalContext } from '../Context';
 import SelectEmployeeModal from './SelectEmployeeModal';
 
@@ -25,7 +24,6 @@ const EditScheduleModal = (props) => {
     } = props;
 
     const { updateSchedule, user, employees } = UseGlobalContext();
-    const { t } = useTranslation();
 
     const [selectEmploy, setSelectEmploy] = useState(false);
     const [formData, setFormData] = useState({
@@ -75,10 +73,10 @@ const EditScheduleModal = (props) => {
 
         try {
             // Validatsiya
-            if (!formData.name?.trim()) throw new Error(t('schedule.validation.name_required', 'Zanayatye majburiy'));
-            if (!formData.title?.trim()) throw new Error(t('schedule.validation.title_required', 'Titul majburiy'));
-            if (!formData.start_time) throw new Error(t('schedule.validation.start_time_required', 'Boshlanish vaqti majburiy'));
-            if (!formData.end_time) throw new Error(t('schedule.validation.end_time_required', 'Tugash vaqti majburiy'));
+            if (!formData.name?.trim()) throw new Error('Занятие majburiy');
+            if (!formData.title?.trim()) throw new Error('Титул majburiy');
+            if (!formData.start_time) throw new Error('Время начала majburiy');
+            if (!formData.end_time) throw new Error('Время окончания majburiy');
 
             // ✅ Faqat o'zgargan fieldlarni yuborish
             const scheduleData = {
@@ -102,13 +100,13 @@ const EditScheduleModal = (props) => {
 
             await updateSchedule(id, scheduleData);
 
-            alert(t('schedule.update_success', 'Jadval muvaffaqiyatli yangilandi!'));
+            alert('Jadval muvaffaqiyatli yangilandi!');
             if (typeof setEditModal === 'function') {
                 setEditModal(false);
             }
         } catch (error) {
             console.error('❌ Jadval yangilashda xatolik:', error);
-            setError(error.message || t('schedule.update_error', 'Jadval yangilashda xatolik yuz berdi'));
+            setError(error.message || 'Jadval yangilashda xatolik yuz berdi');
         } finally {
             setLoading(false);
         }
@@ -117,7 +115,7 @@ const EditScheduleModal = (props) => {
     return (
         <div className='schedule-modal' onClick={() => typeof setEditModal === 'function' && setEditModal(false)}>
             <div className='schedule-modal-cont' onClick={(e) => e.stopPropagation()}>
-                <h4>{t('schedule.edit_title', 'Редактировать')}</h4>
+                <h4>Редактировать</h4>
 
                 {error && (
                     <div style={{
@@ -132,27 +130,27 @@ const EditScheduleModal = (props) => {
                 )}
 
                 <div className='schedule-modal-form'>
-                    <label htmlFor=''>{t('schedule.field.name', 'Занятие *')}</label>
+                    <label htmlFor=''>Занятие *</label>
                     <input
                         type='text'
-                        placeholder={t('schedule.placeholder.name', 'Занятие 1')}
+                        placeholder='Занятие 1'
                         className='form-inputs'
                         value={formData.name}
                         onChange={(e) => handleInputChange('name', e.target.value)}
                         required
                     />
 
-                    <label htmlFor=''>{t('schedule.field.title', 'Титул *')}</label>
+                    <label htmlFor=''>Титул *</label>
                     <input
                         type='text'
-                        placeholder={t('schedule.placeholder.title', 'Титул 1')}
+                        placeholder='Титул 1'
                         className='form-inputs'
                         value={formData.title}
                         onChange={(e) => handleInputChange('title', e.target.value)}
                         required
                     />
 
-                    <label htmlFor=''>{t('schedule.field.date', 'Дата *')}</label>
+                    <label htmlFor=''>Дата *</label>
                     <input
                         type='date'
                         className='form-inputs'
@@ -161,7 +159,7 @@ const EditScheduleModal = (props) => {
                         required
                     />
 
-                    <label htmlFor=''>{t('schedule.field.start_time', 'Время начала *')}</label>
+                    <label htmlFor=''>Время начала *</label>
                     <input
                         type='time'
                         className='form-inputs'
@@ -170,7 +168,7 @@ const EditScheduleModal = (props) => {
                         required
                     />
 
-                    <label htmlFor=''>{t('schedule.field.end_time', 'Время окончания *')}</label>
+                    <label htmlFor=''>Время окончания *</label>
                     <input
                         type='time'
                         className='form-inputs'
@@ -186,15 +184,15 @@ const EditScheduleModal = (props) => {
                             onChange={(e) => handleInputChange('repeat', e.target.checked)}
                             style={{ marginRight: '8px' }}
                         />
-                        {t('schedule.field.repeat', 'Повторить')}
+                        Повторить
                     </label>
 
                     {formData.repeat && (
                         <>
-                            <label htmlFor=''>{t('schedule.field.repeat_value', 'Повторить каждые')}</label>
+                            <label htmlFor=''>Повторить каждые</label>
                             <input
                                 type='text'
-                                placeholder={t('schedule.placeholder.repeat_value', 'например: 1 неделя')}
+                                placeholder='например: 1 неделя'
                                 className='form-inputs'
                                 value={formData.repeat_value}
                                 onChange={(e) => handleInputChange('repeat_value', e.target.value)}
@@ -204,10 +202,10 @@ const EditScheduleModal = (props) => {
                 </div>
 
                 <div className='schedule-modal-addPersonal'>
-                    <label htmlFor=''>{t('schedule.field.employees', 'Обслуживающие')}</label>
+                    <label htmlFor=''>Обслуживающие</label>
                     <button onClick={() => setSelectEmploy(true)}>
                         <img src='/images/+.png' alt='' />
-                        {t('actions.add', 'добавить')}
+                        добавить
                     </button>
 
                     {selectEmploy && (
@@ -220,12 +218,12 @@ const EditScheduleModal = (props) => {
                     {Array.isArray(formData.employee_list) && formData.employee_list.length > 0 && (
                         <div style={{ marginTop: '10px' }}>
                             <p style={{ fontSize: '0.8vw', marginBottom: '5px' }}>
-                                {t('schedule.selected_employees', 'Выбранные сотрудники:')}
+                                Выбранные сотрудники:
                             </p>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                                 {formData.employee_list.map((employeeId) => {
                                     const emp = employees?.find(e => String(e.id) === String(employeeId));
-                                    const displayName = emp?.name || emp?.employee_name || t('schedule.employee_placeholder', 'Сотрудник');
+                                    const displayName = emp?.name || emp?.employee_name || 'Сотрудник';
                                     const avatarSrc = emp?.avatar_url || emp?.photo || '/images/masterImage.png';
                                     return (
                                         <div style={{display:"flex",flexDirection:"column"}}>
@@ -261,17 +259,17 @@ const EditScheduleModal = (props) => {
                         </div>
                     )}
 
-                    <label htmlFor=''>{t('schedule.field.price', 'Цена услуги')}</label>
+                    <label htmlFor=''>Цена услуги</label>
                     <input
                         type='number'
-                        placeholder={t('schedule.placeholder.price', '0 UZS')}
+                        placeholder='0 UZS'
                         value={formData.price}
                         onChange={(e) => handleInputChange('price', e.target.value)}
                     />
                 </div>
 
                 <div className='schedule-modal-paymentType'>
-                    <label htmlFor="">{t('schedule.field.payment_hint', 'Оплата через приложение (необязательно)')}</label>
+                    <label htmlFor="">Оплата через приложение (необязательно)</label>
                     <div className='schedule-modal-paymentType-cont'>
                         <button
                             onClick={() => {
@@ -283,7 +281,7 @@ const EditScheduleModal = (props) => {
                                 color: formData.full_pay > 0 ? 'white' : 'black'
                             }}
                         >
-                            {t('schedule.payment.full', 'Полная оплата')}
+                            Полная оплата
                         </button>
                         <button
                             onClick={() => {
@@ -296,11 +294,11 @@ const EditScheduleModal = (props) => {
                                 color: formData.deposit > 0 ? 'white' : 'black'
                             }}
                         >
-                            {t('schedule.payment.deposit', 'Начальный взнос')}
+                            Начальный взнос
                         </button>
                         <input
                             type="number"
-                            placeholder={t('schedule.placeholder.deposit', '0 UZS')}
+                            placeholder='0 UZS'
                             value={formData.deposit || ''}
                             onChange={(e) => handleInputChange('deposit', e.target.value)}
                         />

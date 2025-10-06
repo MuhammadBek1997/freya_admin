@@ -77,85 +77,46 @@
     "modalTitle": "Титул",
     "modalTitlePlh": "Титул 1",
     "modalDate": "Дата",
-    "cancel": "Отменить",
-    "save": "Сохранить",
-    "actions": {
-        "add": "добавить",
-        "retry": "Повторить"
-    },
-    "common": {
-        "unknown": "Неизвестно"
-    },
-    "chat": {
-        "title": "Чаты",
-        "loading_conversations": "Загрузка диалогов...",
-        "no_conversations": "Диалоги отсутствуют",
-        "no_last_message": "Нет сообщения",
-        "loading_messages": "Загрузка сообщений...",
-        "messages_error": "Сообщения не загрузились",
-        "no_messages": "Пока нет сообщений",
-        "write_first": "Напишите сообщение первым",
-        "input_placeholder": "Напишите сообщение...",
-        "select_conversation": "Выберите диалог"
-    },
-    "schedule": {
-        "title": "Расписание",
-        "loading": "Расписание загружается...",
-        "empty": "Расписание отсутствует",
-        "no_schedule_day": "На этот день расписания нет",
-        "client": "Клиент",
-        "service": "Услуга",
-        "employee": "Сотрудник",
-        "selected_employees": "Выбранные сотрудники:",
-        "employee_placeholder": "Сотрудник",
-        "add_title": "Добавить",
-        "edit_title": "Редактировать",
-        "create_success": "Расписание успешно создано!",
-        "create_error": "Ошибка при сохранении расписания",
-        "update_success": "Расписание успешно обновлено!",
-        "update_error": "Ошибка при обновлении расписания",
-        "field": {
-            "name": "Занятие *",
-            "title": "Титул *",
-            "date": "Дата *",
-            "start_time": "Время начала *",
-            "end_time": "Время окончания *",
-            "repeat": "Повторить",
-            "repeat_value": "Повторить каждые",
-            "employees": "Обслуживающие"
-        },
-        "placeholder": {
-            "name": "Занятие 1",
-            "title": "Титул 1",
-            "repeat_value": "например: 1 неделя"
-        },
-        "validation": {
-            "name_required": "Занятие обязательно",
-            "title_required": "Титул обязателен",
-            "date_required": "Дата обязательна",
-            "start_time_required": "Время начала обязательно",
-            "end_time_required": "Время окончания обязательно",
-            "salon_missing": "ID салона не найден"
-        }
-    },
-    "posts": {
-        "title": "Посты",
-        "add": "Новый пост",
-        "soon": "Посты скоро будут добавлены"
-    },
-    "comments": {
-        "title": "Комментарии",
-        "soon": "Комментарии скоро будут добавлены"
-    },
-    "map": {
-        "hint": "Место",
-        "balloon": "Выбранное место"
-    },
-    "auth": {
-        "forbidden": "У вас нет доступа к этой странице!"
-    },
-    "common": {
-        "loading": "Загрузка...",
-        "unknown": "Неизвестно"
-    }
+  "cancel": "Отменить",
+  "save": "Сохранить"
+  ,
+  "saving": "Сохраняется...",
+  "employee": {
+    "nameLabel": "Имя *",
+    "namePlaceholder": "Введите имя",
+    "usernameLabel": "Имя пользователя *",
+    "usernamePlaceholder": "employee_username",
+    "phoneLabel": "Телефон *",
+    "phonePlaceholder": "+998901234567",
+    "emailLabel": "Email *",
+    "emailPlaceholder": "employee@example.com",
+    "positionLabel": "Должность *",
+    "chooseProfession": "Выберите профессию",
+    "passwordLabel": "Пароль *",
+    "passwordPlaceholder": "Минимум 8 символов"
+  },
+  "profession": {
+    "stylist": "Стилист",
+    "cosmetologist": "Косметолог",
+    "makeup": "Визажист",
+    "brow": "Бровист",
+    "lash": "Лэшмейкер",
+    "masseur": "Массажист"
+  },
+  "alerts": {
+    "employeeAdded": "Сотрудник успешно добавлен!"
+  },
+  "errors": {
+    "employeeCreateFailed": "Ошибка при создании сотрудника",
+    "salonIdMissing": "Salon ID не найден. Пожалуйста, войдите заново."
+  },
+  "validation": {
+    "required": "Обязательно",
+    "min2": "Минимум 2 символа",
+    "max100": "Максимум 100 символов",
+    "emailInvalid": "Неверный email",
+    "min3": "Минимум 3 символа",
+    "min8": "Минимум 8 символов",
+    "invalidProfession": "Неверная профессия"
+  }
 }

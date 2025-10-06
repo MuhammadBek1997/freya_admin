@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../hooks/useI18n'
-import { UseGlobalContext } from '../Context'
+import { UseGlobalContext, getHeaders } from '../Context'
 
 const BookScheduleModal = (props) => {
   const {
@@ -102,10 +102,7 @@ const BookScheduleModal = (props) => {
 
       const response = await fetch('https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/book', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: getHeaders(true),
         body: JSON.stringify(bookingData),
       })
 
@@ -340,5 +337,5 @@ export default BookScheduleModal
 // (
 //                 <span style={{ color: '#999', fontSize: '0.9vw' }}>Выберите сотрудника</span>
 //               )}
-//               
+//
             

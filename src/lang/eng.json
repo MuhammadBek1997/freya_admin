@@ -77,85 +77,46 @@
     "modalTitle": "Title",
     "modalTitlePlh": "Title 1",
     "modalDate": "Date",
-    "cancel": "Cancel",
-    "save": "Save",
-    "actions": {
-        "add": "add",
-        "retry": "Retry"
-    },
-    "common": {
-        "unknown": "Unknown"
-    },
-    "chat": {
-        "title": "Chats",
-        "loading_conversations": "Loading conversations...",
-        "no_conversations": "No conversations",
-        "no_last_message": "No message",
-        "loading_messages": "Loading messages...",
-        "messages_error": "Failed to load messages",
-        "no_messages": "No messages yet",
-        "write_first": "Write the first message",
-        "input_placeholder": "Type a message...",
-        "select_conversation": "Select a conversation"
-    },
-    "schedule": {
-        "title": "Schedule",
-        "loading": "Loading schedule...",
-        "empty": "No schedule",
-        "no_schedule_day": "No schedule for this day",
-        "client": "Client",
-        "service": "Service",
-        "employee": "Employee",
-        "selected_employees": "Selected employees:",
-        "employee_placeholder": "Employee",
-        "add_title": "Add",
-        "edit_title": "Edit",
-        "create_success": "Schedule created successfully!",
-        "create_error": "Error saving schedule",
-        "update_success": "Schedule updated successfully!",
-        "update_error": "Error updating schedule",
-        "field": {
-            "name": "Lesson *",
-            "title": "Title *",
-            "date": "Date *",
-            "start_time": "Start time *",
-            "end_time": "End time *",
-            "repeat": "Repeat",
-            "repeat_value": "Repeat every",
-            "employees": "Employees"
-        },
-        "placeholder": {
-            "name": "Lesson 1",
-            "title": "Title 1",
-            "repeat_value": "e.g., 1 week"
-        },
-        "validation": {
-            "name_required": "Lesson is required",
-            "title_required": "Title is required",
-            "date_required": "Date is required",
-            "start_time_required": "Start time is required",
-            "end_time_required": "End time is required",
-            "salon_missing": "Salon ID not found"
-        }
-    },
-    "posts": {
-        "title": "Posts",
-        "add": "New post",
-        "soon": "Posts will be added soon"
-    },
-    "comments": {
-        "title": "Comments",
-        "soon": "Comments will be added soon"
-    },
-    "map": {
-        "hint": "Place",
-        "balloon": "Selected place"
-    },
-    "auth": {
-        "forbidden": "You do not have permission to access this page!"
-    },
-    "common": {
-        "loading": "Loading...",
-        "unknown": "Unknown"
-    }
+  "cancel": "Cancel",
+  "save": "Save"
+  ,
+  "saving": "Saving...",
+  "employee": {
+    "nameLabel": "Name *",
+    "namePlaceholder": "Enter name",
+    "usernameLabel": "Username *",
+    "usernamePlaceholder": "employee_username",
+    "phoneLabel": "Phone *",
+    "phonePlaceholder": "+998901234567",
+    "emailLabel": "Email *",
+    "emailPlaceholder": "employee@example.com",
+    "positionLabel": "Position *",
+    "chooseProfession": "Choose profession",
+    "passwordLabel": "Password *",
+    "passwordPlaceholder": "At least 8 characters"
+  },
+  "profession": {
+    "stylist": "Stylist",
+    "cosmetologist": "Cosmetologist",
+    "makeup": "Makeup artist",
+    "brow": "Brow artist",
+    "lash": "Lashmaker",
+    "masseur": "Masseur"
+  },
+  "alerts": {
+    "employeeAdded": "Employee added successfully!"
+  },
+  "errors": {
+    "employeeCreateFailed": "Failed to create employee",
+    "salonIdMissing": "Salon ID missing. Please log in again."
+  },
+  "validation": {
+    "required": "Required",
+    "min2": "At least 2 characters",
+    "max100": "Up to 100 characters",
+    "emailInvalid": "Invalid email",
+    "min3": "At least 3 characters",
+    "min8": "At least 8 characters",
+    "invalidProfession": "Invalid profession"
+  }
 }

@@ -90,16 +90,16 @@
   width: 10vw;
 }
 .home-nav-columns a:nth-child(2){
-  margin-left: 20vw;
+  margin-left: 18vw;
 }
 .home-nav-columns a:nth-child(3){
-  margin-left: 1vw;
+  margin-left: 0vw;
 }
 .home-nav-columns a:nth-child(4){
-  margin-left: 1vw;
+  margin-left: 2vw;
 }
 .home-nav-columns a:nth-child(5){
-  margin-left: -2vw;
+  margin-left: -1.5vw;
 }
 .home-nav-columns a:nth-child(6){
   margin-left: -1vw;
