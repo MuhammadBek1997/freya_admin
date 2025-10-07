@@ -122,6 +122,26 @@
   font-size: 0.7vw;
   font-weight: 300;
 }
+.profile-salon-sale{
+  height: 3vw;
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  img{
+    width: 1.2vw;
+  }
+}
+.profile-salon-sale div{
+  padding: 0.1vw 1vw;
+  border-radius: 5vw;
+  font-size: 1.2vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5vw;
+  color: #FFFFFF;
+  background: linear-gradient(87.93deg, #C236FF -0.79%, #83B9FF 99.75%);
+}
 
 
 .profile-nav-right{

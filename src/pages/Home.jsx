@@ -12,15 +12,18 @@ const Home = () => {
         openRightSidebar,
         selectedFilter,
         setSelectedFilter,
-        combinedAppointments, // ✅ appointments o'rniga
+        combinedAppointments,
         appointmentsError,
         appointmentsLoading,
-        bookingsLoading, // ✅ bookings loading ham kerak
-        fetchCombinedAppointments, // ✅ yangi funksiya
+        bookingsLoading,
+        fetchCombinedAppointments,
         user
       } = UseGlobalContext()
 
-      const [selectedAppoint, setSelectedAppoint] = useState({})
+  const [selectedAppoint, setSelectedAppoint] = useState({})
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Sahifa yuklanganda ma'lumotlarni olish
   useEffect(() => {
@@ -29,7 +32,6 @@ const Home = () => {
       setSelectedFilter(parseInt(savedFilter));
     }
 
-    // Combined appointments'ni olish
     if (user?.salon_id) {
       fetchCombinedAppointments(user.salon_id);
     }
@@ -55,8 +57,8 @@ const Home = () => {
       return d;
     })();
 
-    return combinedAppointments.filter((item) => {
-      // ✅ date field ishlatish (appointment va booking uchun umumiy)
+    // Date filter
+    let filtered = combinedAppointments.filter((item) => {
       const d = new Date(item?.date);
       if (Number.isNaN(d.getTime())) return false;
 
@@ -76,9 +78,29 @@ const Home = () => {
           return true;
       }
     });
-  }, [combinedAppointments, selectedFilter]);
 
-  // ✅ Loading state - ikkala loading ham tekshiriladi
+    // Search filter - barcha maydonlar bo'yicha qidirish
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((item) => {
+        // Barcha string va number qiymatlarni tekshirish
+        const searchableValues = Object.values(item)
+          .filter(val => val !== null && val !== undefined)
+          .map(val => {
+            if (typeof val === 'string') return val.toLowerCase();
+            if (typeof val === 'number') return val.toString();
+            if (typeof val === 'boolean') return val.toString();
+            return '';
+          })
+          .join(' ');
+        
+        return searchableValues.includes(query);
+      });
+    }
+
+    return filtered;
+  }, [combinedAppointments, selectedFilter, searchQuery]);
+
   const isLoading = appointmentsLoading || bookingsLoading;
 
   return (
@@ -86,14 +108,19 @@ const Home = () => {
       <nav className="home-nav">
         <div className="home-nav-top">
           <img src="/images/clientAppIcon.png" alt="" />
-          <h2>
-            {t('homeHT')}
-          </h2>
+          <h2>{t('homeHT')}</h2>
         </div>
+        
         <div className="home-nav-search">
           <img src="/images/searchIcon.png" alt="" />
-          <input type="text" placeholder={t('homeSrchPlhdr')} />
+          <input 
+            type="text" 
+            placeholder={t('homeSrchPlhdr')} 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
+        
         <div className="home-nav-filter">
           <button
             onClick={() => {
@@ -165,6 +192,7 @@ const Home = () => {
             {t('homeFlThsYr')}
           </button>
         </div>
+        
         <div className="home-nav-columns">
           <a href="">{t('homeCmnNm')}</a>
           <a href="">{t('homeCmnNmbrApp')}</a>
@@ -174,6 +202,7 @@ const Home = () => {
           <a href="">{t('homeCmnWhm')}</a>
         </div>
       </nav>
+      
       <div className="home-body">
         {isLoading ? (
           <div style={{
@@ -218,16 +247,18 @@ const Home = () => {
           }}>
             <img style={{ width: "6vw" }} src="/images/homeDashImg.png" alt="" />
             <p style={{ color: "#A8A8B3", fontSize: "1vw" }}>
-              {t("homeNone")}
+              {searchQuery ? t('searchNoResults') : t("homeNone")}
             </p>
           </div>
         )}
       </div>
+      
       <div className="right-sidebar-cont" style={{
         transform: isRightSidebarOpen ? "translateX(0vw)" : "translateX(100vw)"
       }}>
         <RightSidebar selectedAppoint={selectedAppoint} />
       </div>
+      
       {!confirmModal && (
         <div className="confirm-modal">
           <ConfirmModal selectedAppoint={selectedAppoint} />

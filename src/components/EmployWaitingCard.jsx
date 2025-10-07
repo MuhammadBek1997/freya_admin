@@ -1,10 +1,12 @@
 import React from 'react'
+import { UseGlobalContext } from '../Context'
 
-const EmployWaitingCard = ({ id, name,spec,isMenuOpen,setIsMenuOpen, bio, is_verified, salon, isOpen, handleToggleMenu , isCheckedItem , setIsCheckedItem , handleRemoveWaitingEmp  }) => {
-
-
-
-
+const EmployWaitingCard = ({ 
+    id, name, spec, isMenuOpen, setIsMenuOpen, bio, is_verified, 
+    salon, isOpen, handleToggleMenu, isCheckedItem, setIsCheckedItem, 
+    handleRemoveWaitingEmp 
+}) => {
+    const { t } = UseGlobalContext()
 
     const handleToggleEmployMenu = (ID, type) => {
         setIsMenuOpen({
@@ -12,8 +14,6 @@ const EmployWaitingCard = ({ id, name,spec,isMenuOpen,setIsMenuOpen, bio, is_ver
             menu: type
         });
     };
-
-
 
     return (
         <div className="employCard">
@@ -31,11 +31,7 @@ const EmployWaitingCard = ({ id, name,spec,isMenuOpen,setIsMenuOpen, bio, is_ver
                     }}
                 />
                 <div className="employCard-masterJob">
-                    <p>
-                        {
-                            spec
-                        }
-                    </p>
+                    <p>{spec}</p>
                 </div>
                 <button className="employCard-menuBtn" onClick={handleToggleMenu}>
                     <img src="/images/menuImg.png" alt="" />
@@ -45,7 +41,7 @@ const EmployWaitingCard = ({ id, name,spec,isMenuOpen,setIsMenuOpen, bio, is_ver
             <h2>{name}</h2>
             <div className="employCard-rating">
                 <img src="/images/Star1.png" alt="" />
-                <p>4.8 (13 отзывов)</p>
+                <p>4.8 (13 {t('profileReviews')})</p>
             </div>
             <div className="employWaitingCard-bottom">
                 <div className="employCard-email">
@@ -58,17 +54,17 @@ const EmployWaitingCard = ({ id, name,spec,isMenuOpen,setIsMenuOpen, bio, is_ver
                 </div>
                 <div className="employCard-workedTimes">
                     <h1>24</h1>
-                    <p>Работы</p>
+                    <p>{t('workHour')}</p>
                     <button className="employCard-workedTimesBtn" onClick={() => handleToggleEmployMenu(id, 'see')}>
-                        Посмотреть
+                        {t('look')}
                     </button>
                 </div>
             </div>
             {isOpen && (
                 <div className="employWaitingCard-menu">
-                    <div onClick={()=>handleRemoveWaitingEmp([id])}>
+                    <div onClick={() => handleRemoveWaitingEmp([id])}>
                         <img src="/images/sendWaitEmploy.png" alt="" />
-                        <p>Вернуть в числа сотрудников</p>
+                        <p>{t('returnToEmployees')}</p>
                     </div>
                 </div>
             )}

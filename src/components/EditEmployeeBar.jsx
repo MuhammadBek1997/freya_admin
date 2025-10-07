@@ -1,9 +1,8 @@
-// EditEmployeeBar.jsx - To'liq yangilangan versiya
 import React, { useEffect, useState } from 'react';
 import { UseGlobalContext } from '../Context';
 
 const EditEmployeeBar = ({ employee, onClose }) => {
-  const { updateEmployee, fetchEmployees } = UseGlobalContext();
+  const { updateEmployee, fetchEmployees, t } = UseGlobalContext();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -17,11 +16,8 @@ const EditEmployeeBar = ({ employee, onClose }) => {
     password: ''
   });
 
-  // Employee props'dan ma'lumotlarni yuklash
   useEffect(() => {
     if (employee) {
-      console.log('📥 Employee data:', employee);
-      
       setFormData({
         name: employee.name || '',
         surname: employee.surname || '',
@@ -29,14 +25,14 @@ const EditEmployeeBar = ({ employee, onClose }) => {
         email: employee.email || '',
         profession: employee.profession || '',
         username: employee.username || '',
-        password: '' // Password hech qachon to'ldirilmaydi (xavfsizlik uchun)
+        password: ''
       });
     }
   }, [employee]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    setError(''); // Xatoni tozalash
+    setError('');
   };
 
   const handleSave = async () => {
@@ -45,14 +41,13 @@ const EditEmployeeBar = ({ employee, onClose }) => {
       setError('');
 
       if (!employee?.id) {
-        throw new Error('Employee ID topilmadi');
+        throw new Error(t('employeeIdNotFound') || 'Employee ID topilmadi');
       }
 
-      // Validatsiya
       if (!formData.name.trim()) {
-        throw new Error('Ism majburiy');
+        throw new Error(t('validation.required') || 'Ism majburiy');
       }
-      // Update data tayyorlash (backend EmployeeUpdate schema bilan mos)
+
       const updateData = {
         name: formData.name.trim(),
         surname: formData.surname.trim(),
@@ -62,21 +57,13 @@ const EditEmployeeBar = ({ employee, onClose }) => {
         username: formData.username.trim()
       };
 
-      console.log('📤 Updating employee:', updateData);
-
       await updateEmployee(employee.id, updateData);
-
-      console.log('✅ Employee updated successfully');
-      
-      // Employees list'ni qayta yuklash
       await fetchEmployees();
-      
-      // Sidebar'ni yopish
       onClose();
 
     } catch (err) {
       console.error('❌ Error updating employee:', err);
-      setError(err.message || 'Xatolik yuz berdi');
+      setError(err.message || t('updateError') || 'Xatolik yuz berdi');
     } finally {
       setLoading(false);
     }
@@ -88,7 +75,7 @@ const EditEmployeeBar = ({ employee, onClose }) => {
         <img src="/images/masterImage.png" alt="" className="editEmployeeBar-cont-img" />
         <div className="editEmployeeBar-rating">
           <img src="/images/Star1.png" alt="" />
-          <p>4.5 (12 отзывов)</p>
+          <p>4.5 (12 {t('profileReviews') || 'отзывов'})</p>
         </div>
 
         {error && (
@@ -105,7 +92,7 @@ const EditEmployeeBar = ({ employee, onClose }) => {
         )}
 
         <div className="editEmployeeBar-cont-info">
-          <label>Имя *</label>
+          <label>{t('employee.nameLabel') || 'Имя'} *</label>
           <input
             type="text"
             value={formData.name}
@@ -113,7 +100,7 @@ const EditEmployeeBar = ({ employee, onClose }) => {
             disabled={loading}
           />
 
-          <label>Фамилия</label>
+          <label>{t('surname') || 'Фамилия'}</label>
           <input
             type="text"
             value={formData.surname}
@@ -121,7 +108,7 @@ const EditEmployeeBar = ({ employee, onClose }) => {
             disabled={loading}
           />
 
-          <label>Номер телефона</label>
+          <label>{t('employee.phoneLabel') || 'Номер телефона'}</label>
           <input
             type="text"
             value={formData.phone}
@@ -130,7 +117,7 @@ const EditEmployeeBar = ({ employee, onClose }) => {
             placeholder="+998901234567"
           />
 
-          <label>Электронная почта</label>
+          <label>{t('employee.emailLabel') || 'Электронная почта'}</label>
           <input
             type="email"
             value={formData.email}
@@ -139,7 +126,7 @@ const EditEmployeeBar = ({ employee, onClose }) => {
             placeholder="example@email.com"
           />
 
-          <label>Профессия</label>
+          <label>{t('employee.positionLabel') || 'Профессия'}</label>
           <input
             type="text"
             value={formData.profession}
@@ -148,7 +135,7 @@ const EditEmployeeBar = ({ employee, onClose }) => {
             placeholder="Hair, Nails, etc."
           />
 
-          <label>Имя пользователя</label>
+          <label>{t('employee.usernameLabel') || 'Имя пользователя'}</label>
           <input
             type="text"
             value={formData.username}
@@ -156,13 +143,13 @@ const EditEmployeeBar = ({ employee, onClose }) => {
             disabled={loading}
           />
 
-          <label>Пароль (оставьте пустым, если не хотите менять)</label>
+          <label>{t('passwordOptional') || 'Пароль (оставьте пустым, если не хотите менять)'}</label>
           <input
             type="password"
             value={formData.password}
             onChange={(e) => handleChange('password', e.target.value)}
             disabled={loading}
-            placeholder="Новый пароль"
+            placeholder={t('newPassword') || 'Новый пароль'}
           />
         </div>
 
@@ -172,14 +159,14 @@ const EditEmployeeBar = ({ employee, onClose }) => {
             onClick={onClose}
             disabled={loading}
           >
-            Отменить
+            {t('cancel') || 'Отменить'}
           </button>
           <button 
             className="editEmployeeBar-cont-bottom-save"
             onClick={handleSave}
             disabled={loading}
           >
-            {loading ? 'Сохранение...' : 'Сохранить'}
+            {loading ? (t('saving') || 'Сохранение...') : (t('save') || 'Сохранить')}
           </button>
         </div>
       </div>

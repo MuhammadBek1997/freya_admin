@@ -958,7 +958,26 @@ const Profile = () => {
                   </p>
                 </div>
                 <div className='profile-salon-sale'>
-
+                  {/* {salonProfile.is_top} */}
+                  {/* <div className='profile-salon-top'>
+                  <img src="/images/Star2.png" alt="" />
+                  <p>
+                    {t("top")}
+                  </p>
+                  </div> */}
+                  {/* <div className='profile-salon-new'>
+                    <p>
+                      {t("new")}
+                    </p>
+                  </div> */}
+                  {salonProfile.salon_sale 
+                  &&
+                  <div className='profile-salon-salecount'>
+                      <p>
+                        {t("sale")}{salonProfile.salon_sale}%
+                      </p>
+                  </div>}
+                  
                 </div>
               </div>
             </div>

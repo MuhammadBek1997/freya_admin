@@ -53,7 +53,7 @@ const RightSidebar = () => {
     
 
     const handleReject = async () => {
-        const reason = prompt('Bekor qilish sababini kiriting:');
+        const reason = prompt(t('cancelReasonPrompt'));
         if (!reason) return;
 
         try {
@@ -84,9 +84,12 @@ const RightSidebar = () => {
                 <img src="/images/closeSidebar.png" alt="Close" />
             </button>
 
-            <img src="/images/customerImage.png" alt="" className='right-sidebar-img' />
+            {(() => {
+                const customerAvatar = selectedElement?.user_avatar || selectedElement?.user_avatar_url || selectedElement?.avatar || selectedElement?.avatar_url || "/images/customerImage.png";
+                return <img src={customerAvatar} alt="" className='right-sidebar-img' />
+            })()}
             <h3>
-                {selectedElement.user_name || t("Mijoz ismi")}
+                {selectedElement.user_name || t('homeCmnFullName')}
             </h3>
 
             <div className='right-custNumb'>
@@ -103,7 +106,7 @@ const RightSidebar = () => {
 
             <div className='right-appNumb'>
                 <h3>
-                    {selectedElement.application_number || 'N/A'}
+                    {selectedElement.application_number || t('notAvailable')}
                 </h3>
             </div>
 
@@ -129,19 +132,19 @@ const RightSidebar = () => {
 
             <div className='right-appTime-cont'>
                 <div className='right-appTime-top'>
-                    <h4>{t("Время")}</h4>
+                    <h4>{t('timeLabel')}</h4>
                 </div>
                 <div className='right-appTime-btm'>
                     <div className='appTime-left'>
                         <div>
                             <p>
                                 {scheduleLoading
-                                    ? 'Loading...'
+                                    ? t('loading')
                                     : scheduleData?.start_time
                                         ? scheduleData.start_time.substring(0, 5)
                                         : selectedElement.application_time
                                             ? selectedElement.application_time.substring(0, 5)
-                                            : 'N/A'
+                                            : t('notAvailable')
                                 }
                             </p>
                         </div>
@@ -150,7 +153,7 @@ const RightSidebar = () => {
                         <div>
                             <p>
                                 {scheduleLoading
-                                    ? 'Loading...'
+                                    ? t('loading')
                                     : scheduleData?.end_time ||
                                     (selectedElement.application_time ?
                                         (() => {
@@ -159,7 +162,7 @@ const RightSidebar = () => {
                                             const minute = parseInt(timeParts[1], 10);
                                             return `${hour}:${minute < 10 ? "0" + minute : minute}`;
                                         })()
-                                        : 'N/A'
+                                        : t('notAvailable')
                                     )
                                 }
                             </p>
@@ -171,7 +174,7 @@ const RightSidebar = () => {
             {selectedElement.notes && (
                 <div className='right-notes-cont'>
                     <div className='right-notes-top'>
-                        <h4>{t("Mijoz izohi")}</h4>
+                        <h4>{t('clientNote')}</h4>
                     </div>
                     <div className='right-notes-btm'>
                         <p>{selectedElement.notes}</p>
@@ -182,15 +185,19 @@ const RightSidebar = () => {
             {employee && (
                 <div className='right-master-info'>
                     <div className='right-master-header'>
-                        <img
-                            src={employee.profile_image || "/images/masterImage.png"}
-                            alt="Master"
-                            className='right-master-avatar'
-                        />
+                        {(() => {
+                            const masterAvatar = employee?.avatar_url || employee?.photo || employee?.profile_image || "/images/masterImage.png";
+                            return (
+                                <img
+                                    src={masterAvatar}
+                                    alt="Master"
+                                    className='right-master-avatar'
+                                />
+                            );
+                        })()}
                         <div className='right-master-details'>
-                            <h4>{employee.name || 'Любовь'}</h4>
-                            <p>18 работы</p>
-                            <p>{employee.profession || 'Колорист'}</p>
+                            <h4>{employee.name || t('notAvailable')}</h4>
+                            <p>{employee.profession || t('homeCmnProfession')}</p>
                         </div>
                     </div>
                     <div className='right-master-rating'>
@@ -202,11 +209,11 @@ const RightSidebar = () => {
 
             {selectedElement.service_name && (
                 <div className='right-service-info'>
-                    <h4>Услуга</h4>
+                    <h4>{t('service')}</h4>
                     <div className='right-service-details'>
                         <p>{selectedElement.service_name}</p>
                         {selectedElement.service_price && (
-                            <p>СКУЛЬПТУРНО-БУККАЛЬНЫЙ МАССАЖ ЛИЦА 60 мин</p>
+                            <p>{t('price')}: {selectedElement.service_price}</p>
                         )}
                     </div>
                 </div>
@@ -214,7 +221,7 @@ const RightSidebar = () => {
 
             {selectedElement.is_cancelled && selectedElement.cancellation_reason && (
                 <div className='right-cancel-reason'>
-                    <h4>{t("Bekor qilish sababi")}</h4>
+                    <h4>{t('cancelReason')}</h4>
                     <p>{selectedElement.cancellation_reason}</p>
                 </div>
             )}
@@ -222,7 +229,7 @@ const RightSidebar = () => {
             {selectedElement.is_completed && relatedComments.length > 0 && (
                 <div className='right-comments-cont'>
                     <div className='right-comments-top'>
-                        <h4>{t("Mijoz kommentlari")}</h4>
+                        <h4>{t('customerComments')}</h4>
                     </div>
                     <div className='right-comments-btm'>
                         {relatedComments.map((comment, index) => (

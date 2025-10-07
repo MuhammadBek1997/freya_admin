@@ -26,18 +26,20 @@ const Schedule = () => {
     services,
     fetchServices
   } = UseGlobalContext()
+  
   let currentDay = {
     day: new Date().getDate(),
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear()
   }
 
-
   const weekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
-  // API dan kelgan guruhlangan ma'lumotlarni ishlatamiz
   const dayListItems = groupedSchedules || [];
   const [editModal, setEditModal] = useState(false)
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Component yuklanganda grouped schedules ni fetch qilish
   useEffect(() => {
@@ -51,8 +53,6 @@ const Schedule = () => {
     }
   }, [dayListItems, selectDay.length, setSelectDay]);
 
-
-
   const containerRef = useRef(null)
 
   const handleSelectDay = (element) => {
@@ -60,27 +60,56 @@ const Schedule = () => {
     setSelectDay(element)
   }
 
-  
+  // Filter schedules based on search query
+  const filterSchedules = (schedulesList) => {
+    if (!searchQuery.trim()) return schedulesList;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return schedulesList.filter(schedule => {
+      const name = (schedule.name || '').toLowerCase();
+      const title = (schedule.title || '').toLowerCase();
+      const price = (schedule.price || '').toString();
+      
+      // Employee names search
+      const employeeNames = (schedule.employee_list || [])
+        .map(empId => {
+          const emp = (employees || []).find(e => e.id === empId);
+          return (emp?.name || '').toLowerCase();
+        })
+        .join(' ');
+      
+      return name.includes(query) || 
+             title.includes(query) || 
+             price.includes(query) ||
+             employeeNames.includes(query);
+    });
+  };
+
+  // Filter selected day schedules
+  const filteredSelectedDaySchedules = filterSchedules(selectDay.length > 0 ? selectDay : []);
 
   return (
     <section>
       <nav className="sched-nav">
         <div className="sched-nav-top">
           <img src="/images/clientSchedule.png" alt="" />
-          <h2>
-            {t('schedHT')}
-          </h2>
+          <h2>{t('schedHT')}</h2>
         </div>
+        
         <div className="sched-nav-search">
           <img src="/images/searchIcon.png" alt="" />
-          <input type="text" placeholder={t('homeSrchPlhdr')} />
+          <input 
+            type="text" 
+            placeholder={t('homeSrchPlhdr')} 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
           <button className='sched-add-btn' onClick={() => setAddSched(true)}>
             <img src="/images/+.png" alt="" />
-            <p>
-              {t("schedSrchBtn")}
-            </p>
+            <p>{t("schedSrchBtn")}</p>
           </button>
         </div>
+        
         <div className='sched-dayList'>
           <div
             ref={containerRef}
@@ -142,47 +171,34 @@ const Schedule = () => {
               )
             })}
           </div>
-          {
-            dayListItems.length > 18 ?
-              <button className='sched-dayList-btn' onClick={() => scrollRight(containerRef)} >
-                <img src="/images/leftArrow.png" alt="" />
-              </button>
-              : null
-          }
+          {dayListItems.length > 18 ? (
+            <button className='sched-dayList-btn' onClick={() => scrollRight(containerRef)} >
+              <img src="/images/leftArrow.png" alt="" />
+            </button>
+          ) : null}
         </div>
       </nav>
+      
       <div className='schedule-body'>
-        {
-          (selectDay.length > 0 ? selectDay : []).map((item) => {
+        {filteredSelectedDaySchedules.length > 0 ? (
+          filteredSelectedDaySchedules.map((item) => {
             return (
               <div key={item.id} className='schedule-list-item'>
                 <div className='schedule-item-top'>
                   <div className="schedule-order">
                     <div className="schedule-order-type">
                       <img src="/images/scheduleOrderIcon.png" alt="orderStar" />
-                      <h3>
-                        {item.name}
-                      </h3>
+                      <h3>{item.name}</h3>
                     </div>
-                    <p className='order-title'>
-                      {item.title}
-                    </p>
+                    <p className='order-title'>{item.title}</p>
                     <div className='schedule-order-pricebox'>
-                      <p>
-                        Цена
-                      </p>
+                      <p>Цена</p>
                       <div>
-                        <h3>
-                          {item.price / 1000} 000 <span>uzs</span>
-                        </h3>
+                        <h3>{item.price / 1000} 000 <span>uzs</span></h3>
                       </div>
-                      <p>
-                        Начальный взнос:
-                      </p>
+                      <p>Начальный взнос:</p>
                       <div>
-                        <h3>
-                          {item.deposit != 0 ? item.deposit / 1000 + " 000" : 0} <span>uzs</span>
-                        </h3>
+                        <h3>{item.deposit != 0 ? item.deposit / 1000 + " 000" : 0} <span>uzs</span></h3>
                       </div>
                     </div>
                   </div>
@@ -192,49 +208,46 @@ const Schedule = () => {
                     <img src={(new Date(item.date).getDate() - 7) <= currentDay.day && new Date(item.date).getMonth() + 1 == currentDay.month ? "/images/reserveIcon.png" : "/images/editPen.png"} alt="" />
                   </button>
                   <div className='editChedule'>
-                    {
-                      editModal
-                      ?
+                    {editModal ? (
                       <>
-                      {
-                        (new Date(item.date).getDate() - 7) <= currentDay.day
-                      && new Date(item.date).getMonth() + 1 == currentDay.month
-                      ?
-                      <BookScheduleModal {...item} setEditModal={setEditModal}/>
-                      :
-                      <EditScheduleModal {...item} setEditModal={setEditModal} />
-                    }
+                        {(new Date(item.date).getDate() - 7) <= currentDay.day
+                        && new Date(item.date).getMonth() + 1 == currentDay.month
+                        ? <BookScheduleModal {...item} setEditModal={setEditModal}/>
+                        : <EditScheduleModal {...item} setEditModal={setEditModal} />}
                       </>
-                      :
-                      null
-                    }
+                    ) : null}
                   </div>
                 </div>
                 <div className="schedule-item-masters">
-                  {
-                    
-                    (Array.isArray(item.employee_list) ? item.employee_list : []).map((employeeId) => {
-                      let master = (employees || []).find((i) => i.id == employeeId) || { id: employeeId, name: 'Unknown Master' }
-                      return (
-                        <div className='schedule-master-card' key={master.id}>
-                          <img src="/images/masterImage.png" alt="" />
-                          <p>
-                            {master.name.split(" ")[0]}
-                          </p>
-                          <div className='masters-time'>
-                            <p>
-                              {item.start_time} - {item.end_time}
-                            </p>
-                          </div>
+                  {(Array.isArray(item.employee_list) ? item.employee_list : []).map((employeeId) => {
+                    let master = (employees || []).find((i) => i.id == employeeId) || { id: employeeId, name: 'Unknown Master' }
+                    return (
+                      <div className='schedule-master-card' key={master.id}>
+                        <img src="/images/masterImage.png" alt="" />
+                        <p>{master.name.split(" ")[0]}</p>
+                        <div className='masters-time'>
+                          <p>{item.start_time} - {item.end_time}</p>
                         </div>
-                      )
-                    })
-                  }
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )
           })
-        }
+        ) : (
+          <div style={{
+            width: "100%",
+            height: "60vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            color: "#A8A8B3",
+            fontSize: "1vw"
+          }}>
+            {searchQuery ? t('searchNoResults') : t('noSchedules')}
+          </div>
+        )}
       </div>
 
       <div className='addChedule'>

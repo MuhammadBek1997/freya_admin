@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import '../styles/ChatStyles.css'
 import { UseGlobalContext, getHeaders } from '../Context';
 import EmployeeProfileModal from '../components/EmployeeProfileModal';
+import EmployeePostForm from '../components/EmployeePostForm';
 
 const EmployeeChatPage = () => {
   const {
@@ -17,10 +18,11 @@ const EmployeeChatPage = () => {
     sendMessage,
     getUnreadCount,
     markConversationAsRead,
-    createEmployeePost, 
+    createEmployeePost,
     fetchEmployeePosts,
     updateEmployeePost,
-    deleteEmployeePost
+    deleteEmployeePost,
+    t
   } = UseGlobalContext();
 
   const [selectedUser, setSelectedUser] = useState(null);
@@ -40,9 +42,11 @@ const EmployeeChatPage = () => {
   const [employeePosts, setEmployeePosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState(null);
-  const [postSlideIndex, setPostSlideIndex] = useState({}); // { [postId]: currentIndex }
+  const [postSlideIndex, setPostSlideIndex] = useState({});
 
-  // Load posts when switching to Posts tab
+  // ✅ Post modal state
+  const [isAddPostModalOpen, setIsAddPostModalOpen] = useState(false);
+
   useEffect(() => {
     const loadPosts = async () => {
       if (!user) return;
@@ -54,7 +58,7 @@ const EmployeeChatPage = () => {
         const list = data?.data || data || [];
         setEmployeePosts(list);
       } catch (e) {
-        setPostsError(e?.message || 'Postlarni olishda xatolik');
+        setPostsError(e?.message || t('postsLoadError') || 'Postlarni olishda xatolik');
       } finally {
         setPostsLoading(false);
       }
@@ -65,7 +69,6 @@ const EmployeeChatPage = () => {
     }
   }, [selectedPageEmployee, user]);
 
-  // Carousel helpers per post
   const nextPostSlide = (postId, total) => {
     setPostSlideIndex(prev => {
       const current = prev[postId] || 0;
@@ -73,6 +76,7 @@ const EmployeeChatPage = () => {
       return { ...prev, [postId]: next };
     });
   };
+
   const goToPostSlide = (postId, index) => {
     setPostSlideIndex(prev => ({ ...prev, [postId]: index }));
   };
@@ -104,14 +108,12 @@ const EmployeeChatPage = () => {
     }
   }, [messages]);
 
-  // Fetch grouped schedules when page changes to schedule
   useEffect(() => {
     if (selectedPageEmployee === 'schedule' && user) {
       fetchGroupedSchedules();
     }
   }, [selectedPageEmployee, user]);
 
-  // Fetch grouped schedules from /api/schedules/grouped/by-date
   const fetchGroupedSchedules = async () => {
     setSchedulesLoading(true);
     setSchedulesError(null);
@@ -125,20 +127,14 @@ const EmployeeChatPage = () => {
       );
 
       if (!response.ok) {
-        throw new Error('Jadval yuklanmadi');
+        throw new Error(t('scheduleLoadError') || 'Jadval yuklanmadi');
       }
 
       const data = await response.json();
-      console.log('Grouped schedules response:', data);
-
-      // Data struktura: { "2025-10-05": [...schedules], "2025-10-06": [...schedules] }
       const schedulesData = data.data || data;
-
-      // Employee role bo'lsa, faqat o'z schedule'larini filter qilamiz
       let filteredSchedules = {};
 
       if (user.role === 'employee') {
-        // Employee faqat o'z appointment'larini ko'radi
         Object.keys(schedulesData).forEach(date => {
           const employeeSchedules = schedulesData[date].filter(
             schedule => schedule.employee_id === user.id
@@ -148,13 +144,11 @@ const EmployeeChatPage = () => {
           }
         });
       } else {
-        // Admin yoki private_admin barcha schedule'larni ko'radi (salon filter backend'da)
         filteredSchedules = schedulesData;
       }
 
       setGroupedSchedules(filteredSchedules);
 
-      // Birinchi sanani tanlash
       const dates = Object.keys(filteredSchedules).sort();
       if (dates.length > 0 && !selectedDate) {
         setSelectedDate(dates[0]);
@@ -169,13 +163,11 @@ const EmployeeChatPage = () => {
     }
   };
 
-  // Get schedules for selected date
   const getSchedulesForDate = () => {
     if (!selectedDate || !groupedSchedules[selectedDate]) return [];
     return groupedSchedules[selectedDate];
   };
 
-  // Get available dates
   const getAvailableDates = () => {
     return Object.keys(groupedSchedules).sort();
   };
@@ -187,7 +179,6 @@ const EmployeeChatPage = () => {
     try {
       await fetchMessages(userId);
       await markConversationAsRead(userId);
-
       const count = await getUnreadCount();
       setUnreadCount(count);
     } catch (error) {
@@ -203,11 +194,17 @@ const EmployeeChatPage = () => {
       await sendMessage(selectedUser.id, newMessage.trim());
       setNewMessage('');
 
+      // ✅ Xabarlar ro'yxatini darhol yangilash
+      await fetchMessages(selectedUser.id);
+
+      // ✅ Conversations ro'yxatini yangilash (oxirgi xabarni ko'rsatish uchun)
+      await fetchConversations();
+
       const count = await getUnreadCount();
       setUnreadCount(count);
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Xabar yuborishda xatolik yuz berdi!');
+      alert(t('messageSendError') || 'Xabar yuborishda xatolik yuz berdi!');
     }
   };
 
@@ -224,7 +221,6 @@ const EmployeeChatPage = () => {
     handleCloseProfileModal();
   };
 
-  // Format date for display (DD.MM)
   const formatDisplayDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('uz-UZ', {
@@ -233,7 +229,6 @@ const EmployeeChatPage = () => {
     });
   };
 
-  // Format date with day name
   const formatDateWithDay = (dateString) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -241,9 +236,9 @@ const EmployeeChatPage = () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return 'Bugun';
+      return t('today') || 'Bugun';
     } else if (date.toDateString() === tomorrow.toDateString()) {
-      return 'Ertaga';
+      return t('tomorrow') || 'Ertaga';
     } else {
       return date.toLocaleDateString('uz-UZ', {
         weekday: 'long',
@@ -253,7 +248,6 @@ const EmployeeChatPage = () => {
     }
   };
 
-  // Format time
   const formatTime = (timeString) => {
     if (!timeString) return '';
     try {
@@ -267,76 +261,16 @@ const EmployeeChatPage = () => {
     }
   };
 
-
-  // 1. Post yaratish
-const handleCreatePost = async () => {
-    try {
-        const newPost = await createEmployeePost('employee-uuid-here', {
-            title: 'Yangi post',
-            content: 'Post matni',
-            image_url: 'https://example.com/image.jpg' // ixtiyoriy
-        });
-        console.log('Post yaratildi:', newPost);
-    } catch (error) {
-        console.error('Xato:', error.message);
-    }
-};
-
-
-// 2. Postlarni olish
-const handleFetchPosts = async () => {
-    try {
-        const posts = await fetchEmployeePosts('employee-uuid-here', 1, 10);
-        console.log('Postlar:', posts);
-    } catch (error) {
-        console.error('Xato:', error.message);
-    }
-};
-
-
-// 3. Post yangilash
-const handleUpdatePost = async () => {
-    try {
-        const updated = await updateEmployeePost(
-            'employee-uuid-here',
-            'post-uuid-here',
-            {
-                title: 'Yangilangan sarlavha',
-                content: 'Yangilangan matn'
-            }
-        );
-        console.log('Post yangilandi:', updated);
-    } catch (error) {
-        console.error('Xato:', error.message);
-    }
-};
-
-
-// 4. Post o'chirish
-const handleDeletePost = async () => {
-    try {
-        await deleteEmployeePost('employee-uuid-here', 'post-uuid-here');
-        console.log('Post o\'chirildi');
-    } catch (error) {
-        console.error('Xato:', error.message);
-    }
-};
-
-
-  // Status text
   const getStatusText = (status) => {
     const statusMap = {
-      'pending': 'Kutilmoqda',
-      'confirmed': 'Tasdiqlangan',
-      'completed': 'Bajarilgan',
-      'cancelled': 'Bekor qilingan'
+      'pending': t('statusPending') || 'Kutilmoqda',
+      'confirmed': t('statusConfirmed') || 'Tasdiqlangan',
+      'completed': t('statusCompleted') || 'Bajarilgan',
+      'cancelled': t('statusCancelled') || 'Bekor qilingan'
     };
     return statusMap[status] || status;
   };
 
-
-
-  // Status color
   const getStatusColor = (status) => {
     const colorMap = {
       'pending': '#FF9800',
@@ -347,15 +281,19 @@ const handleDeletePost = async () => {
     return colorMap[status] || '#757575';
   };
 
-
-
-
-
+  // ✅ Post qo'shilgandan keyin callback
+  const handlePostAdded = async (newPost) => {
+    setIsAddPostModalOpen(false);
+    // Postlar ro'yxatini yangilash
+    const employeeIdToUse = user?.id || user?.employee_id;
+    const data = await fetchEmployeePosts(employeeIdToUse, 1, 10);
+    const list = data?.data || data || [];
+    setEmployeePosts(list);
+  };
 
   return (
     <div>
       <div className="chat-container" style={user.role === 'private_admin' ? { flexDirection: "row-reverse" } : {}}>
-        {/* LEFT SIDEBAR */}
         <aside className="chatSidebar">
           <div className="chatSidebar-top">
             <img className="chatSidebarLogo" src="sidebarLogo.svg" alt="Logo" />
@@ -379,22 +317,22 @@ const handleDeletePost = async () => {
           <div className="chat-profile-card">
             <span className="chat-profile-info">
               <h2 className="chat-profile-name">{user.name || user.username}</h2>
-              <span className="chat-profile-role">Employee</span>
+              <span className="chat-profile-role">{user?.role}</span>
             </span>
             <button className="profile-btn" onClick={handleOpenProfileModal}>
               <img className="profile-btn-icon" src="btnicon.svg" alt="" />
-              <p>Мой профиль →</p>
+              <p>{t('myProfile') || 'Мой профиль'} →</p>
             </button>
             <div className="chat-stats">
               <div className="chat-stat-item">
-                <span className="chat-stats-label">Чаты</span>
+                <span className="chat-stats-label">{t('chats') || 'Чаты'}</span>
                 <span className="chat-stats-number">{conversations?.length || 0}</span>
               </div>
               <span>
                 <img src="chatline.svg" alt="" />
               </span>
               <div className="chat-stat-item">
-                <span className="chat-stats-label">Новые</span>
+                <span className="chat-stats-label">{t('new') || 'Новые'}</span>
                 <span className="chat-stats-number">{unreadCount}</span>
               </div>
             </div>
@@ -421,7 +359,7 @@ const handleDeletePost = async () => {
                   animation: "spin 1s linear infinite"
                 }}></div>
                 <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
-                  Suhbatlar yuklanmoqda...
+                  {t('conversationsLoading') || 'Suhbatlar yuklanmoqda...'}
                 </p>
               </div>
             ) : conversationsError ? (
@@ -434,7 +372,7 @@ const handleDeletePost = async () => {
                 alignItems: 'center'
               }}>
                 <p style={{ color: '#A8A8B3', fontSize: '0.9vw' }}>
-                  Yozishmalar mavjud emas
+                  {t('noConversations') || 'Yozishmalar mavjud emas'}
                 </p>
                 <p style={{ color: '#FF6B6B', fontSize: '0.8vw' }}>
                   {conversationsError}
@@ -451,7 +389,7 @@ const handleDeletePost = async () => {
                     fontSize: '0.8vw'
                   }}
                 >
-                  Qayta urinish
+                  {t('retry') || 'Qayta urinish'}
                 </button>
               </div>
             ) : !conversations || conversations.length === 0 ? (
@@ -464,12 +402,14 @@ const handleDeletePost = async () => {
                 alignItems: 'center'
               }}>
                 <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
-                  Yozishmalar mavjud emas
+                  {t('noConversations') || 'Yozishmalar mavjud emas'}
                 </p>
               </div>
             ) : (
               <>
-                <h3 className="chat-section-title">Suhbatlar ({conversations.length})</h3>
+                <h3 className="chat-section-title">
+                  {t('conversations') || 'Suhbatlar'} ({conversations.length})
+                </h3>
                 {conversations.map((conversation, index) => (
                   <div
                     key={conversation.other_user_id || index}
@@ -501,7 +441,7 @@ const handleDeletePost = async () => {
                         </p>
                       </span>
                       <p className="chat-msg">
-                        {conversation.last_message || 'Xabar yo\'q'}
+                        {conversation.last_message || t('noMessage') || 'Xabar yo\'q'}
                       </p>
                     </div>
                     <div className="chat-header-info">
@@ -524,9 +464,8 @@ const handleDeletePost = async () => {
           </div>
         </aside>
 
-        {/* MAIN CONTENT AREA */}
         {selectedPageEmployee === 'chat' ? (
-          <main className="chat-window" >
+          <main className="chat-window">
             {selectedUser ? (
               <>
                 <div className="chat-header">
@@ -542,7 +481,7 @@ const handleDeletePost = async () => {
                       <span className="chat-header-name">{selectedUser.name}</span>
                       <span className="online-status-wrapper">
                         <span className="online-status"></span>
-                        <span className="chat-header-status">онлайн</span>
+                        <span className="chat-header-status">{t('online') || 'онлайн'}</span>
                       </span>
                     </div>
                   </div>
@@ -569,7 +508,7 @@ const handleDeletePost = async () => {
                         animation: "spin 1s linear infinite"
                       }}></div>
                       <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
-                        Xabarlar yuklanmoqda...
+                        {t('messagesLoading') || 'Xabarlar yuklanmoqda...'}
                       </p>
                     </div>
                   ) : messagesError ? (
@@ -584,7 +523,7 @@ const handleDeletePost = async () => {
                       justifyContent: 'center'
                     }}>
                       <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
-                        Xabarlar yuklanmadi
+                        {t('messagesLoadError') || 'Xabarlar yuklanmadi'}
                       </p>
                       <p style={{ color: '#FF6B6B', fontSize: '0.8vw' }}>
                         {messagesError}
@@ -602,10 +541,10 @@ const handleDeletePost = async () => {
                       justifyContent: 'center'
                     }}>
                       <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
-                        Hozircha xabarlar yo'q
+                        {t('noMessages') || 'Hozircha xabarlar yo\'q'}
                       </p>
                       <p style={{ color: '#A8A8B3', fontSize: '0.8vw' }}>
-                        Birinchi bo'lib xabar yozing
+                        {t('beFirstToMessage') || 'Birinchi bo\'lib xabar yozing'}
                       </p>
                     </div>
                   ) : (
@@ -628,9 +567,9 @@ const handleDeletePost = async () => {
                           yesterday.setDate(yesterday.getDate() - 1);
 
                           if (date.toDateString() === today.toDateString()) {
-                            return 'Bugun';
+                            return t('today') || 'Bugun';
                           } else if (date.toDateString() === yesterday.toDateString()) {
-                            return 'Kecha';
+                            return t('yesterday') || 'Kecha';
                           } else {
                             return date.toLocaleDateString('uz-UZ', {
                               day: 'numeric',
@@ -675,7 +614,7 @@ const handleDeletePost = async () => {
                   <div className="chat-input">
                     <input
                       type="text"
-                      placeholder="Xabar yozing..."
+                      placeholder={t('writeMessage') || 'Xabar yozing...'}
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                     />
@@ -695,7 +634,7 @@ const handleDeletePost = async () => {
                 gap: '15px'
               }}>
                 <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
-                  Suhbatni tanlang
+                  {t('selectConversation') || 'Suhbatni tanlang'}
                 </p>
               </div>
             )}
@@ -707,7 +646,7 @@ const handleDeletePost = async () => {
                 <button className='schedule-back-button' onClick={() => handleChangeEmployeePage('chat')}>
                   <img src="/images/arrowLeft.png" alt="" />
                 </button>
-                <p>Расписание</p>
+                <p>{t('schedHT')}</p>
               </div>
 
               {schedulesLoading ? (
@@ -728,7 +667,7 @@ const handleDeletePost = async () => {
                     animation: "spin 1s linear infinite"
                   }}></div>
                   <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
-                    Jadval yuklanmoqda...
+                    {t('loading') || 'Jadval yuklanmoqda...'}
                   </p>
                 </div>
               ) : schedulesError ? (
@@ -753,7 +692,7 @@ const handleDeletePost = async () => {
                       cursor: 'pointer'
                     }}
                   >
-                    Qayta urinish
+                    {t('retry') || 'Qayta urinish'}
                   </button>
                 </div>
               ) : Object.keys(groupedSchedules).length === 0 ? (
@@ -765,7 +704,7 @@ const handleDeletePost = async () => {
                   padding: '2vw'
                 }}>
                   <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
-                    Jadval mavjud emas
+                    {t('noSchedules') || 'Jadval mavjud emas'}
                   </p>
                 </div>
               ) : (
@@ -820,7 +759,7 @@ const handleDeletePost = async () => {
                         padding: '2vw',
                         color: '#A8A8B3'
                       }}>
-                        Bu kunda jadval yo'q
+                        {t('noScheduleThisDay') || 'Bu kunda jadval yo\'q'}
                       </div>
                     ) : (
                       getSchedulesForDate().map((item, index) => (
@@ -865,14 +804,14 @@ const handleDeletePost = async () => {
 
                           <div style={{ fontSize: '0.9vw', color: '#666' }}>
                             <div style={{ marginBottom: '0.3vw' }}>
-                              <strong>Mijoz:</strong> {item.client_name || item.client || 'Noma\'lum'}
+                              <strong>{t('client') || 'Mijoz'}:</strong> {item.client_name || item.client || t('notAvailable') || 'Noma\'lum'}
                             </div>
                             <div style={{ marginBottom: '0.3vw' }}>
-                              <strong>Xizmat:</strong> {item.service_name || item.service || 'Noma\'lum'}
+                              <strong>{t('service') || 'Xizmat'}:</strong> {item.service_name || item.service || t('notAvailable') || 'Noma\'lum'}
                             </div>
                             {item.employee_name && (
                               <div>
-                                <strong>Xodim:</strong> {item.employee_name}
+                                <strong>{t('employee') || 'Xodim'}:</strong> {item.employee_name}
                               </div>
                             )}
                           </div>
@@ -886,11 +825,29 @@ const handleDeletePost = async () => {
           </div>
         ) : selectedPageEmployee === 'posts' ? (
           <div className='chat-posts'>
-            <div className='posts employee-header' style={user.role == "private_admin" ? {left:"10vw" , zIndex:"-10"}:null}>
-              <h1>Postlar</h1>
-              <button className='add-post-button'>
-                <img src="/images/addPostImg.png" alt="" />
-                Добавить пост
+            <div className='posts employee-header' style={user.role === "private_admin" ? { left: "10vw", zIndex: "-10" } : null}>
+              <h1>{t('postsCount') || 'Postlar'}</h1>
+              
+              <button
+                className='add-post-button'
+                onClick={() => setIsAddPostModalOpen(true)}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#9C2BFF',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                <img src="/images/addPostImg.png" alt="" style={{ width: '20px', height: '20px' }} />
+                {t('addPost') || 'Добавить пост'}
               </button>
             </div>
             <div className='posts-body'>
@@ -914,7 +871,7 @@ const handleDeletePost = async () => {
                     animation: "spin 1s linear infinite"
                   }}></div>
                   <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
-                    Postlar yuklanmoqda...
+                    {t('postsLoading') || 'Postlar yuklanmoqda...'}
                   </p>
                 </div>
               ) : postsError ? (
@@ -937,7 +894,7 @@ const handleDeletePost = async () => {
                   color: '#A8A8B3'
                 }}>
                   <p style={{ fontSize: '1vw', marginTop: '1vw' }}>
-                    Postlar tez orada qo'shiladi
+                    {t('noPosts') || 'Postlar tez orada qo\'shiladi'}
                   </p>
                 </div>
               ) : (
@@ -949,16 +906,14 @@ const handleDeletePost = async () => {
 
                   return (
                     <div key={post.id} style={{
-                      width:"32vw",
+                      width: "32vw",
                       marginBottom: '2vw',
                       backgroundColor: '#fff',
                       borderRadius: '1vw',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-
                     }}>
-
-                      <div className="relative w-full" style={{width:"30vw", padding: '1vw' }}>
-                        <div className="relative overflow-hidden" style={{width:"30vw", height: "50vh", borderRadius: "1vw" }}>
+                      <div className="relative w-full" style={{ width: "30vw", padding: '1vw' }}>
+                        <div className="relative overflow-hidden" style={{ width: "30vw", height: "50vh", borderRadius: "1vw" }}>
                           {files.length > 0 ? (
                             <div className="w-full h-full">
                               {isVideo ? (
@@ -997,7 +952,7 @@ const handleDeletePost = async () => {
                               borderRadius: '1vw',
                               color: '#A8A8B3'
                             }}>
-                              Media fayllar mavjud emas
+                              {t('noMediaFiles') || 'Media fayllar mavjud emas'}
                             </div>
                           )}
                         </div>
@@ -1017,21 +972,12 @@ const handleDeletePost = async () => {
                           </div>
                         )}
                       </div>
-                      
+
                       <div style={{ padding: '1vw' }}>
                         <h2 style={{ fontSize: '1.2vw', margin: 0 }}>{post.title}</h2>
                         <p style={{ color: '#666', fontSize: '0.9vw', marginTop: '0.5vw' }}>{post.description}</p>
                         <div style={{ color: '#999', fontSize: '0.8vw', marginTop: '0.5vw' }}>
-                          <span>{new Date(post.created_at).toLocaleString('uz-UZ')}</span>
-                          {post.employee_name && (
-                            <span> · {post.employee_name} {post.employee_surname || ''}</span>
-                          )}
-                          {post.employee_profession && (
-                            <span> · {post.employee_profession}</span>
-                          )}
-                          {post.salon_name && (
-                            <span> · {post.salon_name}</span>
-                          )}
+                          <span>{post.created_at.split("T").at(0).split("-").reverse().join(".")}</span>
                         </div>
                       </div>
                     </div>
@@ -1042,8 +988,8 @@ const handleDeletePost = async () => {
           </div>
         ) : (
           <div className='chat-comments'>
-            <div className='comments employee-header' style={user.role == "private_admin" ? {left:"10vw" , zIndex:"0"}:null}>
-              <h1>Izohlar</h1>
+            <div className='comments employee-header' style={user.role === "private_admin" ? { left: "10vw", zIndex: "0" } : null}>
+              <h1>{t('commentsCount') || 'Izohlar'}</h1>
             </div>
             <div className='comments-body' style={{ padding: '1vw' }}>
               <div style={{
@@ -1052,7 +998,7 @@ const handleDeletePost = async () => {
                 color: '#A8A8B3'
               }}>
                 <p style={{ fontSize: '1vw' }}>
-                  Izohlar tez orada qo'shiladi
+                  {t('noComments') || 'Izohlar tez orada qo\'shiladi'}
                 </p>
               </div>
             </div>
@@ -1060,14 +1006,47 @@ const handleDeletePost = async () => {
         )}
       </div>
 
+      {/* ✅ Profile Modal */}
       <EmployeeProfileModal
         isOpen={isProfileModalOpen}
         onClose={handleCloseProfileModal}
         user={user}
         handleChangeEmployeePage={handleChangeEmployeePage}
       />
-    </div>
 
+      {/* ✅ Post Form Modal */}
+      {isAddPostModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            width: '90%',
+            maxWidth: '600px',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)'
+          }}>
+            <EmployeePostForm
+              employeeId={user?.id || user?.employee_id}
+              onClose={() => setIsAddPostModalOpen(false)}
+              onPostAdded={handlePostAdded}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
+
 export default EmployeeChatPage;

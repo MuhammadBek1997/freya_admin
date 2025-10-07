@@ -4,6 +4,7 @@ import { UseGlobalContext } from '../Context';
 const AppointCard = (props) => {
     const {
         id,
+        employee_id,
         application_number,
         user_name,
         phone_number,
@@ -21,11 +22,8 @@ const AppointCard = (props) => {
         openRightSidebar
     } = props
   
-    const {selectedElement} = UseGlobalContext()
+    const { t, selectedElement, employees } = UseGlobalContext()
 
-    
-
-    // Parse date and time from strings
     const parseDate = (dateString) => {
         if (!dateString) return { day: '', month: '', year: '' };
         const date = new Date(dateString);
@@ -45,7 +43,6 @@ const AppointCard = (props) => {
         };
     };
 
-    // type ga qarab (appointment yoki booking) sanani va vaqtni tayyorlash
     const dateObj = type === 'appointment'
         ? parseDate(application_date)
         : parseDate(date);
@@ -55,40 +52,53 @@ const AppointCard = (props) => {
         : (typeof booking_time === 'string' ? parseTime(booking_time) : { hour: '', minute: '' });
 
     const handleCardClick = () => {
-        // O'ng sidebar uchun umumiy payload
         openRightSidebar({
             id,
             type,
-            // Appointment
             application_number,
             user_name,
             phone_number,
             application_date,
             application_time,
-            employee_name,
+            employee_name: masterName || null,
             service_name,
             service_price,
-            // Booking
             full_name,
             phone,
             date,
             time: booking_time,
-            // Common parsed
-            time: timeObj,
-            date: dateObj,
+            timeObj,
+            dateObj,
             status,
         });
     }
 
+    // Derive employee name from employee_id using global employees list
+    const masterName = (() => {
+        if (type === 'appointment' && employee_id) {
+            const emp = employees?.find(e => String(e.id) === String(employee_id));
+            if (emp) {
+                const parts = [emp.name, emp.surname].filter(Boolean);
+                return parts.join(' ').trim();
+            }
+        }
+        return null;
+    })();
+
     return (
-        <div onClick={()=>handleCardClick()} className='appoint-card' >
+        <div onClick={() => handleCardClick()} className='appoint-card'>
             <div className='appoint-card-customer' style={{
-            backgroundColor: selectedElement?.id == id ? "#C3A3D1" :  "white",
-            color: "#2C2C2C"
-        }}>
-                <img src="/images/customerImage.png" alt="" />
+                backgroundColor: selectedElement?.id == id ? "#C3A3D1" : "white",
+                color: "#2C2C2C"
+            }}>
+                {
+                    (() => {
+                        const customerAvatar = props.user_avatar || props.user_avatar_url || props.avatar || props.avatar_url || "/images/customerImage.png";
+                        return <img src={customerAvatar} alt="" />
+                    })()
+                }
                 <p className='customerName'>
-                    {type === 'appointment' ? (user_name) : (full_name || 'N/A')}
+                    {type === 'appointment' ? (user_name) : (full_name || t('notAvailable'))}
                 </p>
                 <p className='appointNumber'>
                     {type === 'appointment' ? (application_number) : (id)}
@@ -98,32 +108,36 @@ const AppointCard = (props) => {
                 </a>
                 <p className='appointDate'>
                     {type === 'appointment'
-                        ? (application_date ? new Date(application_date).toLocaleDateString('ru-RU') : 'N/A')
-                        : (date ? new Date(date).toLocaleDateString('ru-RU') : 'N/A')}
+                        ? (application_date ? new Date(application_date).toLocaleDateString('ru-RU') : t('notAvailable'))
+                        : (date ? new Date(date).toLocaleDateString('ru-RU') : t('notAvailable'))}
                 </p>
                 <p className='appointTime'>
-                    {type === 'appointment' ? (application_time || 'N/A') : (booking_time || 'N/A')}
+                    {type === 'appointment' ? (application_time || t('notAvailable')) : (booking_time || t('notAvailable'))}
                 </p>
             </div>
-            <div className='appoint-card-master' >
-                <img src="/images/masterImage.png" alt="" />
+            <div className='appoint-card-master'>
+                {(() => {
+                    const emp = (type === 'appointment' && employee_id) ? employees?.find(e => String(e.id) === String(employee_id)) : null;
+                    const masterAvatar = emp?.avatar_url || emp?.photo || emp?.profile_image || "/images/masterImage.png";
+                    return <img src={masterAvatar} alt="" />
+                })()}
                 <div className='appoint-card-master-text'>
                     <div className='appoint-card-masterName'>
-                        <p>
-                            {type === 'appointment'
-                                ? (employee_name ? employee_name.split(" ").at(0) : 'N/A')
-                                : 'N/A'}
-                        </p>
+                            <p>
+                                {type === 'appointment'
+                                ? (masterName ? masterName.split(" ").at(0) : t('notAvailable'))
+                                : t('notAvailable')}
+                            </p>
                         <div className='appoint-card-masterJob'>
                             <p>
-                                {type === 'appointment' ? service_name : 'Booking'}
+                                {type === 'appointment' ? service_name : t('appointmentTypeBooking')}
                             </p>
                         </div>
                     </div>
                     <div className='appoint-card-masterRating'>
                         <img src="/images/Star1.png" alt="" />
                         <p>
-                            4.8 (13 отзывов)
+                            4.8 (13 {t('profileReviews')})
                         </p>
                     </div>
                 </div>

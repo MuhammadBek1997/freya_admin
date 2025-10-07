@@ -2,29 +2,27 @@ import React from 'react'
 import { UseGlobalContext } from '../Context'
 
 const ConfirmModal = () => {
-    const {t, selectedElement , confirmModal , setConfirmModal , handleConfirm} = UseGlobalContext()
+    const {t, setConfirmModal, handleConfirm} = UseGlobalContext()
 
-   
-
-  return (
+    return (
         <div className="confirm-cont">
             <div className="confirm-text-cont">
                 <h3>
-                    Подтвердите действие:
+                    {t('confirmAction') || 'Подтвердите действие:'}
                 </h3>
             </div>
             <div>
                 <div className="confirm-btns">
-                    <button onClick={()=>setConfirmModal(true)}>
-                        Нет
+                    <button onClick={() => setConfirmModal(false)}>
+                        {t('no') || 'Нет'}
                     </button>
                     <button onClick={handleConfirm}>
-                        Да
+                        {t('yes') || 'Да'}
                     </button>
                 </div>
             </div>
         </div>
-  )
+    )
 }
 
 export default ConfirmModal

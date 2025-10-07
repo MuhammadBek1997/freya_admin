@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { UseGlobalContext } from '../Context';
 import SelectEmployeeModal from './SelectEmployeeModal';
 
-// Edit modal that mirrors AddScheduleModal but calls updateSchedule
-// Allows editing name, title, date and employee_list (plus optional price fields)
 const EditScheduleModal = (props) => {
     const {
         id,
@@ -23,7 +21,7 @@ const EditScheduleModal = (props) => {
         setEditModal
     } = props;
 
-    const { updateSchedule, user, employees } = UseGlobalContext();
+    const { updateSchedule, user, employees, t } = UseGlobalContext();
 
     const [selectEmploy, setSelectEmploy] = useState(false);
     const [formData, setFormData] = useState({
@@ -65,24 +63,19 @@ const EditScheduleModal = (props) => {
         }));
     };
 
-    // EditScheduleModal.jsx - handleUpdateSchedule funksiyasini yangilash
-    // EditScheduleModal.jsx - handleUpdateSchedule funksiyasini to'liq yangilash
     const handleUpdateSchedule = async () => {
         setError('');
         setLoading(true);
 
         try {
-            // Validatsiya
-            if (!formData.name?.trim()) throw new Error('Занятие majburiy');
-            if (!formData.title?.trim()) throw new Error('Титул majburiy');
-            if (!formData.start_time) throw new Error('Время начала majburiy');
-            if (!formData.end_time) throw new Error('Время окончания majburiy');
+            if (!formData.name?.trim()) throw new Error(t('validation.required') || 'Занятие majburiy');
+            if (!formData.title?.trim()) throw new Error(t('titleRequired') || 'Титул majburiy');
+            if (!formData.start_time) throw new Error(t('startTimeRequired') || 'Время начала majburiy');
+            if (!formData.end_time) throw new Error(t('endTimeRequired') || 'Время окончания majburiy');
 
-            // ✅ Faqat o'zgargan fieldlarni yuborish
             const scheduleData = {
                 name: String(formData.name).trim(),
                 title: String(formData.title).trim(),
-                // ❌ date ni yubormaslik - backend o'zgartirmaydi
                 start_time: String(formData.start_time),
                 end_time: String(formData.end_time),
                 repeat: Boolean(formData.repeat),
@@ -96,17 +89,15 @@ const EditScheduleModal = (props) => {
                 is_active: Boolean(formData.is_active)
             };
 
-            console.log('✏️ Yangilanayotgan schedule:', JSON.stringify(scheduleData, null, 2));
-
             await updateSchedule(id, scheduleData);
 
-            alert('Jadval muvaffaqiyatli yangilandi!');
+            alert(t('scheduleUpdated') || 'Jadval muvaffaqiyatli yangilandi!');
             if (typeof setEditModal === 'function') {
                 setEditModal(false);
             }
         } catch (error) {
             console.error('❌ Jadval yangilashda xatolik:', error);
-            setError(error.message || 'Jadval yangilashda xatolik yuz berdi');
+            setError(error.message || t('errors.scheduleCreateFailed') || 'Jadval yangilashda xatolik yuz berdi');
         } finally {
             setLoading(false);
         }
@@ -115,7 +106,7 @@ const EditScheduleModal = (props) => {
     return (
         <div className='schedule-modal' onClick={() => typeof setEditModal === 'function' && setEditModal(false)}>
             <div className='schedule-modal-cont' onClick={(e) => e.stopPropagation()}>
-                <h4>Редактировать</h4>
+                <h4>{t('modalEdit') || 'Редактировать'}</h4>
 
                 {error && (
                     <div style={{
@@ -130,27 +121,27 @@ const EditScheduleModal = (props) => {
                 )}
 
                 <div className='schedule-modal-form'>
-                    <label htmlFor=''>Занятие *</label>
+                    <label htmlFor=''>{t('schedule.lesson') || 'Занятие'} *</label>
                     <input
                         type='text'
-                        placeholder='Занятие 1'
+                        placeholder={t('schedule.lessonPlaceholder') || 'Занятие 1'}
                         className='form-inputs'
                         value={formData.name}
                         onChange={(e) => handleInputChange('name', e.target.value)}
                         required
                     />
 
-                    <label htmlFor=''>Титул *</label>
+                    <label htmlFor=''>{t('schedule.title') || 'Титул'} *</label>
                     <input
                         type='text'
-                        placeholder='Титул 1'
+                        placeholder={t('schedule.titlePlaceholder') || 'Титул 1'}
                         className='form-inputs'
                         value={formData.title}
                         onChange={(e) => handleInputChange('title', e.target.value)}
                         required
                     />
 
-                    <label htmlFor=''>Дата *</label>
+                    <label htmlFor=''>{t('schedule.date') || 'Дата'} *</label>
                     <input
                         type='date'
                         className='form-inputs'
@@ -159,7 +150,7 @@ const EditScheduleModal = (props) => {
                         required
                     />
 
-                    <label htmlFor=''>Время начала *</label>
+                    <label htmlFor=''>{t('schedule.startTime') || 'Время начала'} *</label>
                     <input
                         type='time'
                         className='form-inputs'
@@ -168,7 +159,7 @@ const EditScheduleModal = (props) => {
                         required
                     />
 
-                    <label htmlFor=''>Время окончания *</label>
+                    <label htmlFor=''>{t('schedule.endTime') || 'Время окончания'} *</label>
                     <input
                         type='time'
                         className='form-inputs'
@@ -184,15 +175,15 @@ const EditScheduleModal = (props) => {
                             onChange={(e) => handleInputChange('repeat', e.target.checked)}
                             style={{ marginRight: '8px' }}
                         />
-                        Повторить
+                        {t('schedule.repeat') || 'Повторить'}
                     </label>
 
                     {formData.repeat && (
                         <>
-                            <label htmlFor=''>Повторить каждые</label>
+                            <label htmlFor=''>{t('schedule.repeatEvery') || 'Повторить каждые'}</label>
                             <input
                                 type='text'
-                                placeholder='например: 1 неделя'
+                                placeholder={t('schedule.repeatPlaceholder') || 'например: 1 неделя'}
                                 className='form-inputs'
                                 value={formData.repeat_value}
                                 onChange={(e) => handleInputChange('repeat_value', e.target.value)}
@@ -202,10 +193,10 @@ const EditScheduleModal = (props) => {
                 </div>
 
                 <div className='schedule-modal-addPersonal'>
-                    <label htmlFor=''>Обслуживающие</label>
+                    <label htmlFor=''>{t('schedule.staff') || 'Обслуживающие'}</label>
                     <button onClick={() => setSelectEmploy(true)}>
                         <img src='/images/+.png' alt='' />
-                        добавить
+                        {t('schedule.addStaff') || 'добавить'}
                     </button>
 
                     {selectEmploy && (
@@ -218,17 +209,16 @@ const EditScheduleModal = (props) => {
                     {Array.isArray(formData.employee_list) && formData.employee_list.length > 0 && (
                         <div style={{ marginTop: '10px' }}>
                             <p style={{ fontSize: '0.8vw', marginBottom: '5px' }}>
-                                Выбранные сотрудники:
+                                {t('schedule.selectedStaff') || 'Выбранные сотрудники:'}
                             </p>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                                 {formData.employee_list.map((employeeId) => {
                                     const emp = employees?.find(e => String(e.id) === String(employeeId));
-                                    const displayName = emp?.name || emp?.employee_name || 'Сотрудник';
+                                    const displayName = emp?.name || emp?.employee_name || t('employee') || 'Сотрудник';
                                     const avatarSrc = emp?.avatar_url || emp?.photo || '/images/masterImage.png';
                                     return (
-                                        <div style={{display:"flex",flexDirection:"column"}}>
+                                        <div style={{ display: "flex", flexDirection: "column" }} key={employeeId}>
                                             <div
-                                                key={employeeId}
                                                 style={{
                                                     backgroundColor: '#FFF',
                                                     color: '#9C2BFF',
@@ -240,12 +230,12 @@ const EditScheduleModal = (props) => {
                                                     gap: '8px'
                                                 }}
                                             >
-                                            <img
-                                                src={avatarSrc}
-                                                alt={displayName}
-                                                style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-                                            />
-                                            <span>{displayName}</span>
+                                                <img
+                                                    src={avatarSrc}
+                                                    alt={displayName}
+                                                    style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                                                />
+                                                <span>{displayName}</span>
                                             </div>
                                             <div className='masters-time' style={{ color: '#555' }}>
                                                 <p style={{ margin: 0 }}>
@@ -259,17 +249,17 @@ const EditScheduleModal = (props) => {
                         </div>
                     )}
 
-                    <label htmlFor=''>Цена услуги</label>
+                    <label htmlFor=''>{t('schedule.servicePrice') || 'Цена услуги'}</label>
                     <input
                         type='number'
-                        placeholder='0 UZS'
+                        placeholder={t('schedule.pricePlaceholder') || '0 UZS'}
                         value={formData.price}
                         onChange={(e) => handleInputChange('price', e.target.value)}
                     />
                 </div>
 
                 <div className='schedule-modal-paymentType'>
-                    <label htmlFor="">Оплата через приложение (необязательно)</label>
+                    <label htmlFor="">{t('schedule.paymentOptional') || 'Оплата через приложение (необязательно)'}</label>
                     <div className='schedule-modal-paymentType-cont'>
                         <button
                             onClick={() => {
@@ -281,7 +271,7 @@ const EditScheduleModal = (props) => {
                                 color: formData.full_pay > 0 ? 'white' : 'black'
                             }}
                         >
-                            Полная оплата
+                            {t('schedule.fullPayment') || 'Полная оплата'}
                         </button>
                         <button
                             onClick={() => {
@@ -294,11 +284,11 @@ const EditScheduleModal = (props) => {
                                 color: formData.deposit > 0 ? 'white' : 'black'
                             }}
                         >
-                            Начальный взнос
+                            {t('schedule.deposit') || 'Начальный взнос'}
                         </button>
                         <input
                             type="number"
-                            placeholder='0 UZS'
+                            placeholder={t('schedule.pricePlaceholder') || '0 UZS'}
                             value={formData.deposit || ''}
                             onChange={(e) => handleInputChange('deposit', e.target.value)}
                         />
@@ -307,10 +297,10 @@ const EditScheduleModal = (props) => {
 
                 <div className='schedule-modal-btns'>
                     <button onClick={() => typeof setEditModal === 'function' && setEditModal(false)} disabled={loading}>
-                        Отменить
+                        {t('schedule.cancel') || 'Отменить'}
                     </button>
                     <button onClick={handleUpdateSchedule} disabled={loading}>
-                        {loading ? 'Сохранение...' : 'Сохранить'}
+                        {loading ? (t('schedule.saving') || 'Сохранение...') : (t('schedule.save') || 'Сохранить')}
                     </button>
                 </div>
             </div>

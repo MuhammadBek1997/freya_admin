@@ -1,19 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { getHeaders } from '../Context';
+import { UseGlobalContext } from '../Context';
 
 const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
+    const { t, uploadPhotosToServer, user } = UseGlobalContext();
+    
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        media: ''
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [postLimits, setPostLimits] = useState(null);
     const [showPayment, setShowPayment] = useState(false);
 
-    // Post limitlarini olish
+    // Media files uchun state
+    const [mediaFiles, setMediaFiles] = useState([]);
+    const [pendingMedia, setPendingMedia] = useState([]);
+    const fileInputRef = useRef(null);
+
     useEffect(() => {
         fetchPostLimits();
     }, [employeeId]);
@@ -37,26 +43,114 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
         }));
     };
 
+    // Media fayllarni tanlash
+    const handleMediaSelect = (event) => {
+        const files = Array.from(event.target.files);
+        if (files.length === 0) return;
+
+        const maxBytes = 4 * 1024 * 1024;
+        const validFiles = files.filter(f => {
+            const isImage = f.type?.startsWith('image/');
+            const isVideo = f.type?.startsWith('video/');
+            const isValidSize = f.size <= maxBytes;
+            
+            if (!isImage && !isVideo) {
+                alert(`${f.name} rasm yoki video emas`);
+                return false;
+            }
+            if (!isValidSize) {
+                alert(`${f.name} hajmi katta (maks 4MB)`);
+                return false;
+            }
+            return true;
+        });
+
+        const newMediaPreviews = validFiles.map(file => ({
+            file,
+            preview: URL.createObjectURL(file),
+            type: file.type.startsWith('image/') ? 'image' : 'video'
+        }));
+
+        setPendingMedia(prev => [...prev, ...newMediaPreviews]);
+        
+        try {
+            event.target.value = '';
+        } catch {}
+    };
+
+    // Media faylni o'chirish
+    const handleDeleteMedia = (index) => {
+        setPendingMedia(prev => {
+            const newMedia = [...prev];
+            if (newMedia[index]?.preview) {
+                URL.revokeObjectURL(newMedia[index].preview);
+            }
+            newMedia.splice(index, 1);
+            return newMedia;
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!formData.title.trim() || !formData.description.trim()) {
+            setError(t('fillAllFields') || 'Barcha maydonlarni to\'ldiring');
+            return;
+        }
+
         setLoading(true);
         setError('');
 
         try {
-            const response = await axios.post(`/api/employees/${employeeId}/posts`, formData, {
-                headers: getHeaders(true)
-            });
+            // 1. Avval media fayllarni yuklash
+            let mediaUrls = [];
+            if (pendingMedia.length > 0) {
+                console.log('📤 Uploading', pendingMedia.length, 'media files...');
+                const files = pendingMedia.map(m => m.file);
+                mediaUrls = await uploadPhotosToServer(files);
+                console.log('✅ Media uploaded:', mediaUrls);
+            }
+
+            // 2. Post yaratish
+            const postPayload = {
+                title: formData.title.trim(),
+                description: formData.description.trim(),
+                media_files: mediaUrls
+            };
+
+            console.log('📤 Creating post:', postPayload);
+
+            const response = await axios.post(
+                `/api/employees/${employeeId}/posts`,
+                postPayload,
+                { headers: getHeaders(true) }
+            );
 
             if (response.data.success) {
+                console.log('✅ Post created successfully');
+                
+                // Preview URLlarni tozalash
+                pendingMedia.forEach(m => {
+                    if (m.preview) URL.revokeObjectURL(m.preview);
+                });
+
                 onPostAdded(response.data.data);
-                setFormData({ title: '', description: '', media: '' });
-                fetchPostLimits(); // Limitlarni yangilash
+                setFormData({ title: '', description: '' });
+                setPendingMedia([]);
+                fetchPostLimits();
             }
         } catch (error) {
+            console.error('❌ Post yaratishda xatolik:', error);
+            
             if (error.response?.status === 403) {
                 setShowPayment(true);
             } else {
-                setError(error.response?.data?.message || 'Post qo\'shishda xatolik yuz berdi');
+                setError(
+                    error.response?.data?.message || 
+                    error.message || 
+                    t('postAddError') || 
+                    'Post qo\'shishda xatolik yuz berdi'
+                );
             }
         } finally {
             setLoading(false);
@@ -71,114 +165,456 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
             );
 
             if (response.data.success) {
-                // To'lov URL ga yo'naltirish
                 window.open(response.data.data.paymentUrl, '_blank');
             }
         } catch (error) {
-            setError(error.response?.data?.message || 'To\'lov yaratishda xatolik');
+            setError(error.response?.data?.message || t('paymentError') || 'To\'lov yaratishda xatolik');
         }
     };
 
     if (showPayment) {
         return (
-            <div className="employee-post-payment">
-                <div className="payment-modal">
-                    <h3>Post limitingiz tugadi!</h3>
-                    <p>Yangi postlar qo'shish uchun to'lov qiling</p>
-                    
-                    <div className="payment-options">
-                        <div className="payment-option">
-                            <h4>4 ta post</h4>
-                            <p>20,000 so'm</p>
-                            <button onClick={() => handleBuyPosts(4)}>
-                                Sotib olish
-                            </button>
+            <div style={{
+                padding: '2rem',
+                backgroundColor: 'white',
+                borderRadius: '12px'
+            }}>
+                <h3 style={{ 
+                    fontSize: '1.5rem', 
+                    marginBottom: '1rem',
+                    color: '#1f2937'
+                }}>
+                    {t('postLimitReached') || 'Post limitingiz tugadi!'}
+                </h3>
+                <p style={{ 
+                    color: '#6b7280',
+                    marginBottom: '2rem'
+                }}>
+                    {t('payForNewPosts') || 'Yangi postlar qo\'shish uchun to\'lov qiling'}
+                </p>
+                
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                    gap: '1rem',
+                    marginBottom: '2rem'
+                }}>
+                    {[
+                        { count: 4, price: 20000 },
+                        { count: 8, price: 40000 },
+                        { count: 12, price: 60000 }
+                    ].map((option) => (
+                        <div key={option.count} style={{
+                            padding: '1.5rem',
+                            border: '2px solid #e5e7eb',
+                            borderRadius: '12px',
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#9C2BFF';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = '#e5e7eb';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                        }}
+                        onClick={() => handleBuyPosts(option.count)}
+                        >
+                            <h4 style={{ 
+                                fontSize: '1.25rem',
+                                color: '#1f2937',
+                                marginBottom: '0.5rem'
+                            }}>
+                                {option.count} {t('posts') || 'ta post'}
+                            </h4>
+                            <p style={{ 
+                                fontSize: '1.5rem',
+                                color: '#9C2BFF',
+                                fontWeight: 'bold'
+                            }}>
+                                {option.price.toLocaleString()} {t('currency') || 'so\'m'}
+                            </p>
                         </div>
-                        <div className="payment-option">
-                            <h4>8 ta post</h4>
-                            <p>40,000 so'm</p>
-                            <button onClick={() => handleBuyPosts(8)}>
-                                Sotib olish
-                            </button>
-                        </div>
-                        <div className="payment-option">
-                            <h4>12 ta post</h4>
-                            <p>60,000 so'm</p>
-                            <button onClick={() => handleBuyPosts(12)}>
-                                Sotib olish
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <button onClick={() => setShowPayment(false)} className="cancel-btn">
-                        Bekor qilish
-                    </button>
+                    ))}
                 </div>
+                
+                <button 
+                    onClick={() => setShowPayment(false)}
+                    style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '1rem',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.3s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#dc2626'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#ef4444'}
+                >
+                    {t('cancel') || 'Bekor qilish'}
+                </button>
             </div>
         );
     }
 
     return (
-        <div className="employee-post-form">
-            <div className="form-header">
-                <h3>Yangi post qo'shish</h3>
-                <button onClick={onClose} className="close-btn">×</button>
+        <div style={{
+            padding: '2rem',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+        }}>
+            {/* Header */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1.5rem',
+                paddingBottom: '1rem',
+                borderBottom: '2px solid #f3f4f6'
+            }}>
+                <h3 style={{ 
+                    fontSize: '1.5rem',
+                    color: '#1f2937',
+                    fontWeight: '600'
+                }}>
+                    {t('addNewPost') || 'Yangi post qo\'shish'}
+                </h3>
+                <button 
+                    onClick={onClose}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '2rem',
+                        cursor: 'pointer',
+                        color: '#6b7280',
+                        lineHeight: '1',
+                        padding: '0',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '50%',
+                        transition: 'all 0.3s'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#f3f4f6';
+                        e.target.style.color = '#1f2937';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = 'transparent';
+                        e.target.style.color = '#6b7280';
+                    }}
+                >
+                    ×
+                </button>
             </div>
 
+            {/* Post Limits Info */}
             {postLimits && (
-                <div className="post-limits-info">
-                    <p>Tekin postlar: {postLimits.remaining_free_posts}</p>
-                    <p>To'lovli postlar: {postLimits.remaining_paid_posts}</p>
+                <div style={{
+                    padding: '1rem',
+                    backgroundColor: '#f9fafb',
+                    borderRadius: '8px',
+                    marginBottom: '1.5rem',
+                    display: 'flex',
+                    justifyContent: 'space-around'
+                }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                            {t('freePosts') || 'Tekin postlar'}
+                        </p>
+                        <p style={{ 
+                            fontSize: '1.5rem',
+                            fontWeight: 'bold',
+                            color: '#10b981'
+                        }}>
+                            {postLimits.remaining_free_posts}
+                        </p>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                        <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                            {t('paidPosts') || 'To\'lovli postlar'}
+                        </p>
+                        <p style={{ 
+                            fontSize: '1.5rem',
+                            fontWeight: 'bold',
+                            color: '#9C2BFF'
+                        }}>
+                            {postLimits.remaining_paid_posts}
+                        </p>
+                    </div>
                 </div>
             )}
 
-            {error && <div className="error-message">{error}</div>}
+            {/* Error Message */}
+            {error && (
+                <div style={{
+                    padding: '1rem',
+                    backgroundColor: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    borderRadius: '8px',
+                    color: '#dc2626',
+                    marginBottom: '1.5rem'
+                }}>
+                    {error}
+                </div>
+            )}
 
+            {/* Form */}
             <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label htmlFor="title">Sarlavha</label>
+                {/* Title */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '0.5rem'
+                    }}>
+                        {t('postTitle') || 'Sarlavha'} <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
                     <input
                         type="text"
-                        id="title"
                         name="title"
                         value={formData.title}
                         onChange={handleInputChange}
                         required
-                        placeholder="Post sarlavhasini kiriting"
+                        placeholder={t('enterPostTitle') || 'Post sarlavhasini kiriting'}
+                        style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '2px solid #e5e7eb',
+                            borderRadius: '8px',
+                            fontSize: '1rem',
+                            outline: 'none',
+                            transition: 'border-color 0.3s'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#9C2BFF'}
+                        onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
                     />
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="description">Tavsif</label>
+                {/* Description */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '0.5rem'
+                    }}>
+                        {t('description') || 'Tavsif'} <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
                     <textarea
-                        id="description"
                         name="description"
                         value={formData.description}
                         onChange={handleInputChange}
                         required
-                        placeholder="Post tavsifini kiriting"
+                        placeholder={t('enterDescription') || 'Post tavsifini kiriting'}
                         rows="4"
+                        style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '2px solid #e5e7eb',
+                            borderRadius: '8px',
+                            fontSize: '1rem',
+                            outline: 'none',
+                            transition: 'border-color 0.3s',
+                            resize: 'vertical',
+                            fontFamily: 'inherit'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#9C2BFF'}
+                        onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
                     />
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="media">Media URL (ixtiyoriy)</label>
-                    <input
-                        type="url"
-                        id="media"
-                        name="media"
-                        value={formData.media}
-                        onChange={handleInputChange}
-                        placeholder="Rasm yoki video URL"
-                    />
-                </div>
+                {/* Media Upload */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '0.5rem'
+                    }}>
+                        {t('mediaFiles') || 'Media fayllar'} ({t('optional') || 'ixtiyoriy'})
+                    </label>
+                    
+                    {/* Media Preview Grid */}
+                    {pendingMedia.length > 0 && (
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                            gap: '1rem',
+                            marginBottom: '1rem'
+                        }}>
+                            {pendingMedia.map((media, index) => (
+                                <div key={index} style={{
+                                    position: 'relative',
+                                    paddingTop: '100%',
+                                    borderRadius: '8px',
+                                    overflow: 'hidden',
+                                    border: '2px solid #e5e7eb'
+                                }}>
+                                    {media.type === 'image' ? (
+                                        <img
+                                            src={media.preview}
+                                            alt={`Preview ${index + 1}`}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover'
+                                            }}
+                                        />
+                                    ) : (
+                                        <video
+                                            src={media.preview}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover'
+                                            }}
+                                        />
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDeleteMedia(index)}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '4px',
+                                            right: '4px',
+                                            width: '24px',
+                                            height: '24px',
+                                            borderRadius: '50%',
+                                            border: 'none',
+                                            backgroundColor: '#ef4444',
+                                            color: 'white',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '1rem',
+                                            fontWeight: 'bold',
+                                            transition: 'background-color 0.3s'
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = '#dc2626'}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = '#ef4444'}
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
-                <div className="form-actions">
-                    <button type="button" onClick={onClose} className="cancel-btn">
-                        Bekor qilish
+                    {/* Upload Button */}
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{
+                            width: '100%',
+                            padding: '1rem',
+                            border: '2px dashed #d1d5db',
+                            borderRadius: '8px',
+                            backgroundColor: '#f9fafb',
+                            color: '#6b7280',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            fontSize: '0.875rem'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.target.style.borderColor = '#9C2BFF';
+                            e.target.style.backgroundColor = '#f3e8ff';
+                            e.target.style.color = '#9C2BFF';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.target.style.borderColor = '#d1d5db';
+                            e.target.style.backgroundColor = '#f9fafb';
+                            e.target.style.color = '#6b7280';
+                        }}
+                    >
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />
+                        </svg>
+                        {t('uploadMedia') || 'Rasm yoki video yuklash'}
                     </button>
-                    <button type="submit" disabled={loading} className="submit-btn">
-                        {loading ? 'Qo\'shilmoqda...' : 'Post qo\'shish'}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*,video/*"
+                        multiple
+                        onChange={handleMediaSelect}
+                        style={{ display: 'none' }}
+                    />
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{
+                    display: 'flex',
+                    gap: '1rem',
+                    marginTop: '2rem'
+                }}>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        style={{
+                            flex: 1,
+                            padding: '0.75rem',
+                            backgroundColor: '#f3f4f6',
+                            color: '#374151',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '1rem',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.3s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#e5e7eb'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+                    >
+                        {t('cancel') || 'Bekor qilish'}
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        style={{
+                            flex: 1,
+                            padding: '0.75rem',
+                            backgroundColor: loading ? '#d1d5db' : '#9C2BFF',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '1rem',
+                            fontWeight: '500',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            transition: 'background-color 0.3s'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!loading) e.target.style.backgroundColor = '#7c22cc';
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!loading) e.target.style.backgroundColor = '#9C2BFF';
+                        }}
+                    >
+                        {loading ? (t('adding') || 'Qo\'shilmoqda...') : (t('addPost') || 'Post qo\'shish')}
                     </button>
                 </div>
             </form>

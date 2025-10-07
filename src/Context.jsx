@@ -1919,128 +1919,176 @@ const getScheduleById = async (scheduleId) => {
     }
 };
 	// ===== CHAT API FUNCTIONS =====
+// Fetch conversations for employee - URL ni o'zgartirish
+const fetchConversations = async () => {
+    if (!user || user.role !== 'employee') {
+        console.error('Only employees can fetch conversations');
+        return;
+    }
 
-	// Fetch conversations for employee and admin2
-	const fetchConversations = async () => {
-		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
-			console.error('Only employees and admin2 can fetch conversations');
-			return;
-		}
+    setConversationsLoading(true);
+    setConversationsError(null);
 
-		setConversationsLoading(true);
-		setConversationsError(null);
+    try {
+        const token = getAuthToken();
+        // ✅ Employee uchun alohida endpoint
+        const response = await fetch(`${messagesUrl}/employee/conversations`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
 
-		try {
-			const token = getAuthToken();
-			const response = await fetch(`${messagesUrl}/conversations`, {
-				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Conversations fetched:', data);
+            setConversations(data.data || data || []);
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to fetch conversations');
+        }
+    } catch (error) {
+        console.error('Error fetching conversations:', error);
+        setConversationsError(error.message);
+        setConversations([]);
+    } finally {
+        setConversationsLoading(false);
+    }
+};
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Conversations fetched:', data);
-				setConversations(data.data || data || []);
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to fetch conversations');
-			}
-		} catch (error) {
-			console.error('Error fetching conversations:', error);
-			setConversationsError(error.message);
-			setConversations([]);
-		} finally {
-			setConversationsLoading(false);
-		}
-	};
+// Fetch messages for employee - URL ni o'zgartirish
+const fetchMessages = async (userId) => {
+    if (!user || user.role !== 'employee') {
+        console.error('Only employees can fetch messages');
+        return;
+    }
 
-	// Fetch messages for a specific conversation
-	const fetchMessages = async (userId) => {
-		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
-			console.error('Only employees and admin2 can fetch messages');
-			return;
-		}
+    setMessagesLoading(true);
+    setMessagesError(null);
 
-		setMessagesLoading(true);
-		setMessagesError(null);
+    try {
+        const token = getAuthToken();
+        // ✅ Employee uchun alohida endpoint
+        const response = await fetch(`${messagesUrl}/employee/conversation/${userId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
 
-		try {
-			const token = getAuthToken();
-			const response = await fetch(`${messagesUrl}/conversation/${userId}`, {
-				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Messages fetched:', data);
+            setMessages(data.data?.messages || data || []);
+            setCurrentConversation(userId);
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to fetch messages');
+        }
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+        setMessagesError(error.message);
+        setMessages([]);
+    } finally {
+        setMessagesLoading(false);
+    }
+};
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Messages fetched:', data);
-				setMessages(data.data || data || []);
-				setCurrentConversation(userId);
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to fetch messages');
-			}
-		} catch (error) {
-			console.error('Error fetching messages:', error);
-			setMessagesError(error.message);
-			setMessages([]);
-		} finally {
-			setMessagesLoading(false);
-		}
-	};
+// Send message from employee - URL ni o'zgartirish
+const sendMessage = async (receiverId, messageText, messageType = 'text') => {
+    if (!user || user.role !== 'employee') {
+        console.error('Only employees can send messages');
+        return;
+    }
 
-	// Send message to user
-	const sendMessage = async (receiverId, messageText, messageType = 'text') => {
-		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
-			console.error('Only employees and admin2 can send messages');
-			return;
-		}
+    try {
+        const token = getAuthToken();
+        // ✅ Employee uchun alohida endpoint
+        const response = await fetch(`${messagesUrl}/employee/send`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                receiver_id: receiverId,
+                message_text: messageText,
+                message_type: messageType
+            }),
+        });
 
-		try {
-			const token = getAuthToken();
-			const response = await fetch(`${messagesUrl}/send`, {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					receiver_id: receiverId,
-					receiver_type: 'user',
-					message_text: messageText,
-					message_type: messageType
-				}),
-			});
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Message sent:', data);
+            
+            if (currentConversation === receiverId) {
+                setMessages(prevMessages => [...prevMessages, {
+                    id: data.data?.id,
+                    sender_id: user.id,
+                    sender_type: 'employee',
+                    receiver_id: receiverId,
+                    receiver_type: 'user',
+                    message_text: messageText,
+                    message_type: messageType,
+                    is_read: false,
+                    created_at: data.data?.created_at || new Date().toISOString()
+                }]);
+            }
+            
+            await fetchConversations();
+            return data;
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to send message');
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
+        throw error;
+    }
+};
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Message sent:', data);
-				
-				// Add new message to current messages if this is the active conversation
-				if (currentConversation === receiverId) {
-					setMessages(prevMessages => [...prevMessages, data.data || data]);
-				}
-				
-				// Refresh conversations to update last message
-				await fetchConversations();
-				
-				return data;
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to send message');
-			}
-		} catch (error) {
-			console.error('Error sending message:', error);
-			throw error;
-		}
-	};
+// Mark conversation as read for employee - URL ni o'zgartirish
+const markConversationAsRead = async (userId) => {
+    if (!user || user.role !== 'employee') {
+        console.error('Only employees can mark conversation as read');
+        return;
+    }
 
+    try {
+        const token = getAuthToken();
+        // ✅ Employee uchun alohida endpoint
+        const response = await fetch(`${messagesUrl}/employee/conversation/${userId}/mark-read`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Conversation marked as read:', data);
+            
+            setConversations(prevConversations => 
+                prevConversations.map(conv => 
+                    conv.participant?.id === userId 
+                        ? { ...conv, unread_count: 0 }
+                        : conv
+                )
+            );
+            
+            return data;
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to mark conversation as read');
+        }
+    } catch (error) {
+        console.error('Error marking conversation as read:', error);
+        throw error;
+    }
+};
 	// Get unread messages count
 	const getUnreadCount = async () => {
 		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
@@ -2093,47 +2141,6 @@ const getScheduleById = async (scheduleId) => {
 			}
 		} catch (error) {
 			console.error('Error marking messages as read:', error);
-			throw error;
-		}
-	};
-
-	// Mark all messages in conversation as read
-	const markConversationAsRead = async (userId) => {
-		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
-			console.error('Only employees and admin2 can mark conversation as read');
-			return;
-		}
-
-		try {
-			const token = getAuthToken();
-			const response = await fetch(`${messagesUrl}/conversation/${userId}/mark-read`, {
-				method: 'PUT',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
-
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Conversation marked as read:', data);
-				
-				// Update conversations to reflect the change
-				setConversations(prevConversations => 
-					prevConversations.map(conv => 
-						conv.other_user_id === userId 
-							? { ...conv, unread_count: 0 }
-							: conv
-					)
-				);
-				
-				return data;
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to mark conversation as read');
-			}
-		} catch (error) {
-			console.error('Error marking conversation as read:', error);
 			throw error;
 		}
 	};
@@ -3399,6 +3406,7 @@ const fetchEmployeeComments = async (employeeId, page = 1, limit = 10) => {
 			// Salons state va funksiyalari
 	salons, salonsLoading, salonsError, fetchSalons, updateSalon,
 	// Salon rasmlarini yuklash va o'chirish funksiyalari
+	uploadPhotosToServer,
 	uploadSalonPhotos, 
 		uploadSalonLogo, // Yangi funksiya
 		deleteSalonPhoto, deleteSalonPhoto,
