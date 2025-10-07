@@ -77,6 +77,9 @@ const EmployeeChatPage = () => {
     });
   };
 
+  console.log(user);
+  
+
   const goToPostSlide = (postId, index) => {
     setPostSlideIndex(prev => ({ ...prev, [postId]: index }));
   };

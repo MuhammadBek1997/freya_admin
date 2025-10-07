@@ -7,6 +7,16 @@ import { BrowserRouter } from 'react-router-dom'
 import './i18n.jsx'
 import { AppProvider } from './Context.jsx'
 
+// Disable non-error console output globally
+if (typeof window !== 'undefined') {
+  try {
+    console.log = () => {};
+    console.info = () => {};
+    console.debug = () => {};
+    console.warn = () => {};
+  } catch {}
+}
+
 // Optional: clear storage when ?clearStorage=1 is present
 if (typeof window !== 'undefined') {
   try {
@@ -14,10 +24,9 @@ if (typeof window !== 'undefined') {
     if (qs.has('clearStorage') || qs.get('clearStorage') === '1') {
       localStorage.clear()
       sessionStorage.clear()
-      console.log('✅ LocalStorage va SessionStorage tozalandi')
     }
   } catch (e) {
-    console.warn('Storage tozalashda xatolik:', e)
+    console.error('Storage tozalashda xatolik:', e)
   }
 }
 
