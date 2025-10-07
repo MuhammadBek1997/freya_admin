@@ -3284,6 +3284,63 @@ const deleteEmployeePost = async (employeeId, postId) => {
     }
 };
 
+// Employee commentlarini olish (pagination bilan)
+const fetchEmployeeComments = async (employeeId, page = 1, limit = 10) => {
+    try {
+        const token = getAuthToken();
+        
+        console.log('📤 Fetching employee comments:', { employeeId, page, limit });
+
+        const response = await fetch(
+            `${employeesUrl}/${employeeId}/comments?page=${page}&limit=${limit}`,
+            {
+                method: 'GET',
+                headers: getHeaders(true),
+            }
+        );
+
+        console.log('📥 Response status:', response.status);
+
+        if (!response.ok) {
+            const contentType = response.headers.get('content-type');
+            let errorMessage = `HTTP ${response.status}`;
+            
+            if (contentType?.includes('application/json')) {
+                const errorData = await response.json();
+                console.error('❌ Error response:', errorData);
+                
+                if (Array.isArray(errorData?.detail)) {
+                    errorMessage = errorData.detail.map(err => {
+                        const field = err.loc ? err.loc[err.loc.length - 1] : '';
+                        return `${field}: ${err.msg}`;
+                    }).join(', ');
+                } else if (typeof errorData?.detail === 'string') {
+                    errorMessage = errorData.detail;
+                } else {
+                    errorMessage = errorData?.message || errorData?.error || errorMessage;
+                }
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Error text:', errorText);
+                errorMessage = errorText || errorMessage;
+            }
+
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        console.log('✅ Employee comments fetched:', data);
+
+        return {
+            comments: data.data || [],
+            pagination: data.pagination || {},
+            avg_rating: data.avg_rating || 0
+        };
+    } catch (error) {
+        console.error('❌ Employee commentlarni olishda xatolik:', error);
+        throw error;
+    }
+};
 
 
 
@@ -3390,7 +3447,7 @@ const deleteEmployeePost = async (employeeId, postId) => {
         fetchEmployeePosts,
         updateEmployeePost,
         deleteEmployeePost,
-
+		fetchEmployeeComments,
 
 
 }}>

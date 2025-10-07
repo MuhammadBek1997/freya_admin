@@ -1,27 +1,109 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { UseGlobalContext } from '../Context';
 
-const AboutEmployeeBar = ({ employee,onClose , avg_rating, comment_count }) => {
+const AboutEmployeeBar = ({ id, employee, onClose, avg_rating, comment_count }) => {
+  const { t, fetchEmployeeComments, fetchEmployeePosts } = UseGlobalContext()
 
+  const [selectedInfo, setSelectedInfo] = useState('post');
+  
+  // ✅ Comments states
+  const [comments, setComments] = useState([]);
+  const [avgRating, setAvgRating] = useState(0);
+  const [commentsLoading, setCommentsLoading] = useState(false);
 
-  const [selectedInfo,setSelectedInfo] = useState('post');
+  // ✅ Posts states - O'ZGARTIRILDI
+  const [aboutEmployeePosts, setAboutEmployeePosts] = useState([]);
+  const [aboutPostsLoading, setAboutPostsLoading] = useState(false);
+  const [aboutPostsError, setAboutPostsError] = useState(null);
+  const [aboutPostSlideIndex, setAboutPostSlideIndex] = useState({}); // { [postId]: currentIndex }
 
+  // Commentlarni yuklash
+  const loadComments = async () => {
+    setCommentsLoading(true);
+    try {
+      const result = await fetchEmployeeComments(employee.id, 1, 10);
+      setComments(result.comments);
+      setAvgRating(result.avg_rating);
+      console.log('Comments loaded:', result);
+    } catch (error) {
+      console.error('Error loading comments:', error);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadComments();
+  }, [employee.id]);
+
+  // ✅ Load posts when switching to Posts tab
+  useEffect(() => {
+    const loadAboutPosts = async () => {
+      if (!employee.id) {
+        console.error('Employee ID topilmadi');
+        return;
+      }
+
+      setAboutPostsLoading(true);
+      setAboutPostsError(null);
+      
+      try {
+        const employeeIdToUse = employee.id;
+        console.log('📤 Fetching posts for employee:', employeeIdToUse);
+        
+        const data = await fetchEmployeePosts(employeeIdToUse, 1, 10);
+        console.log('📥 Posts data received:', data);
+        
+        const list = data?.data || data || [];
+        console.log('📋 Posts list:', list);
+        
+        setAboutEmployeePosts(list);
+      } catch (e) {
+        console.error('❌ Error fetching posts:', e);
+        setAboutPostsError(e?.message || 'Postlarni olishda xatolik');
+      } finally {
+        setAboutPostsLoading(false);
+      }
+    };
+
+    if (selectedInfo === 'post') {
+      loadAboutPosts();
+    }
+  }, [selectedInfo, employee.id]);
+
+  // ✅ Carousel helpers - O'ZGARTIRILDI
+  const nextAboutPostSlide = (postId, total) => {
+    setAboutPostSlideIndex(prev => {
+      const current = prev[postId] || 0;
+      const next = (current + 1) % Math.max(total, 1);
+      return { ...prev, [postId]: next };
+    });
+  };
+
+  const prevAboutPostSlide = (postId, total) => {
+    setAboutPostSlideIndex(prev => {
+      const current = prev[postId] || 0;
+      const prev_index = (current - 1 + total) % Math.max(total, 1);
+      return { ...prev, [postId]: prev_index };
+    });
+  };
+
+  const goToAboutPostSlide = (postId, index) => {
+    setAboutPostSlideIndex(prev => ({ ...prev, [postId]: index }));
+  };
 
   return (
     <div className="aboutEmployeeBar">
       <div className="aboutEmployeeBar-cont">
         <button className="aboutEmployeeBar-cont-close" onClick={onClose}>
-                <img src="/images/closeSidebar.png" alt="" />
-            </button>
+          <img src="/images/closeSidebar.png" alt="" />
+        </button>
         <img src="/images/masterImage.png" alt="Employee" className='aboutEmployeeBar-cont-img' />
         <div className='aboutEmployeeBar-masterJob'>
-          <p>
-            {employee.profession}
-          </p>
+          <p>{employee.profession}</p>
         </div>
         <div className="aboutEmployeeBar-cont-info">
-          <h3>
-            {employee.name}
-          </h3>
+          <h3>{employee.name}</h3>
           <div className='aboutEmployeeBar-cont-rating'>
             <img src="/images/Star1.png" alt="" />
             <p>
@@ -29,43 +111,115 @@ const AboutEmployeeBar = ({ employee,onClose , avg_rating, comment_count }) => {
             </p>
           </div>
         </div>
+
+        {/* Tab Selection */}
         <div className='aboutEmployeeBar-cont-selectinfo'>
-          <div className='aboutEmployeeBar-cont-selectinfo-item' onClick={() => setSelectedInfo('post')} id={selectedInfo == 'post' ? 'selected' : ''}>
+          <div
+            className='aboutEmployeeBar-cont-selectinfo-item'
+            onClick={() => setSelectedInfo('post')}
+            id={selectedInfo === 'post' ? 'selected' : ''}
+          >
             <img src="/images/employPostIcon.png" alt="" />
-            <p>
-              Посты (28)
-            </p>
+            <p>Посты ({aboutEmployeePosts.length})</p>
           </div>
-          <div className='aboutEmployeeBar-cont-selectinfo-item' onClick={() => setSelectedInfo('comment')} id={selectedInfo == 'comment' ? 'selected' : ''}>
+          <div
+            className='aboutEmployeeBar-cont-selectinfo-item'
+            onClick={() => setSelectedInfo('comment')}
+            id={selectedInfo === 'comment' ? 'selected' : ''}
+          >
             <img src="/images/employCommentIcon.png" alt="" />
-            <p>
-              Комментарии (179)
-            </p>
+            <p>Комментарии ({comments.length})</p>
           </div>
-          <div className='aboutEmployeeBar-cont-selectinfo-item' onClick={() => setSelectedInfo('schedule')} id={selectedInfo == 'schedule' ? 'selected' : ''}>
+          <div
+            className='aboutEmployeeBar-cont-selectinfo-item'
+            onClick={() => setSelectedInfo('schedule')}
+            id={selectedInfo === 'schedule' ? 'selected' : ''}
+          >
             <img src="/images/employSchedIcon.png" alt="" />
-            <p>
-              Расписание
-            </p>
+            <p>Расписание</p>
           </div>
         </div>
-        <div>
 
-        </div>
-      </div>
-    </div>
-  );
-};
+        {/* Content Area */}
+        <div style={{ maxHeight: '50vh', overflowY: 'auto', padding: '1vw' }}>
+          
+          {/* ✅ Comments Tab */}
+          {selectedInfo === 'comment' && (
+            <div className='aboutEmp-comments'>
+              {commentsLoading ? (
+                <div style={{ textAlign: 'center', padding: '2vw' }}>
+                  <div style={{
+                    width: "2vw",
+                    height: "2vw",
+                    border: "3px solid #f3f3f3",
+                    borderTop: "3px solid #9C2BFF",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                    margin: "0 auto 1vw"
+                  }}></div>
+                  <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>Yuklanmoqda...</p>
+                </div>
+              ) : comments.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2vw' }}>
+                  <p style={{ color: "#A8A8B3", fontSize: "1vw" }}>Izohlar yo'q</p>
+                </div>
+              ) : (
+                comments.map((item, index) => (
+                  <div className='aboutEmp-comment' key={index} style={{
+                    marginBottom: '1.5vw',
+                    padding: '1vw',
+                    backgroundColor: '#f9f9f9',
+                    borderRadius: '0.5vw'
+                  }}>
+                    <div className='aboutEmp-user' style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "1vw",
+                      marginBottom: "0.5vw"
+                    }}>
+                      <img
+                        src={item.user_avatar || '/images/customerImage.png'}
+                        alt=""
+                        style={{ width: "2.5vw", height: "2.5vw", borderRadius: "50%", objectFit: "cover" }}
+                      />
+                      <p style={{ fontSize: "0.9vw", fontWeight: "500" }}>Client</p>
+                    </div>
+                    <p style={{ fontWeight: "300", fontSize: "0.8vw", marginBottom: "0.5vw", lineHeight: "1.4" }}>
+                      {item.text}
+                    </p>
+                    <div className='aboutEmp-rating' style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginTop: "0.5vw"
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5vw" }}>
+                        <div
+                          className="stars"
+                          style={{ '--rating': item.rating }}
+                          aria-label={`Rating: ${item.rating} out of 5 stars`}
+                        />
+                        <p style={{ fontWeight: "300", fontSize: "0.75vw", color: "#666" }}>
+                          ({item.rating})
+                        </p>
+                      </div>
+                      <p style={{ fontWeight: "300", fontSize: "0.7vw", color: "#999" }}>
+                        {item.created_at.split("T").at(0).split("-").reverse().join(".")}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
 
-// b58ee8c0-2015-43c9-90df-3215fd6ad493
-
-export default AboutEmployeeBar;
-
-{/* <div className='posts-body'>
-              {postsLoading ? (
+          {/* ✅ Posts Tab */}
+          {selectedInfo === 'post' && (
+            <div className='aboutEmp-posts'>
+              {aboutPostsLoading ? (
                 <div style={{
                   width: "100%",
-                  padding: '20px',
+                  padding: '2vw',
                   textAlign: 'center',
                   display: 'flex',
                   justifyContent: 'center',
@@ -74,8 +228,8 @@ export default AboutEmployeeBar;
                   gap: '1vw'
                 }}>
                   <div style={{
-                    width: "2vw",
-                    height: "2vw",
+                    width: "2.5vw",
+                    height: "2.5vw",
                     border: "3px solid #f3f3f3",
                     borderTop: "3px solid #9C2BFF",
                     borderRadius: "50%",
@@ -85,125 +239,153 @@ export default AboutEmployeeBar;
                     Postlar yuklanmoqda...
                   </p>
                 </div>
-              ) : postsError ? (
+              ) : aboutPostsError ? (
                 <div style={{
-                  padding: '20px',
+                  padding: '2vw',
                   textAlign: 'center',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '15px',
+                  gap: '1vw',
                   alignItems: 'center'
                 }}>
                   <p style={{ color: '#FF6B6B', fontSize: '0.9vw' }}>
-                    {postsError}
+                    {aboutPostsError}
                   </p>
                 </div>
-              ) : employeePosts.length === 0 ? (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '3vw',
-                  color: '#A8A8B3'
-                }}>
-                  <p style={{ fontSize: '1vw', marginTop: '1vw' }}>
-                    Postlar tez orada qo'shiladi
-                  </p>
+              ) : aboutEmployeePosts.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3vw', color: '#A8A8B3' }}>
+                  <p style={{ fontSize: '1vw' }}>Postlar yo'q</p>
                 </div>
               ) : (
-                employeePosts.map((post) => {
+                aboutEmployeePosts.map((post) => {
                   const files = post.media_files || [];
-                  const currentIndex = postSlideIndex[post.id] || 0;
+                  const currentIndex = aboutPostSlideIndex[post.id] || 0;
                   const currentFile = files[currentIndex];
                   const isVideo = typeof currentFile === 'string' && /\.(mp4|webm|ogg)$/i.test(currentFile);
 
                   return (
                     <div key={post.id} style={{
-                      width:"32vw",
-                      marginBottom: '2vw',
-                      backgroundColor: '#fff',
-                      borderRadius: '1vw',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-
+                      marginBottom: '1.5vw',
+                      
+                      overflow: 'hidden'
                     }}>
-
-                      <div className="relative w-full" style={{width:"30vw", padding: '1vw' }}>
-                        <div className="relative overflow-hidden" style={{width:"30vw", height: "50vh", borderRadius: "1vw" }}>
+                      {/* Media Carousel */}
+                      <div style={{ position: 'relative', width: '100%' }}>
+                        <div style={{ 
+                          position: 'relative', 
+                          overflow: 'hidden', 
+                          height: "35vh",
+                        }}>
                           {files.length > 0 ? (
-                            <div className="w-full h-full">
+                            <>
                               {isVideo ? (
                                 <video
                                   src={currentFile}
-                                  className="w-full h-full object-cover"
-                                  style={{ borderRadius: '1vw' }}
+                                  style={{ 
+                                    width: '100%', 
+                                    height: '100%', 
+                                    objectFit: 'cover' 
+                                  }}
                                   controls
                                 />
                               ) : (
                                 <img
                                   src={currentFile}
-                                  className="w-full h-full object-cover"
                                   alt={`Slide ${currentIndex + 1}`}
-                                  style={{ borderRadius: '1vw' }}
+                                  style={{ 
+                                    width: '100%', 
+                                    height: '100%', 
+                                    objectFit: 'cover' 
+                                  }}
                                 />
                               )}
 
-                              {files.length > 1 && (
-                                <button
-                                  onClick={() => nextPostSlide(post.id, files.length)}
-                                  className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
-                                >
-                                  <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                </button>
-                              )}
-                            </div>
+                             
+                            </>
                           ) : (
-                            <div className="w-full h-full" style={{
+                            <div style={{
+                              width: '100%',
+                              height: '100%',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              backgroundColor: '#f7f7f7',
-                              borderRadius: '1vw',
-                              color: '#A8A8B3'
+                              color: '#A8A8B3',
+                              fontSize: '0.9vw'
                             }}>
                               Media fayllar mavjud emas
                             </div>
                           )}
                         </div>
 
+                        {/* Dots Indicator */}
                         {files.length > 1 && (
-                          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '1vw',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            display: 'flex',
+                            gap: '0.5vw'
+                          }}>
                             {files.map((_, index) => (
                               <button
                                 key={index}
-                                onClick={() => goToPostSlide(post.id, index)}
-                                className={`w-3 h-3 rounded-full transition-all ${index === currentIndex
-                                  ? 'bg-white'
-                                  : 'bg-white/50 hover:bg-white/75'
-                                  }`}
+                                onClick={() => goToAboutPostSlide(post.id, index)}
+                                style={{
+                                  width: index === currentIndex ? '1.5vw' : '0.5vw',
+                                  height: '0.55vw',
+                                  borderRadius: '30vw',
+                                  border: 'none',
+                                  background: index === currentIndex ? '#9C2BFF':'#9C2BFF' ,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.3s',
+                                  padding: 0
+                                }}
                               />
                             ))}
                           </div>
                         )}
                       </div>
-                      
+
+                      {/* Post Content */}
                       <div style={{ padding: '1vw' }}>
-                        <h2 style={{ fontSize: '1.2vw', margin: 0 }}>{post.title}</h2>
-                        <p style={{ color: '#666', fontSize: '0.9vw', marginTop: '0.5vw' }}>{post.description}</p>
-                        <div style={{ color: '#999', fontSize: '0.8vw', marginTop: '0.5vw' }}>
-                          <span>{new Date(post.created_at).toLocaleString('uz-UZ')}</span>
-                          {post.employee_name && (
-                            <span> · {post.employee_name} {post.employee_surname || ''}</span>
-                          )}
-                          {post.employee_profession && (
-                            <span> · {post.employee_profession}</span>
-                          )}
-                          {post.salon_name && (
-                            <span> · {post.salon_name}</span>
-                          )}
+                        <h2 style={{ 
+                          fontSize: '1.1vw', 
+                          margin: '0 0 0.5vw 0', 
+                          fontWeight: '600',
+                          color: '#333'
+                        }}>
+                          {post.title}
+                        </h2>
+                        <p style={{ 
+                          color: '#666', 
+                          fontSize: '0.85vw', 
+                          lineHeight: '1.5',
+                          marginBottom: '0.8vw'
+                        }}>
+                          {post.description}
+                        </p>
+                        <div style={{ 
+                          color: '#999', 
+                          fontSize: '0.75vw',
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '0.5vw'
+                        }}>
+                         <span>{post.created_at.split("T").at(0).split("-").reverse().join(".")}</span>
+                          
                         </div>
                       </div>
                     </div>
                   );
                 })
               )}
-            </div> */}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AboutEmployeeBar;

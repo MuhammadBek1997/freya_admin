@@ -652,3 +652,14 @@
     height: 1.5vw;
   }
 }
+.aboutEmp-comment{
+  padding: 1vw;
+  background: #E8DFF5;
+  border-radius: 0.7vw;
+}
+.aboutEmp-rating{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+}
