@@ -901,9 +901,7 @@ const login = async (username, password) => {
 
 	// Logout function
 	const logout = () => {
-		localStorage.removeItem('authToken');
-		localStorage.removeItem('userData');
-		localStorage.removeItem('whiteBoxPos');
+		localStorage.clear()
 		setUser(null);
 		setIsAuthenticated(false);
 		// Clear all data when logging out
@@ -2925,7 +2923,7 @@ useEffect(() => {
 	const [selectIcon, setSelectIcon] = useState(selectedIcon || darkImg)
 
 	const whiteBoxRef = useRef(null);
-	
+
 const moveWhiteBoxToElement = (element, save = true) => {
 	if (!element || !whiteBoxRef.current) return;
 
