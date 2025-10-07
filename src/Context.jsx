@@ -3020,6 +3020,7 @@ useEffect(() => {
 }, []);
 
 // ✅ Default pozitsiya - birinchi sidebar elementiga (Home - index 0)
+// ✅ Default pozitsiya - birinchi sidebar elementiga (Home - index 0)
 const setDefaultWhiteBoxPosition = () => {
 	if (!whiteBoxRef.current) return;
 	
@@ -3030,9 +3031,14 @@ const setDefaultWhiteBoxPosition = () => {
 		// Birinchi elementga avtomatik joylashtirish
 		moveWhiteBoxToElement(firstSidebarElement, true);
 		
-		// ✅ Birinchi element iconini active qilish (Home - light icon)
-		const updatedIcons = [...darkImg];
-		updatedIcons[0] = { img: '/images/home-light.png', color: '#9C2BFF', style: 'none' };
+		// ✅ Barcha iconlarni default holatga qaytarish
+		const updatedIcons = [
+			{ img: '/images/home-light.png', color: '#9C2BFF', style: 'none' },
+			{ img: '/images/schedule-dark.png', color: 'white', style: 'underline' },
+			{ img: '/images/group-dark.png', color: 'white', style: 'underline' },
+			{ img: '/images/chat-dark.png', color: 'white', style: 'underline' },
+			{ img: '/images/settings-dark.png', color: 'white', style: 'underline' }
+		];
 		setSelectIcon(updatedIcons);
 		
 		// localStorage'ga index 0 ni saqlash
