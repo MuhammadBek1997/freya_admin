@@ -2925,7 +2925,7 @@ useEffect(() => {
 	const [selectIcon, setSelectIcon] = useState(selectedIcon || darkImg)
 
 	const whiteBoxRef = useRef(null);
-
+	
 const moveWhiteBoxToElement = (element, save = true) => {
 	if (!element || !whiteBoxRef.current) return;
 
@@ -2953,7 +2953,7 @@ const moveWhiteBoxToElement = (element, save = true) => {
 			JSON.stringify({ topVH, leftVW, heightVH, widthVW })
 		);
 		// ✅ Tanlangan element indexini ham saqlash
-		const sidebarItems = document.querySelectorAll('.sidebar-item');
+		const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
 		const elementIndex = Array.from(sidebarItems).indexOf(element);
 		if (elementIndex !== -1) {
 			localStorage.setItem("selectedSidebarIndex", elementIndex.toString());
@@ -2997,7 +2997,7 @@ useEffect(() => {
 				whiteBox.style.width = `${widthVW}vw`;
 				
 				// ✅ Saqlangan element iconini yangilash
-				const sidebarItems = document.querySelectorAll('.sidebar-item');
+				const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
 				if (sidebarItems[savedIndex]) {
 					const updatedIcons = [...darkImg];
 					if (savedIndex !== 0) {
@@ -3016,48 +3016,31 @@ useEffect(() => {
 			// ✅ localStorage'da ma'lumot yo'q - birinchi elementga o'rnatish
 			setDefaultWhiteBoxPosition();
 		}
-	}, 100); // 100ms kutish - DOM yuklangunga qadar
+	}, 200);
 
 	return () => clearTimeout(timer);
 }, []);
 
-// ✅ Default pozitsiya - birinchi sidebar elementiga
+// ✅ Default pozitsiya - birinchi sidebar elementiga (Home - index 0)
 const setDefaultWhiteBoxPosition = () => {
 	if (!whiteBoxRef.current) return;
 	
-	// Birinchi sidebar elementini topish
-	const firstSidebarElement = document.querySelector('.sidebar-item');
+	// Birinchi sidebar elementini topish (.sidebar-nav-item)
+	const firstSidebarElement = document.querySelector('.sidebar-nav-item');
 	
 	if (firstSidebarElement) {
 		// Birinchi elementga avtomatik joylashtirish
 		moveWhiteBoxToElement(firstSidebarElement, true);
 		
-		// ✅ Birinchi element iconini active qilish
+		// ✅ Birinchi element iconini active qilish (Home - light icon)
 		const updatedIcons = [...darkImg];
-		updatedIcons[0] = darkImg[0]; // Home icon active
+		updatedIcons[0] = { img: '/images/home-light.png', color: '#9C2BFF', style: 'none' };
 		setSelectIcon(updatedIcons);
-	} else {
-		// Fallback: manual default (agar sidebar element topilmasa)
-		const whiteBox = whiteBoxRef.current;
-		whiteBox.style.top = '17vh';
-		whiteBox.style.left = '0.5vw';
-		whiteBox.style.height = '5.5vh';
-		whiteBox.style.width = '4vw';
 		
-		// Default pozitsiyani localStorage'ga saqlash
-		localStorage.setItem(
-			"whiteBoxPos",
-			JSON.stringify({
-				topVH: 19, // 17 + 2
-				leftVW: 0.5,
-				heightVH: 5.5,
-				widthVW: 4
-			})
-		);
+		// localStorage'ga index 0 ni saqlash
 		localStorage.setItem("selectedSidebarIndex", "0");
 	}
 };
-
 
 
 
