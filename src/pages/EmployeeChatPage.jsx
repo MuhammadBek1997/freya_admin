@@ -18,12 +18,11 @@ const EmployeeChatPage = () => {
     sendMessage,
     getUnreadCount,
     markConversationAsRead,
-    createEmployeePost,
     fetchEmployeePosts,
-    updateEmployeePost,
-    deleteEmployeePost,
-    updateEmployeeAvatar,
-    t
+    t,
+    uploadPhotosToServer,
+    updateEmployee,
+    setUser
   } = UseGlobalContext();
 
   const [selectedUser, setSelectedUser] = useState(null);
@@ -297,50 +296,86 @@ const EmployeeChatPage = () => {
     const list = data?.data || data || [];
     setEmployeePosts(list);
   };
+// Avatar upload state
+const [avatarUploading, setAvatarUploading] = useState(false);
+const [avatarError, setAvatarError] = useState(null);
+const fileInputRef = useRef(null);
 
-  // Avatar upload state
-  const [avatarUploading, setAvatarUploading] = useState(false);
-  const [avatarError, setAvatarError] = useState(null);
-  const fileInputRef = useRef(null);
+// Avatar yuklash funksiyasi - TO'G'RILANGAN
+const handleAvatarUpload = async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
-  // Avatar yuklash funksiyasi
-  const handleAvatarUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // Fayl validatsiyasi
+  if (!file.type?.startsWith('image/')) {
+    alert('Faqat rasm fayllarini yuklash mumkin');
+    return;
+  }
 
-    setAvatarUploading(true);
-    setAvatarError(null);
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) {
+    alert('Rasm hajmi 5MB dan oshmasligi kerak');
+    return;
+  }
 
-    try {
-      const employeeId = user?.id || user?.employee_id;
-      const newAvatarUrl = await updateEmployeeAvatar(employeeId, file);
+  setAvatarUploading(true);
+  setAvatarError(null);
 
-      // Muvaffaqiyatli yuklandi
-      console.log('✅ Avatar yangilandi:', newAvatarUrl);
-
-      // Toast yoki notification ko'rsatish mumkin
-      // alert(t('avatarUpdated') || 'Avatar muvaffaqiyatli yangilandi!');
-
-    } catch (error) {
-      console.error('Avatar yuklashda xatolik:', error);
-      setAvatarError(error.message);
-      alert(error.message);
-    } finally {
-      setAvatarUploading(false);
-      // Input ni tozalash (bir xil faylni qayta yuklash mumkin bo'lishi uchun)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+  try {
+    const employeeId = user?.id || user?.employee_id;
+    
+    // 1) Avval rasmni uploadPhotosToServer orqali yuklash
+    console.log('📤 Uploading avatar...');
+    const uploadedUrls = await uploadPhotosToServer([file]);
+    
+    if (!uploadedUrls || uploadedUrls.length === 0) {
+      throw new Error('Avatar yuklanmadi');
     }
-  };
 
-  // Avatar click handler
-  const handleAvatarClick = () => {
+    const avatarUrl = uploadedUrls[0];
+    console.log('✅ Avatar uploaded:', avatarUrl);
+
+    // 2) Keyin employee ni yangilash
+    const updateData = {
+      avatar: avatarUrl,
+      profile_image: avatarUrl
+    };
+
+    await updateEmployee(employeeId, updateData);
+    
+    console.log('✅ Employee avatar yangilandi');
+
+    // User state ni yangilash
+    setUser(prev => ({
+      ...prev,
+      avatar: avatarUrl,
+      profile_image: avatarUrl
+    }));
+
+    // LocalStorage ni ham yangilash
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    userData.avatar = avatarUrl;
+    userData.profile_image = avatarUrl;
+    localStorage.setItem('userData', JSON.stringify(userData));
+
+  } catch (error) {
+    console.error('Avatar yuklashda xatolik:', error);
+    setAvatarError(error.message);
+    alert(error.message);
+  } finally {
+    setAvatarUploading(false);
     if (fileInputRef.current) {
-      fileInputRef.current.click();
+      fileInputRef.current.value = '';
     }
-  };
+  }
+};
 
+// Avatar click handler
+const handleAvatarClick = () => {
+  if (fileInputRef.current) {
+    fileInputRef.current.click();
+  }
+};
 
   return (
     <div>
@@ -350,11 +385,45 @@ const EmployeeChatPage = () => {
             <img className="chatSidebarLogo" src="sidebarLogo.svg" alt="Logo" />
 
             {/* ✅ Avatar ni user state'dan olish */}
-            <img
-              src={user?.avatar || user?.profile_image || "Avatar.svg"}
-              alt="User"
-              className="profile-avatar"
-            />
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <img
+                src={user?.avatar || user?.profile_image || user?.avatar_url || user?.photo || "Avatar.svg"}
+                alt="User"
+                className="profile-avatar"
+              />
+              {/* Avatarni almashtirish tugmasi */}
+              <button
+                onClick={handleAvatarClick}
+                disabled={avatarUploading}
+                title={avatarUploading ? (t('uploading') || 'Yuklanmoqda...') : (t('changePhoto') || 'Rasmni almashtirish')}
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  background: '#9C2BFF',
+                  color: '#FFF',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: avatarUploading ? 'not-allowed' : 'pointer',
+                  opacity: avatarUploading ? 0.7 : 1
+                }}
+              >
+                ✎
+              </button>
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                style={{ display: 'none' }}
+              />
+            </div>
 
             {user.role !== 'private_admin' && (
               <button

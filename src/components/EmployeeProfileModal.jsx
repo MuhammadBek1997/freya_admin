@@ -5,55 +5,96 @@ import { UseGlobalContext } from '../Context';
 const EmployeeProfileModal = ({ isOpen, onClose, user, handleChangeEmployeePage }) => {
   const {
     t,
-    updateEmployeeAvatar,
-    fetchEmployeeComments
+    updateEmployee,
+    uploadPhotosToServer,
+    setUser,
+    fetchEmployeeComments,
+    fetchEmployeePosts
   } = UseGlobalContext();
 
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [employeeComments, setEmployeeComments] = useState([]);
+  const [avgRating, setAvgRating] = useState(0);
   const [changePhoto, setChangePhoto] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
-  const [employeeComments, setEmployeeComments] = useState([]);
-  const [commentsLoading, setCommentsLoading] = useState(false);
-  const [avgRating, setAvgRating] = useState(0);
   const fileInputRef = useRef(null);
 
-  // Avatar yuklash funksiyasi
-  // EmployeeProfileModal.jsx - handleAvatarUpload ichida
+  
+
 const handleAvatarUpload = async (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  setAvatarUploading(true);
-  setAvatarError(null);
-
-  try {
-    const employeeId = user?.id || user?.employee_id;
-    const newAvatarUrl = await updateEmployeeAvatar(employeeId, file);
-    
-    console.log('✅ Avatar muvaffaqiyatli yangilandi:', newAvatarUrl);
-    
-    // ✅ Modal ni yopmasdan, user ma'lumotini yangilash
-    // Bu avtomatik ishlaydi Context orqali
-    
-  } catch (error) {
-    console.error('Avatar yuklashda xatolik:', error);
-    setAvatarError(error.message);
-    alert(error.message);
-  } finally {
-    setAvatarUploading(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    // Fayl validatsiyasi
+    if (!file.type?.startsWith('image/')) {
+      alert('Faqat rasm fayllarini yuklash mumkin');
+      return;
     }
-  }
-};
 
-  // Avatar click handler
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('Rasm hajmi 5MB dan oshmasligi kerak');
+      return;
+    }
+
+    setAvatarUploading(true);
+    setAvatarError(null);
+
+    try {
+      const employeeId = user?.id || user?.employee_id;
+      
+      // 1) Avval rasmni yuklash
+      console.log('📤 Uploading avatar...');
+      const uploadedUrls = await uploadPhotosToServer([file]);
+      
+      if (!uploadedUrls || uploadedUrls.length === 0) {
+        throw new Error('Avatar yuklanmadi');
+      }
+
+      const avatarUrl = uploadedUrls[0];
+      console.log('✅ Avatar uploaded:', avatarUrl);
+
+      // 2) Employee ni yangilash
+      const updateData = {
+        avatar: avatarUrl,
+        profile_image: avatarUrl
+      };
+
+      await updateEmployee(employeeId, updateData);
+      
+      console.log('✅ Employee avatar yangilandi');
+
+      // User state ni yangilash
+      setUser(prev => ({
+        ...prev,
+        avatar: avatarUrl,
+        profile_image: avatarUrl
+      }));
+
+      // LocalStorage ni ham yangilash
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      userData.avatar = avatarUrl;
+      userData.profile_image = avatarUrl;
+      localStorage.setItem('userData', JSON.stringify(userData));
+
+    } catch (error) {
+      console.error('Avatar yuklashda xatolik:', error);
+      setAvatarError(error.message);
+      alert(error.message);
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleAvatarClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
-
   // Comments va rating olish
   useEffect(() => {
     const loadEmployeeComments = async () => {
@@ -132,7 +173,7 @@ const handleAvatarUpload = async (event) => {
               {/* ✅ Avatar bilan container */}
               <div style={{ position: 'relative' }}>
                 <img
-                  src={user?.avatar || user?.profile_image || "/Avatar.svg"}
+                  src={user?.avatar || user?.profile_image || user?.avatar_url || user?.photo || "/Avatar.svg"}
                   alt="avatar"
                   style={{
                     width: '80px',
