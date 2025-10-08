@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { getHeaders } from '../Context';
+import { getAuthToken } from '../Context';
 import './PremiumSubscription.css';
 
 const PremiumSubscription = ({ onClose }) => {
@@ -15,7 +15,10 @@ const PremiumSubscription = ({ onClose }) => {
     const fetchSubscriptionStatus = async () => {
         try {
             const response = await axios.get('/api/payments/user/subscription', {
-                headers: getHeaders(true)
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+                }
             });
             setSubscriptionStatus(response.data.data);
         } catch (error) {
@@ -30,7 +33,12 @@ const PremiumSubscription = ({ onClose }) => {
         try {
             const response = await axios.post('/api/payments/user/premium', 
                 { duration }, 
-                { headers: getHeaders(true) }
+                { 
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+                    }
+                }
             );
 
             if (response.data.success) {

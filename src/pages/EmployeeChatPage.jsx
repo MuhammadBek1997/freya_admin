@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import '../styles/ChatStyles.css'
-import { UseGlobalContext, getHeaders } from '../Context';
+import { UseGlobalContext, getAuthToken } from '../Context';
 import EmployeeProfileModal from '../components/EmployeeProfileModal';
 import EmployeePostForm from '../components/EmployeePostForm';
 
@@ -22,6 +22,7 @@ const EmployeeChatPage = () => {
     fetchEmployeePosts,
     updateEmployeePost,
     deleteEmployeePost,
+    updateEmployeeAvatar,
     t
   } = UseGlobalContext();
 
@@ -78,7 +79,7 @@ const EmployeeChatPage = () => {
   };
 
   console.log(user);
-  
+
 
   const goToPostSlide = (postId, index) => {
     setPostSlideIndex(prev => ({ ...prev, [postId]: index }));
@@ -125,7 +126,10 @@ const EmployeeChatPage = () => {
       const response = await fetch(
         'https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/grouped/by-date',
         {
-          headers: getHeaders(true)
+          headers: {
+            'Content-Type': 'application/json',
+            ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+          }
         }
       );
 
@@ -294,13 +298,63 @@ const EmployeeChatPage = () => {
     setEmployeePosts(list);
   };
 
+  // Avatar upload state
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState(null);
+  const fileInputRef = useRef(null);
+
+  // Avatar yuklash funksiyasi
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setAvatarUploading(true);
+    setAvatarError(null);
+
+    try {
+      const employeeId = user?.id || user?.employee_id;
+      const newAvatarUrl = await updateEmployeeAvatar(employeeId, file);
+
+      // Muvaffaqiyatli yuklandi
+      console.log('✅ Avatar yangilandi:', newAvatarUrl);
+
+      // Toast yoki notification ko'rsatish mumkin
+      // alert(t('avatarUpdated') || 'Avatar muvaffaqiyatli yangilandi!');
+
+    } catch (error) {
+      console.error('Avatar yuklashda xatolik:', error);
+      setAvatarError(error.message);
+      alert(error.message);
+    } finally {
+      setAvatarUploading(false);
+      // Input ni tozalash (bir xil faylni qayta yuklash mumkin bo'lishi uchun)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Avatar click handler
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+
   return (
     <div>
       <div className="chat-container" style={user.role === 'private_admin' ? { flexDirection: "row-reverse" } : {}}>
         <aside className="chatSidebar">
           <div className="chatSidebar-top">
             <img className="chatSidebarLogo" src="sidebarLogo.svg" alt="Logo" />
-            <img src="Avatar.svg" alt="User" className="profile-avatar" />
+
+            {/* ✅ Avatar ni user state'dan olish */}
+            <img
+              src={user?.avatar || user?.profile_image || "Avatar.svg"}
+              alt="User"
+              className="profile-avatar"
+            />
 
             {user.role !== 'private_admin' && (
               <button
@@ -830,7 +884,7 @@ const EmployeeChatPage = () => {
           <div className='chat-posts'>
             <div className='posts employee-header' style={user.role === "private_admin" ? { left: "10vw", zIndex: "-10" } : null}>
               <h1>{t('postsCount') || 'Postlar'}</h1>
-              
+
               <button
                 className='add-post-button'
                 onClick={() => setIsAddPostModalOpen(true)}

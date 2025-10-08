@@ -2,33 +2,33 @@ import { createContext, useContext, useEffect, useMemo, useState, useRef } from 
 import { useTranslation } from "react-i18next";
 import i18n from "./i18n";
 import {
-    authUrl,
-    adminLoginUrl,
-    employeeLoginUrl,
-    superAdminLoginUrl,
-    adminUrl,
-    salonsUrl,
-    adminSalonsUrl,
-    adminMySalonUrl,
-    appointUrl,
-    commentsUrl,
-    mastersUrl,
-    employeesUrl,
-    employeeBulkWaitingStatusUrl,
-    servicesUrl,
-    appointmentsUrl,
-    salonsListUrl,
-    salonDetailUrl,
-    schedulesUrl,
-    scheduleGroupedUrl,
-    salonServicesUrl,
-    statisticsUrl,
-    paymentUrl,
-    smsUrl,
-    translationUrl,
-    messagesUrl,
-    photoUploadUrl,
-	bookingsUrl 
+	authUrl,
+	adminLoginUrl,
+	employeeLoginUrl,
+	superAdminLoginUrl,
+	adminUrl,
+	salonsUrl,
+	adminSalonsUrl,
+	adminMySalonUrl,
+	appointUrl,
+	commentsUrl,
+	mastersUrl,
+	employeesUrl,
+	employeeBulkWaitingStatusUrl,
+	servicesUrl,
+	appointmentsUrl,
+	salonsListUrl,
+	salonDetailUrl,
+	schedulesUrl,
+	scheduleGroupedUrl,
+	salonServicesUrl,
+	statisticsUrl,
+	paymentUrl,
+	smsUrl,
+	translationUrl,
+	messagesUrl,
+	photoUploadUrl,
+	bookingsUrl
 } from "./apiUrls"
 
 
@@ -45,92 +45,75 @@ const USE_LOCAL_DATA = false;
 
 // LocalStorage keys mapping
 const LS_KEYS = {
-  appointments: 'appointments',
-  employees: 'employees',
-  services: 'services',
-  schedules: 'schedules',
-  salons: 'salons',
-  conversations: 'conversations',
-  messages: 'messages',
-  statistics: 'statistics',
+	appointments: 'appointments',
+	employees: 'employees',
+	services: 'services',
+	schedules: 'schedules',
+	salons: 'salons',
+	conversations: 'conversations',
+	messages: 'messages',
+	statistics: 'statistics',
 };
 
 // LocalStorage helpers
 const lsGet = (key, fallback = []) => {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
+	try {
+		const raw = localStorage.getItem(key);
+		return raw ? JSON.parse(raw) : fallback;
+	} catch {
+		return fallback;
+	}
 };
 
 const lsSet = (key, value) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // no-op
-  }
+	try {
+		localStorage.setItem(key, JSON.stringify(value));
+	} catch {
+		// no-op
+	}
 };
 
 const lsUpsert = (key, item, idField = 'id') => {
-  const arr = lsGet(key, []);
-  const idx = arr.findIndex(x => x?.[idField] === item?.[idField]);
-  if (idx >= 0) arr[idx] = item; else arr.push(item);
-  lsSet(key, arr);
-  return arr;
+	const arr = lsGet(key, []);
+	const idx = arr.findIndex(x => x?.[idField] === item?.[idField]);
+	if (idx >= 0) arr[idx] = item; else arr.push(item);
+	lsSet(key, arr);
+	return arr;
 };
 
 const lsRemove = (key, id, idField = 'id') => {
-  const arr = lsGet(key, []).filter(x => x?.[idField] !== id);
-  lsSet(key, arr);
-  return arr;
+	const arr = lsGet(key, []).filter(x => x?.[idField] !== id);
+	lsSet(key, arr);
+	return arr;
 };
 
 // Seed localStorage with test data on first load
 const seedLocalData = () => {
-  try {
-    if (!localStorage.getItem(LS_KEYS.appointments)) lsSet(LS_KEYS.appointments, dataAppoint || []);
-    if (!localStorage.getItem(LS_KEYS.employees))   lsSet(LS_KEYS.employees, dataEmployees || []);
-    if (!localStorage.getItem(LS_KEYS.services))    lsSet(LS_KEYS.services, dataServices || []);
-    if (!localStorage.getItem(LS_KEYS.schedules))   lsSet(LS_KEYS.schedules, dataSchedules || []);
-    if (!localStorage.getItem(LS_KEYS.salons))      lsSet(LS_KEYS.salons, dataSalons || []);
-    if (!localStorage.getItem(LS_KEYS.conversations)) lsSet(LS_KEYS.conversations, dataConversations || []);
-    if (!localStorage.getItem(LS_KEYS.messages))    lsSet(LS_KEYS.messages, dataMessages || []);
-    if (!localStorage.getItem(LS_KEYS.statistics))  lsSet(LS_KEYS.statistics, dataStatistics || []);
-  } catch {
-    // no-op
-  }
+	try {
+		// Fixed: Use empty arrays since test data is not imported
+		if (!localStorage.getItem(LS_KEYS.appointments)) lsSet(LS_KEYS.appointments, []);
+		if (!localStorage.getItem(LS_KEYS.employees)) lsSet(LS_KEYS.employees, []);
+		if (!localStorage.getItem(LS_KEYS.services)) lsSet(LS_KEYS.services, []);
+		if (!localStorage.getItem(LS_KEYS.schedules)) lsSet(LS_KEYS.schedules, []);
+		if (!localStorage.getItem(LS_KEYS.salons)) lsSet(LS_KEYS.salons, []);
+		if (!localStorage.getItem(LS_KEYS.conversations)) lsSet(LS_KEYS.conversations, []);
+		if (!localStorage.getItem(LS_KEYS.messages)) lsSet(LS_KEYS.messages, []);
+		if (!localStorage.getItem(LS_KEYS.statistics)) lsSet(LS_KEYS.statistics, []);
+	} catch {
+		// no-op
+	}
 };
 
 // Top-level helpers for headers and auth
 export const getAuthToken = () => {
-  return localStorage.getItem('authToken');
+	return localStorage.getItem('authToken');
 };
 
-export const getHeaders = (includeAuth = true, contentType = 'application/json') => {
-  const headers = {};
-  if (contentType) headers['Content-Type'] = contentType;
-
-  if (includeAuth) {
-    const token = getAuthToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-  }
-
-  const currentLanguage =
-    localStorage.getItem('i18nextLng') ||
-    localStorage.getItem('language') ||
-    'uz';
-  headers['X-User-Language'] = currentLanguage;
-
-  return headers;
-};
+// getHeaders helper removed as per request; use inline headers where needed
 
 export const AppProvider = ({ children }) => {
-    // Track currently loaded admin salon ID to compare with requests
-    const currentSalonIdRef = useRef(null);
+	// Track currently loaded admin salon ID to compare with requests
+	const currentSalonIdRef = useRef(null);
 
 	// Authentication state
 	const [user, setUser] = useState(null);
@@ -180,13 +163,13 @@ export const AppProvider = ({ children }) => {
 	useEffect(() => {
 		const token = localStorage.getItem('authToken');
 		const userData = localStorage.getItem('userData');
-		
-		
+
+
 		if (token && userData) {
 			try {
 				const parsedUser = JSON.parse(userData);
-				
-				
+
+
 				// Role mavjudligini tekshirish
 				if (!parsedUser.role) {
 					console.error('❌ ERROR: User role is missing! Clearing localStorage...');
@@ -195,7 +178,7 @@ export const AppProvider = ({ children }) => {
 					setAuthLoading(false);
 					return;
 				}
-				
+
 				setUser(parsedUser);
 				setIsAuthenticated(true);
 			} catch (error) {
@@ -255,7 +238,7 @@ export const AppProvider = ({ children }) => {
 					const errJson = await resp.json();
 					msg = errJson?.message || errJson?.detail || msg;
 				} catch {
-					try { msg = await resp.text(); } catch {}
+					try { msg = await resp.text(); } catch { }
 				}
 				console.warn('[getStatistics] request failed:', msg);
 				return { data: {}, message: msg };
@@ -331,64 +314,67 @@ export const AppProvider = ({ children }) => {
 
 	// Update salon function
 	// Context.jsx da updateSalon funksiyasiga debug qo'shish
-const updateSalon = async (salonId, updateData) => {
-    try {
-        console.log('=== updateSalon START ===');
-        console.log('Salon ID:', salonId);
-        console.log('Update Data:', JSON.stringify(updateData, null, 2));
-        
-        const token = getAuthToken();
-        const role = user?.role;
-        
-        console.log('User role:', role);
-        console.log('Token exists:', !!token);
-        
-        if (!role || (role !== 'admin' && role !== 'super_admin' && role !== 'superadmin')) {
-            throw new Error('Admin huquqi talab qilinadi');
-        }
-        
-        if (!token) {
-            throw new Error('Admin token topilmadi');
-        }
-        
-        const targetId = salonId || salonProfile?.id || user?.salon_id;
-        console.log('Target ID:', targetId);
-        console.log('URL:', `${salonsUrl}/${targetId}`);
-        
-        const response = await fetch(`${salonsUrl}/${targetId}`, {
-            method: 'PUT',
-            headers: getHeaders(true),
-            body: JSON.stringify(updateData),
-        });
+	const updateSalon = async (salonId, updateData) => {
+		try {
+			console.log('=== updateSalon START ===');
+			console.log('Salon ID:', salonId);
+			console.log('Update Data:', JSON.stringify(updateData, null, 2));
 
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
+			const token = getAuthToken();
+			const role = user?.role;
 
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Success response:', data);
-            
-            // State'ni yangilash
-            const serverSalon = data?.data || {};
-            setSalonProfile(prev => {
-                if (!prev || prev.id !== targetId) return prev;
-                const updated = { ...prev, ...updateData, ...serverSalon };
-                console.log('Updated salon profile:', updated);
-                return updated;
-            });
-            
-            return data;
-        } else {
-            const errorText = await response.text();
-            console.error('Error response:', errorText);
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-    } catch (error) {
-        console.error('=== updateSalon ERROR ===');
-        console.error('Error:', error);
-        throw error;
-    }
-};
+			console.log('User role:', role);
+			console.log('Token exists:', !!token);
+
+			if (!role || (role !== 'admin' && role !== 'super_admin' && role !== 'superadmin')) {
+				throw new Error('Admin huquqi talab qilinadi');
+			}
+
+			if (!token) {
+				throw new Error('Admin token topilmadi');
+			}
+
+			const targetId = salonId || (salonProfile && salonProfile.id) || user?.salon_id;  // Fixed: Added null-check for salonProfile
+			console.log('Target ID:', targetId);
+			console.log('URL:', `${salonsUrl}/${targetId}`);
+
+			const response = await fetch(`${salonsUrl}/${targetId}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					...(token ? { Authorization: `Bearer ${token}` } : {})
+				},
+				body: JSON.stringify(updateData),
+			});
+
+			console.log('Response status:', response.status);
+			console.log('Response ok:', response.ok);
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Success response:', data);
+
+				// State'ni yangilash
+				const serverSalon = data?.data || {};
+				setSalonProfile(prev => {
+					if (!prev || prev.id !== targetId) return prev;
+					const updated = { ...prev, ...updateData, ...serverSalon };
+					console.log('Updated salon profile:', updated);
+					return updated;
+				});
+
+				return data;
+			} else {
+				const errorText = await response.text();
+				console.error('Error response:', errorText);
+				throw new Error(`HTTP ${response.status}: ${errorText}`);
+			}
+		} catch (error) {
+			console.error('=== updateSalon ERROR ===');
+			console.error('Error:', error);
+			throw error;
+		}
+	};
 
 	// Helper function to convert file to base64
 	const fileToBase64 = (file) => {
@@ -401,223 +387,226 @@ const updateSalon = async (salonId, updateData) => {
 	};
 
 	// Context.jsx - uploadPhotosToServer funksiyasi (alertsiz)
-const uploadPhotosToServer = async (files) => {
-	const token = getAuthToken();
-	if (!token) throw new Error('Admin token topilmadi');
+	const uploadPhotosToServer = async (files) => {
+		const token = getAuthToken();
+		if (!token) throw new Error('Admin token topilmadi');
 
-	const maxSize = 4 * 1024 * 1024;
-	const uploadedUrls = [];
+		const maxSize = 4 * 1024 * 1024;
+		const uploadedUrls = [];
 
-	for (let i = 0; i < files.length; i++) {
-		const file = files[i];
+		for (let i = 0; i < files.length; i++) {
+			const file = files[i];
 
-		if (!file.type?.startsWith('image/')) {
-			throw new Error(`Fayl "${file.name}" rasm emas`);
+			if (!file.type?.startsWith('image/')) {
+				throw new Error(`Fayl "${file.name}" rasm emas`);
+			}
+			if (file.size > maxSize) {
+				throw new Error(`Fayl "${file.name}" hajmi katta (maks 4MB)`);
+			}
+
+			const formData = new FormData();
+			formData.append('file', file);
+
+			console.log(`📤 Uploading file ${i + 1}/${files.length}:`, file.name);
+
+			try {
+				const response = await fetch(photoUploadUrl, {
+					method: 'POST',
+					headers: {
+						'Authorization': `Bearer ${token}`,
+						'Accept': 'application/json'
+					},
+					body: formData
+				});
+
+				if (!response.ok) {
+					let message = `Upload failed (HTTP ${response.status})`;
+					try {
+						const contentType = response.headers.get('content-type');
+						if (contentType?.includes('application/json')) {
+							const errData = await response.json();
+							if (Array.isArray(errData?.detail)) {
+								message = errData.detail.map(d => d?.msg || JSON.stringify(d)).join('; ');
+							} else if (typeof errData?.detail === 'string') {
+								message = errData.detail;
+							} else {
+								message = errData?.message || errData?.error || message;
+							}
+						} else {
+							const text = await response.text();
+							message = text || message;
+						}
+					} catch { }
+					throw new Error(message);
+				}
+
+				const data = await response.json();
+				let url = null;
+				if (typeof data === 'string') {
+					url = data;
+				} else if (data?.url) {
+					url = data.url;
+				} else if (data?.data?.url) {
+					url = data.data.url;
+				}
+
+				if (url) {
+					uploadedUrls.push(url);
+				} else {
+					throw new Error(`File ${i + 1}: Backend dan URL qaytmadi`);
+				}
+
+			} catch (fileError) {
+				throw new Error(`File "${file.name}": ${fileError.message}`);
+			}
 		}
-		if (file.size > maxSize) {
-			throw new Error(`Fayl "${file.name}" hajmi katta (maks 4MB)`);
-		}
 
-		const formData = new FormData();
-		formData.append('file', file);
+		return uploadedUrls;
+	};
 
-		console.log(`📤 Uploading file ${i + 1}/${files.length}:`, file.name);
-
+	// Logo ni alohida yuklash
+	const uploadSalonLogo = async (salonId, logoFile) => {
 		try {
-			const response = await fetch(photoUploadUrl, {
-				method: 'POST',
+			console.log('=== UPLOAD SALON LOGO START ===');
+
+			const targetSalonId = salonId || salonProfile?.id || user?.salon_id;
+			if (!targetSalonId) throw new Error('Salon ID topilmadi');
+
+			const urls = await uploadPhotosToServer([logoFile]);
+
+			if (!urls || urls.length === 0) {
+				throw new Error('Logo yuklanmadi');
+			}
+
+			const logoUrl = urls[0];
+			console.log('✅ Logo uploaded:', logoUrl);
+
+			const token = getAuthToken();
+			const updatePayload = {
+				icon: logoUrl,
+				logo: logoUrl
+			};
+
+			const response = await fetch(`${salonsUrl}/${targetSalonId}`, {
+				method: 'PUT',
 				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Accept': 'application/json'
+					'Content-Type': 'application/json',
+					...(token ? { Authorization: `Bearer ${token}` } : {})
 				},
-				body: formData
+				body: JSON.stringify(updatePayload)
 			});
 
 			if (!response.ok) {
-				let message = `Upload failed (HTTP ${response.status})`;
-				try {
-					const contentType = response.headers.get('content-type');
-					if (contentType?.includes('application/json')) {
-						const errData = await response.json();
-						if (Array.isArray(errData?.detail)) {
-							message = errData.detail.map(d => d?.msg || JSON.stringify(d)).join('; ');
-						} else if (typeof errData?.detail === 'string') {
-							message = errData.detail;
-						} else {
-							message = errData?.message || errData?.error || message;
-						}
-					} else {
-						const text = await response.text();
-						message = text || message;
-					}
-				} catch {}
-				throw new Error(message);
+				const text = await response.text();
+				throw new Error(`HTTP ${response.status}: ${text}`);
 			}
 
 			const data = await response.json();
-			let url = null;
-			if (typeof data === 'string') {
-				url = data;
-			} else if (data?.url) {
-				url = data.url;
-			} else if (data?.data?.url) {
-				url = data.data.url;
-			}
+			const serverSalon = data?.data || data;
 
-			if (url) {
-				uploadedUrls.push(url);
-			} else {
-				throw new Error(`File ${i + 1}: Backend dan URL qaytmadi`);
-			}
+			setSalonProfile(prev => {
+				if (!prev || prev.id !== targetSalonId) return prev;
+				return {
+					...prev,
+					icon: logoUrl,
+					logo: logoUrl,
+					...serverSalon
+				};
+			});
 
-		} catch (fileError) {
-			throw new Error(`File "${file.name}": ${fileError.message}`);
+			return logoUrl;
+
+		} catch (error) {
+			console.error('=== UPLOAD SALON LOGO ERROR ===');
+			console.error('Error:', error);
+			throw error;
 		}
-	}
+	};
 
-	return uploadedUrls;
-};
+	// Photos ni alohida yuklash (logosiz)
+	const uploadSalonPhotos = async (salonId, files) => {
+		try {
+			console.log('=== UPLOAD SALON PHOTOS START ===');
 
-// Logo ni alohida yuklash
-const uploadSalonLogo = async (salonId, logoFile) => {
-	try {
-		console.log('=== UPLOAD SALON LOGO START ===');
+			const targetSalonId = salonId || salonProfile?.id || user?.salon_id;
+			if (!targetSalonId) throw new Error('Salon ID topilmadi');
 
-		const targetSalonId = salonId || salonProfile?.id || user?.salon_id;
-		if (!targetSalonId) throw new Error('Salon ID topilmadi');
+			const uploadedUrls = [];
 
-		const urls = await uploadPhotosToServer([logoFile]);
-		
-		if (!urls || urls.length === 0) {
-			throw new Error('Logo yuklanmadi');
-		}
+			for (let i = 0; i < files.length; i++) {
+				const file = files[i];
+				console.log(`📤 Uploading file ${i + 1}/${files.length}:`, file.name);
 
-		const logoUrl = urls[0];
-		console.log('✅ Logo uploaded:', logoUrl);
+				try {
+					const urls = await uploadPhotosToServer([file]);
 
-		const token = getAuthToken();
-		const updatePayload = {
-			icon: logoUrl,
-			logo: logoUrl
-		};
-
-            const response = await fetch(`${salonsUrl}/${targetSalonId}`, {
-                method: 'PUT',
-                headers: getHeaders(true),
-                body: JSON.stringify(updatePayload)
-            });
-
-		if (!response.ok) {
-			const text = await response.text();
-			throw new Error(`HTTP ${response.status}: ${text}`);
-		}
-
-		const data = await response.json();
-		const serverSalon = data?.data || data;
-
-		setSalonProfile(prev => {
-			if (!prev || prev.id !== targetSalonId) return prev;
-			return { 
-				...prev, 
-				icon: logoUrl,
-				logo: logoUrl,
-				...serverSalon 
-			};
-		});
-
-		return logoUrl;
-		
-	} catch (error) {
-		console.error('=== UPLOAD SALON LOGO ERROR ===');
-		console.error('Error:', error);
-		throw error;
-	}
-};
-
-// Photos ni alohida yuklash (logosiz)
-const uploadSalonPhotos = async (salonId, files) => {
-	try {
-		console.log('=== UPLOAD SALON PHOTOS START ===');
-
-		const targetSalonId = salonId || salonProfile?.id || user?.salon_id;
-		if (!targetSalonId) throw new Error('Salon ID topilmadi');
-
-		const uploadedUrls = [];
-		
-		for (let i = 0; i < files.length; i++) {
-			const file = files[i];
-			console.log(`📤 Uploading file ${i + 1}/${files.length}:`, file.name);
-			
-			try {
-				const urls = await uploadPhotosToServer([file]);
-				
-				if (urls && urls.length > 0) {
-					uploadedUrls.push(urls[0]);
-					console.log(`✅ File ${i + 1} uploaded:`, urls[0]);
+					if (urls && urls.length > 0) {
+						uploadedUrls.push(urls[0]);
+						console.log(`✅ File ${i + 1} uploaded:`, urls[0]);
+					}
+				} catch (fileError) {
+					console.error(`❌ Error uploading file ${i + 1}:`, fileError);
+					throw fileError;
 				}
-			} catch (fileError) {
-				console.error(`❌ Error uploading file ${i + 1}:`, fileError);
-				throw fileError;
 			}
-		}
 
-		if (uploadedUrls.length === 0) {
-			throw new Error('Hech qanday rasm yuklanmadi');
-		}
+			if (uploadedUrls.length === 0) {
+				throw new Error('Hech qanday rasm yuklanmadi');
+			}
 
-		console.log('✅ All uploaded URLs:', uploadedUrls);
+			console.log('✅ All uploaded URLs:', uploadedUrls);
 
-		const currentPhotos = Array.isArray(salonProfile?.salon_photos) 
-			? salonProfile.salon_photos 
-			: Array.isArray(salonProfile?.photos) 
-				? salonProfile.photos 
-				: [];
-		
-		const nextPhotos = [...currentPhotos, ...uploadedUrls];
+			const currentPhotos = Array.isArray(salonProfile?.salon_photos)
+				? salonProfile.salon_photos
+				: Array.isArray(salonProfile?.photos)
+					? salonProfile.photos
+					: [];
 
-		const updatePayload = {
-			salon_photos: nextPhotos,
-			photos: nextPhotos
-		};
+			const nextPhotos = [...currentPhotos, ...uploadedUrls];
 
-		const token = getAuthToken();
-		console.log('📤 Updating salon with photos...');
-
-		const response = await fetch(`${salonsUrl}/${targetSalonId}`, {
-			method: 'PUT',
-			headers: {
-				'Authorization': `Bearer ${token}`,
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(updatePayload)
-		});
-
-		if (!response.ok) {
-			const text = await response.text();
-			throw new Error(`HTTP ${response.status}: ${text}`);
-		}
-
-		const data = await response.json();
-		const serverSalon = data?.data || data;
-
-		setSalonProfile(prev => {
-			if (!prev || prev.id !== targetSalonId) return prev;
-			return { 
-				...prev, 
+			const updatePayload = {
 				salon_photos: nextPhotos,
-				photos: nextPhotos,
-				...serverSalon 
+				photos: nextPhotos
 			};
-		});
 
-		return nextPhotos;
-		
-	} catch (error) {
-		console.error('=== UPLOAD SALON PHOTOS ERROR ===');
-		console.error('Error:', error);
-		throw error;
-	}
-};
+			const token = getAuthToken();
+			console.log('📤 Updating salon with photos...');
+
+			const response = await fetch(`${salonsUrl}/${targetSalonId}`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(updatePayload)
+			});
+
+			if (!response.ok) {
+				const text = await response.text();
+				throw new Error(`HTTP ${response.status}: ${text}`);
+			}
+
+			const data = await response.json();
+			const serverSalon = data?.data || data;
+
+			setSalonProfile(prev => {
+				if (!prev || prev.id !== targetSalonId) return prev;
+				return {
+					...prev,
+					salon_photos: nextPhotos,
+					photos: nextPhotos,
+					...serverSalon
+				};
+			});
+
+			return nextPhotos;
+
+		} catch (error) {
+			console.error('=== UPLOAD SALON PHOTOS ERROR ===');
+			console.error('Error:', error);
+			throw error;
+		}
+	};
 	// Delete salon photo function
 	const deleteSalonPhoto = async (salonId, photoIndex) => {
 		try {
@@ -629,11 +618,11 @@ const uploadSalonPhotos = async (salonId, files) => {
 			if (!currentSalon) throw new Error('Salon ma\'lumotlari topilmadi');
 
 			// Mavjud rasmlar massivini olish (salon_photos yoki photos)
-			let currentPhotos = Array.isArray(currentSalon.salon_photos) 
-				? [...currentSalon.salon_photos] 
-				: Array.isArray(currentSalon.photos) 
-				? [...currentSalon.photos] 
-				: [];
+			let currentPhotos = Array.isArray(currentSalon.salon_photos)
+				? [...currentSalon.salon_photos]
+				: Array.isArray(currentSalon.photos)
+					? [...currentSalon.photos]
+					: [];
 
 			// Index tekshiruvi
 			if (photoIndex < 0 || photoIndex >= currentPhotos.length) {
@@ -678,8 +667,8 @@ const uploadSalonPhotos = async (salonId, files) => {
 			// State'ni yangilash
 			setSalonProfile(prev => {
 				if (!prev || prev.id !== targetSalonId) return prev;
-				return { 
-					...prev, 
+				return {
+					...prev,
 					salon_photos: currentPhotos,
 					photos: currentPhotos,
 					...(updatePayload.icon !== undefined ? { icon: updatePayload.icon, logo: updatePayload.logo } : {}),
@@ -693,13 +682,13 @@ const uploadSalonPhotos = async (salonId, files) => {
 			throw error;
 		}
 	};
-	
+
 
 	// Admin login function
 	// const loginAdmin = async (username, password) => {
 	// 	try {
 	// 		console.log('Login attempt:', { username, password, API_BASE_URL });
-			
+
 	// 		const response = await fetch(adminLoginUrl, {
 	// 			method: 'POST',
 	// 			headers: {
@@ -739,13 +728,13 @@ const uploadSalonPhotos = async (salonId, files) => {
 	// 			};
 
 	// 			console.log('Created userData:', userData);
-				
+
 	// 			localStorage.setItem('authToken', data.token);
 	// 			localStorage.setItem('userData', JSON.stringify(userData));
-				
+
 	// 			setUser(userData);
 	// 			setIsAuthenticated(true);
-				
+
 	// 			console.log('Login successful, userData set:', userData);
 	// 			return userData;
 	// 		} else {
@@ -774,7 +763,7 @@ const uploadSalonPhotos = async (salonId, files) => {
 
 	// 		if (response.ok) {
 	// 			console.log('🔍 LOGIN DEBUG: Backend user data:', data.user);
-				
+
 	// 			const userData = {
 	// 				id: data.user.id,
 	// 				username: data.user.username || data.user.name,
@@ -790,13 +779,13 @@ const uploadSalonPhotos = async (salonId, files) => {
 
 	// 			localStorage.setItem('authToken', data.token);
 	// 			localStorage.setItem('userData', JSON.stringify(userData));
-				
+
 	// 			console.log('🔍 LOGIN DEBUG: Saved to localStorage');
 	// 			console.log('🔍 LOGIN DEBUG: localStorage userData:', localStorage.getItem('userData'));
-				
+
 	// 			setUser(userData);
 	// 			setIsAuthenticated(true);
-				
+
 	// 			return userData;
 	// 		} else {
 	// 			throw new Error(data.message || 'Employee login failed');
@@ -808,95 +797,95 @@ const uploadSalonPhotos = async (salonId, files) => {
 	// };
 
 	// Universal login function - avval admin, keyin employee
-const login = async (username, password) => {
-    try {
-        console.log('🔐 Attempting login for:', username);
-        
-        // 1. Avval admin login'ni sinab ko'ramiz
-        try {
-            console.log('🔍 Trying admin login...');
-            const response = await fetch(adminLoginUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
-            });
+	const login = async (username, password) => {
+		try {
+			console.log('🔐 Attempting login for:', username);
 
-            const responseText = await response.text();
-            let data;
-            try {
-                data = responseText ? JSON.parse(responseText) : {};
-            } catch {
-                throw new Error('Server response is not valid JSON');
-            }
+			// 1. Avval admin login'ni sinab ko'ramiz
+			try {
+				console.log('🔍 Trying admin login...');
+				const response = await fetch(adminLoginUrl, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ username, password }),
+				});
 
-            if (response.ok) {
-                console.log('✅ Admin login successful');
-                const userData = {
-                    id: data.user.id,
-                    username: data.user.username,
-                    email: data.user.email,
-                    full_name: data.user.full_name,
-                    role: data.user.role,
-                    salon_id: data.user.salon_id || null
-                };
+				const responseText = await response.text();
+				let data;
+				try {
+					data = responseText ? JSON.parse(responseText) : {};
+				} catch {
+					throw new Error('Server response is not valid JSON');
+				}
 
-                localStorage.setItem('authToken', data.token);
-                localStorage.setItem('userData', JSON.stringify(userData));
-                
-                setUser(userData);
-                setIsAuthenticated(true);
-                
-                return { success: true, user: userData, role: 'admin' };
-            } else {
-                // Admin login failed, try employee
-                throw new Error('Admin login failed');
-            }
-        } catch (adminError) {
-            console.log('⚠️ Admin login failed, trying employee login...');
-            
-            // 2. Employee login'ni sinab ko'ramiz
-            const response = await fetch(employeeLoginUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
-            });
+				if (response.ok) {
+					console.log('✅ Admin login successful');
+					const userData = {
+						id: data.user.id,
+						username: data.user.username,
+						email: data.user.email,
+						full_name: data.user.full_name,
+						role: data.user.role,
+						salon_id: data.user.salon_id || null
+					};
 
-            const responseText = await response.text();
-            let data;
-            try {
-                data = responseText ? JSON.parse(responseText) : {};
-            } catch {
-                throw new Error('Server response is not valid JSON');
-            }
+					localStorage.setItem('authToken', data.token);
+					localStorage.setItem('userData', JSON.stringify(userData));
 
-            if (response.ok) {
-                console.log('✅ Employee login successful');
-                const userData = {
-                    id: data.user.id,
-                    username: data.user.username || data.user.name,
-                    email: data.user.email,
-                    name: data.user.username || data.user.name,
-                    role: 'employee',
-                    salon_id: data.user.salon_id
-                };
+					setUser(userData);
+					setIsAuthenticated(true);
 
-                localStorage.setItem('authToken', data.token);
-                localStorage.setItem('userData', JSON.stringify(userData));
-                
-                setUser(userData);
-                setIsAuthenticated(true);
-                
-                return { success: true, user: userData, role: 'employee' };
-            } else {
-                // Ikkalasi ham muvaffaqiyatsiz
-                throw new Error(data.detail || data.message || 'Username yoki parol noto\'g\'ri');
-            }
-        }
-    } catch (error) {
-        console.error('❌ Login error:', error);
-        throw error;
-    }
-};
+					return { success: true, user: userData, role: 'admin' };
+				} else {
+					// Admin login failed, try employee
+					throw new Error('Admin login failed');
+				}
+			} catch (adminError) {
+				console.log('⚠️ Admin login failed, trying employee login...');
+
+				// 2. Employee login'ni sinab ko'ramiz
+				const response = await fetch(employeeLoginUrl, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ username, password }),
+				});
+
+				const responseText = await response.text();
+				let data;
+				try {
+					data = responseText ? JSON.parse(responseText) : {};
+				} catch {
+					throw new Error('Server response is not valid JSON');
+				}
+
+				if (response.ok) {
+					console.log('✅ Employee login successful');
+					const userData = {
+						id: data.user.id,
+						username: data.user.username || data.user.name,
+						email: data.user.email,
+						name: data.user.username || data.user.name,
+						role: 'employee',
+						salon_id: data.user.salon_id
+					};
+
+					localStorage.setItem('authToken', data.token);
+					localStorage.setItem('userData', JSON.stringify(userData));
+
+					setUser(userData);
+					setIsAuthenticated(true);
+
+					return { success: true, user: userData, role: 'employee' };
+				} else {
+					// Ikkalasi ham muvaffaqiyatsiz
+					throw new Error(data.detail || data.message || 'Username yoki parol noto\'g\'ri');
+				}
+			}
+		} catch (error) {
+			console.error('❌ Login error:', error);
+			throw error;
+		}
+	};
 
 
 	// Logout function
@@ -925,7 +914,10 @@ const login = async (username, password) => {
 		try {
 			const response = await fetch(`${appointmentsUrl}/salon/${salonId}`, {
 				method: 'GET',
-				headers: getHeaders(true),
+				headers: {
+					'Content-Type': 'application/json',
+					...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+				},
 			});
 
 			if (response.ok) {
@@ -954,21 +946,24 @@ const login = async (username, password) => {
 		try {
 			const response = await fetch(schedulesUrl, {
 				method: 'GET',
-				headers: getHeaders(true),
+				headers: {
+					'Content-Type': 'application/json',
+					...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+				},
 			});
 
 			if (response.ok) {
 				const data = await response.json();
 				console.log('Schedules fetched:', data);
-				
+
 				// Filter schedules by salon_id if user has salon_id
 				let filteredSchedules = data.data || [];
 				if (user && user.salon_id) {
-					filteredSchedules = filteredSchedules.filter(schedule => 
+					filteredSchedules = filteredSchedules.filter(schedule =>
 						schedule.salon_id === user.salon_id
 					);
 				}
-				
+
 				setSchedules(filteredSchedules);
 			} else {
 				const errorData = await response.json();
@@ -985,88 +980,88 @@ const login = async (username, password) => {
 
 	// Create new schedule
 	const createSchedule = async (scheduleData) => {
-    setSchedulesLoading(true);
-    setSchedulesError(null);
+		setSchedulesLoading(true);
+		setSchedulesError(null);
 
-    try {
-        const token = getAuthToken();
-        
-        if (!token) {
-            throw new Error('Tizimga kirish tokeni topilmadi');
-        }
+		try {
+			const token = getAuthToken();
 
-        const dataToSend = {
-            ...scheduleData,
-            salon_id: scheduleData.salon_id || user?.salon_id
-        };
+			if (!token) {
+				throw new Error('Tizimga kirish tokeni topilmadi');
+			}
 
-        if (!dataToSend.salon_id) {
-            throw new Error('Salon ID topilmadi');
-        }
+			const dataToSend = {
+				...scheduleData,
+				salon_id: scheduleData.salon_id || user?.salon_id
+			};
 
-        console.log('📮 Context.jsx - yuborilayotgan data:', dataToSend)
-        console.log('📮 JSON stringify:', JSON.stringify(dataToSend, null, 2))
+			if (!dataToSend.salon_id) {
+				throw new Error('Salon ID topilmadi');
+			}
 
-        const response = await fetch(schedulesUrl, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(dataToSend),
-        });
+			console.log('📮 Context.jsx - yuborilayotgan data:', dataToSend)
+			console.log('📮 JSON stringify:', JSON.stringify(dataToSend, null, 2))
 
-        console.log('Response status:', response.status);
+			const response = await fetch(schedulesUrl, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(dataToSend),
+			});
 
-        if (!response.ok) {
-            const contentType = response.headers.get('content-type');
-            let errorMessage = `HTTP ${response.status}`;
-            
-            if (contentType?.includes('application/json')) {
-                const errorData = await response.json();
-                console.error('❌ Full error response:', JSON.stringify(errorData, null, 2));
-                
-                if (Array.isArray(errorData?.detail)) {
-                    const detailedErrors = errorData.detail.map((err, idx) => {
-                        const field = err.loc ? err.loc.join('.') : 'unknown';
-                        const msg = err.msg || 'unknown error';
-                        const inputValue = err.input;
-                        return `[${idx}] Field: ${field}, Error: ${msg}, Input: ${JSON.stringify(inputValue)}`;
-                    }).join('\n');
-                    
-                    console.error('Validation errors:\n', detailedErrors);
-                    errorMessage = errorData.detail[0]?.msg || errorMessage;
-                } else if (typeof errorData?.detail === 'string') {
-                    errorMessage = errorData.detail;
-                } else {
-                    errorMessage = errorData?.message || errorData?.error || errorMessage;
-                }
-            } else {
-                const errorText = await response.text();
-                errorMessage = errorText || errorMessage;
-            }
+			console.log('Response status:', response.status);
 
-            throw new Error(errorMessage);
-        }
+			if (!response.ok) {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = `HTTP ${response.status}`;
 
-        const data = await response.json();
-        console.log('✅ Schedule yaratildi:', data);
-        
-        const newSchedule = data?.data || data;
-        setSchedules(prev => [...prev, newSchedule]);
-        
-        await fetchSchedules();
-        await fetchGroupedSchedules();
-        
-        return data;
-    } catch (error) {
-        console.error('❌ Schedule yaratishda xatolik:', error);
-        setSchedulesError(error.message);
-        throw error;
-    } finally {
-        setSchedulesLoading(false);
-    }
-};
+				if (contentType?.includes('application/json')) {
+					const errorData = await response.json();
+					console.error('❌ Full error response:', JSON.stringify(errorData, null, 2));
+
+					if (Array.isArray(errorData?.detail)) {
+						const detailedErrors = errorData.detail.map((err, idx) => {
+							const field = err.loc ? err.loc.join('.') : 'unknown';
+							const msg = err.msg || 'unknown error';
+							const inputValue = err.input;
+							return `[${idx}] Field: ${field}, Error: ${msg}, Input: ${JSON.stringify(inputValue)}`;
+						}).join('\n');
+
+						console.error('Validation errors:\n', detailedErrors);
+						errorMessage = errorData.detail[0]?.msg || errorMessage;
+					} else if (typeof errorData?.detail === 'string') {
+						errorMessage = errorData.detail;
+					} else {
+						errorMessage = errorData?.message || errorData?.error || errorMessage;
+					}
+				} else {
+					const errorText = await response.text();
+					errorMessage = errorText || errorMessage;
+				}
+
+				throw new Error(errorMessage);
+			}
+
+			const data = await response.json();
+			console.log('✅ Schedule yaratildi:', data);
+
+			const newSchedule = data?.data || data;
+			setSchedules(prev => [...prev, newSchedule]);
+
+			await fetchSchedules();
+			await fetchGroupedSchedules();
+
+			return data;
+		} catch (error) {
+			console.error('❌ Schedule yaratishda xatolik:', error);
+			setSchedulesError(error.message);
+			throw error;
+		} finally {
+			setSchedulesLoading(false);
+		}
+	};
 	// Fetch grouped schedules - schedules grouped by weekdays from production server
 	const fetchGroupedSchedules = async () => {
 		setGroupedSchedulesLoading(true);
@@ -1079,23 +1074,23 @@ const login = async (username, password) => {
 				'Content-Type': 'application/json',
 			};
 
-    // Explicit backend endpoint requested
-    const resp = await fetch(scheduleGroupedUrl, { method: 'GET', headers });
-    if (!resp.ok) {
-        let errMsg = '';
-        try {
-            const errJson = await resp.json();
-            errMsg = errJson?.message || '';
-        } catch {
-            const errText = await resp.text();
-            errMsg = errText || `HTTP ${resp.status}`;
-        }
-        throw new Error(errMsg || 'Failed to fetch grouped schedules');
-    }
-    const data = await resp.json();
+			// Explicit backend endpoint requested
+			const resp = await fetch(scheduleGroupedUrl, { method: 'GET', headers });
+			if (!resp.ok) {
+				let errMsg = '';
+				try {
+					const errJson = await resp.json();
+					errMsg = errJson?.message || '';
+				} catch {
+					const errText = await resp.text();
+					errMsg = errText || `HTTP ${resp.status}`;
+				}
+				throw new Error(errMsg || 'Failed to fetch grouped schedules');
+			}
+			const data = await resp.json();
 
 			console.log('Grouped schedules fetched:', data);
-			
+
 			// Filter grouped schedules by salon_id if user has salon_id
 			let filteredGroupedSchedules = data.data || [];
 			if (user && user.salon_id) {
@@ -1103,7 +1098,7 @@ const login = async (username, password) => {
 					.map(daySchedules => daySchedules.filter(schedule => schedule.salon_id === user.salon_id))
 					.filter(daySchedules => daySchedules.length > 0);
 			}
-			
+
 			setGroupedSchedules(filteredGroupedSchedules);
 		} catch (error) {
 			console.error('Error fetching grouped schedules:', error);
@@ -1121,7 +1116,7 @@ const login = async (username, password) => {
 
 		try {
 			const token = getAuthToken();
-			
+
 			// Add salon_id from current user if not provided
 			const dataToSend = {
 				...serviceData,
@@ -1140,13 +1135,13 @@ const login = async (username, password) => {
 			if (response.ok) {
 				const data = await response.json();
 				console.log('Service created:', data);
-				
+
 				// Add new service to existing services
 				setServices(prevServices => [...prevServices, data]);
-				
+
 				// Refresh services to get updated list
 				await fetchServices();
-				
+
 				return data;
 			} else {
 				const errorData = await response.json();
@@ -1431,141 +1426,144 @@ const login = async (username, password) => {
 	};
 
 	// Appointment statusini o'zgartirish
-const updateAppointmentStatus = async (appointmentId, status) => {
-    try {
-        const token = getAuthToken();
-        
-        if (!token) {
-            throw new Error('Tizimga kirish tokeni topilmadi');
-        }
+	const updateAppointmentStatus = async (appointmentId, status) => {
+		try {
+			const token = getAuthToken();
 
-        console.log(`📤 Updating appointment ${appointmentId} to status: ${status}`);
+			if (!token) {
+				throw new Error('Tizimga kirish tokeni topilmadi');
+			}
 
-        const response = await fetch(`${appointmentsUrl}/${appointmentId}/status`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ status }),
-        });
+			console.log(`📤 Updating appointment ${appointmentId} to status: ${status}`);
 
-        console.log('📥 Response status:', response.status);
+			const response = await fetch(`${appointmentsUrl}/${appointmentId}/status`, {
+				method: 'PATCH',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ status }),
+			});
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('❌ Error response:', errorData);
-            throw new Error(errorData.message || errorData.detail || 'Status o\'zgartirishda xatolik');
-        }
+			console.log('📥 Response status:', response.status);
 
-        const data = await response.json();
-        console.log('✅ Status o\'zgartirildi:', data);
+			if (!response.ok) {
+				const errorData = await response.json();
+				console.error('❌ Error response:', errorData);
+				throw new Error(errorData.message || errorData.detail || 'Status o\'zgartirishda xatolik');
+			}
 
-        // Appointments ro'yxatini yangilash
-        setAppointments(prev => 
-            prev.map(app => 
-                app.id === appointmentId 
-                    ? { ...app, status, updated_at: new Date().toISOString() }
-                    : app
-            )
-        );
+			const data = await response.json();
+			console.log('✅ Status o\'zgartirildi:', data);
 
-        // Combined appointments ham yangilansin
-        setCombinedAppointments(prev =>
-            prev.map(app =>
-                app.id === appointmentId
-                    ? { ...app, status, updated_at: new Date().toISOString() }
-                    : app
-            )
-        );
+			// Appointments ro'yxatini yangilash
+			setAppointments(prev =>
+				prev.map(app =>
+					app.id === appointmentId
+						? { ...app, status, updated_at: new Date().toISOString() }
+						: app
+				)
+			);
 
-        // Agar salon_id mavjud bo'lsa, qayta yuklash
-        if (user?.salon_id) {
-            await fetchCombinedAppointments(user.salon_id);
-        }
+			// Combined appointments ham yangilansin
+			setCombinedAppointments(prev =>
+				prev.map(app =>
+					app.id === appointmentId
+						? { ...app, status, updated_at: new Date().toISOString() }
+						: app
+				)
+			);
 
-        return data;
-    } catch (error) {
-        console.error('❌ Status o\'zgartirishda xatolik:', error);
-        throw error;
-    }
-};
+			// Agar salon_id mavjud bo'lsa, qayta yuklash
+			if (user?.salon_id) {
+				await fetchCombinedAppointments(user.salon_id);
+			}
 
-// Appointment ni bekor qilish
-const cancelAppointment = async (appointmentId, cancellationReason) => {
-    try {
-        const token = getAuthToken();
-        
-        if (!token) {
-            throw new Error('Tizimga kirish tokeni topilmadi');
-        }
+			return data;
+		} catch (error) {
+			console.error('❌ Status o\'zgartirishda xatolik:', error);
+			throw error;
+		}
+	};
 
-        console.log(`📤 Cancelling appointment ${appointmentId}`);
+	// Appointment ni bekor qilish
+	const cancelAppointment = async (appointmentId, cancellationReason) => {
+		try {
+			const token = getAuthToken();
 
-        const response = await fetch(`${appointmentsUrl}/${appointmentId}/cancel`, {
-            method: 'PATCH',
-            headers: getHeaders(true),
-            body: JSON.stringify({ cancellation_reason: cancellationReason }),
-        });
+			if (!token) {
+				throw new Error('Tizimga kirish tokeni topilmadi');
+			}
 
-        console.log('📥 Response status:', response.status);
+			console.log(`📤 Cancelling appointment ${appointmentId}`);
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('❌ Error response:', errorData);
-            throw new Error(errorData.message || errorData.detail || 'Bekor qilishda xatolik');
-        }
+			const response = await fetch(`${appointmentsUrl}/${appointmentId}/cancel`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json',
+					...(token ? { Authorization: `Bearer ${token}` } : {})
+				},
+				body: JSON.stringify({ cancellation_reason: cancellationReason }),
+			});
 
-        const data = await response.json();
-        console.log('✅ Appointment bekor qilindi:', data);
+			console.log('📥 Response status:', response.status);
 
-        // Appointments ro'yxatini yangilash
-        setAppointments(prev => 
-            prev.map(app => 
-                app.id === appointmentId 
-                    ? { 
-                        ...app, 
-                        status: 'cancelled',
-                        is_cancelled: true,
-                        cancellation_reason: cancellationReason,
-                        updated_at: new Date().toISOString() 
-                      }
-                    : app
-            )
-        );
+			if (!response.ok) {
+				const errorData = await response.json();
+				console.error('❌ Error response:', errorData);
+				throw new Error(errorData.message || errorData.detail || 'Bekor qilishda xatolik');
+			}
 
-        // Combined appointments ham yangilansin
-        setCombinedAppointments(prev =>
-            prev.map(app =>
-                app.id === appointmentId
-                    ? { 
-                        ...app, 
-                        status: 'cancelled',
-                        is_cancelled: true,
-                        cancellation_reason: cancellationReason,
-                        updated_at: new Date().toISOString() 
-                      }
-                    : app
-            )
-        );
+			const data = await response.json();
+			console.log('✅ Appointment bekor qilindi:', data);
 
-        // Agar salon_id mavjud bo'lsa, qayta yuklash
-        if (user?.salon_id) {
-            await fetchCombinedAppointments(user.salon_id);
-        }
+			// Appointments ro'yxatini yangilash
+			setAppointments(prev =>
+				prev.map(app =>
+					app.id === appointmentId
+						? {
+							...app,
+							status: 'cancelled',
+							is_cancelled: true,
+							cancellation_reason: cancellationReason,
+							updated_at: new Date().toISOString()
+						}
+						: app
+				)
+			);
 
-        return data;
-    } catch (error) {
-        console.error('❌ Bekor qilishda xatolik:', error);
-        throw error;
-    }
-};
+			// Combined appointments ham yangilansin
+			setCombinedAppointments(prev =>
+				prev.map(app =>
+					app.id === appointmentId
+						? {
+							...app,
+							status: 'cancelled',
+							is_cancelled: true,
+							cancellation_reason: cancellationReason,
+							updated_at: new Date().toISOString()
+						}
+						: app
+				)
+			);
+
+			// Agar salon_id mavjud bo'lsa, qayta yuklash
+			if (user?.salon_id) {
+				await fetchCombinedAppointments(user.salon_id);
+			}
+
+			return data;
+		} catch (error) {
+			console.error('❌ Bekor qilishda xatolik:', error);
+			throw error;
+		}
+	};
 
 	// Get employee by ID
 	const getEmployeeById = async (employeeId) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${employeeUrl}/${employeeId}`, {
+			const response = await fetch(`${employeesUrl}/${employeeId}`, {  // Fixed: employeesUrl
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -1591,7 +1589,7 @@ const cancelAppointment = async (appointmentId, cancellationReason) => {
 	const updateEmployee = async (employeeId, employeeData) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${employeesUrl}/${employeeId}`, {
+			const response = await fetch(`${employeesUrl}/${employeeId}`, {  // Fixed: employeesUrl
 				method: 'PUT',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -1619,7 +1617,7 @@ const cancelAppointment = async (appointmentId, cancellationReason) => {
 	const deleteEmployee = async (employeeId) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${employeeUrl}/${employeeId}`, {
+			const response = await fetch(`${employeesUrl}/${employeeId}`, {  // Fixed: employeesUrl
 				method: 'DELETE',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -1645,7 +1643,7 @@ const cancelAppointment = async (appointmentId, cancellationReason) => {
 	const getSalonById = async (salonId) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${salonUrl}/${salonId}`, {
+			const response = await fetch(`${salonsUrl}/${salonId}`, {  // Fixed: salonsUrl
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -1671,7 +1669,7 @@ const cancelAppointment = async (appointmentId, cancellationReason) => {
 	const createSalon = async (salonData) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${salonUrl}/create`, {
+			const response = await fetch(salonsUrl, {  // Fixed: salonsUrl, removed /create assuming POST to base
 				method: 'POST',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -1699,10 +1697,13 @@ const cancelAppointment = async (appointmentId, cancellationReason) => {
 	const deleteSalon = async (salonId) => {
 		try {
 			const token = getAuthToken();
-            const response = await fetch(`${salonUrl}/${salonId}`, {
-                method: 'DELETE',
-                headers: getHeaders(true),
-            });
+			const response = await fetch(`${salonsUrl}/${salonId}`, {  // Fixed: salonsUrl
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+					...(token ? { Authorization: `Bearer ${token}` } : {})
+				},
+			});
 
 			if (response.ok) {
 				console.log('Salon deleted successfully');
@@ -1724,7 +1725,7 @@ const cancelAppointment = async (appointmentId, cancellationReason) => {
 	const getServiceById = async (serviceId) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${serviceUrl}/${serviceId}`, {
+			const response = await fetch(`${servicesUrl}/${serviceId}`, {  // Fixed: servicesUrl
 				method: 'GET',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -1750,7 +1751,7 @@ const cancelAppointment = async (appointmentId, cancellationReason) => {
 	const updateService = async (serviceId, serviceData) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${serviceUrl}/${serviceId}`, {
+			const response = await fetch(`${servicesUrl}/${serviceId}`, {  // Fixed: servicesUrl
 				method: 'PUT',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -1778,7 +1779,7 @@ const cancelAppointment = async (appointmentId, cancellationReason) => {
 	const deleteService = async (serviceId) => {
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${serviceUrl}/${serviceId}`, {
+			const response = await fetch(`${servicesUrl}/${serviceId}`, {  // Fixed: servicesUrl
 				method: 'DELETE',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -1802,291 +1803,294 @@ const cancelAppointment = async (appointmentId, cancellationReason) => {
 
 	// ===== EXTENDED SCHEDULE API FUNCTIONS =====
 
-	
+
 
 	// Context.jsx - updateSchedule funksiyasini yangilash
-const updateSchedule = async (scheduleId, scheduleData) => {
-    try {
-        const token = getAuthToken();
-        
-        console.log('📤 Updating schedule with ID:', scheduleId);
-        console.log('📤 Schedule data:', JSON.stringify(scheduleData, null, 2));
-        
-        const response = await fetch(`${schedulesUrl}/${scheduleId}`, {
-            method: 'PUT',
-            headers: getHeaders(true),
-            body: JSON.stringify(scheduleData),
-        });
+	const updateSchedule = async (scheduleId, scheduleData) => {
+		try {
+			const token = getAuthToken();
 
-        console.log('📥 Response status:', response.status);
+			console.log('📤 Updating schedule with ID:', scheduleId);
+			console.log('📤 Schedule data:', JSON.stringify(scheduleData, null, 2));
 
-        if (!response.ok) {
-            const contentType = response.headers.get('content-type');
-            let errorMessage = `HTTP ${response.status}`;
-            
-            if (contentType?.includes('application/json')) {
-                const errorData = await response.json();
-                console.error('❌ Full error response:', JSON.stringify(errorData, null, 2));
-                
-                // FastAPI validation errors
-                if (Array.isArray(errorData?.detail)) {
-                    const detailedErrors = errorData.detail.map((err, idx) => {
-                        const field = err.loc ? err.loc.join('.') : 'unknown';
-                        const msg = err.msg || 'unknown error';
-                        const inputValue = err.input;
-                        return `[${idx}] Field: ${field}, Error: ${msg}, Input: ${JSON.stringify(inputValue)}`;
-                    }).join('\n');
-                    
-                    console.error('❌ Validation errors:\n', detailedErrors);
-                    errorMessage = errorData.detail[0]?.msg || errorMessage;
-                } else if (typeof errorData?.detail === 'string') {
-                    errorMessage = errorData.detail;
-                } else {
-                    errorMessage = errorData?.message || errorData?.error || errorMessage;
-                }
-            } else {
-                const errorText = await response.text();
-                console.error('❌ Error text:', errorText);
-                errorMessage = errorText || errorMessage;
-            }
+			const response = await fetch(`${schedulesUrl}/${scheduleId}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					...(token ? { Authorization: `Bearer ${token}` } : {})
+				},
+				body: JSON.stringify(scheduleData),
+			});
 
-            throw new Error(errorMessage);
-        }
+			console.log('📥 Response status:', response.status);
 
-        const data = await response.json();
-        console.log('✅ Schedule updated:', data);
-        await fetchSchedules();
-        await fetchGroupedSchedules();
-        return data;
-    } catch (error) {
-        console.error('❌ Error updating schedule:', error);
-        throw error;
-    }
-};
+			if (!response.ok) {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = `HTTP ${response.status}`;
 
-// Delete schedule
-const deleteSchedule = async (scheduleId) => {
-    try {
-        const token = getAuthToken();
-        const response = await fetch(`${schedulesUrl}/${scheduleId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
+				if (contentType?.includes('application/json')) {
+					const errorData = await response.json();
+					console.error('❌ Full error response:', JSON.stringify(errorData, null, 2));
 
-        if (response.ok) {
-            console.log('Schedule deleted successfully');
-            await fetchSchedules(); // Refresh schedules
-            await fetchGroupedSchedules(); // Grouped schedules ham yangilansin
-            return true;
-        } else {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to delete schedule');
-        }
-    } catch (error) {
-        console.error('Error deleting schedule:', error);
-        throw error;
-    }
-};
+					// FastAPI validation errors
+					if (Array.isArray(errorData?.detail)) {
+						const detailedErrors = errorData.detail.map((err, idx) => {
+							const field = err.loc ? err.loc.join('.') : 'unknown';
+							const msg = err.msg || 'unknown error';
+							const inputValue = err.input;
+							return `[${idx}] Field: ${field}, Error: ${msg}, Input: ${JSON.stringify(inputValue)}`;
+						}).join('\n');
 
-// Get schedule by ID
-const getScheduleById = async (scheduleId) => {
-    try {
-        const token = getAuthToken();
-        const response = await fetch(`${schedulesUrl}/${scheduleId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
+						console.error('❌ Validation errors:\n', detailedErrors);
+						errorMessage = errorData.detail[0]?.msg || errorMessage;
+					} else if (typeof errorData?.detail === 'string') {
+						errorMessage = errorData.detail;
+					} else {
+						errorMessage = errorData?.message || errorData?.error || errorMessage;
+					}
+				} else {
+					const errorText = await response.text();
+					console.error('❌ Error text:', errorText);
+					errorMessage = errorText || errorMessage;
+				}
 
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Schedule fetched:', data);
-            return data;
-        } else {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to fetch schedule');
-        }
-    } catch (error) {
-        console.error('Error fetching schedule:', error);
-        throw error;
-    }
-};
+				throw new Error(errorMessage);
+			}
+
+			const data = await response.json();
+			console.log('✅ Schedule updated:', data);
+			await fetchSchedules();
+			await fetchGroupedSchedules();
+			return data;
+		} catch (error) {
+			console.error('❌ Error updating schedule:', error);
+			throw error;
+		}
+	};
+
+	// Delete schedule
+	const deleteSchedule = async (scheduleId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${schedulesUrl}/${scheduleId}`, {
+				method: 'DELETE',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				console.log('Schedule deleted successfully');
+				await fetchSchedules(); // Refresh schedules
+				await fetchGroupedSchedules(); // Grouped schedules ham yangilansin
+				return true;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to delete schedule');
+			}
+		} catch (error) {
+			console.error('Error deleting schedule:', error);
+			throw error;
+		}
+	};
+
+	// Get schedule by ID
+	const getScheduleById = async (scheduleId) => {
+		try {
+			const token = getAuthToken();
+			const response = await fetch(`${schedulesUrl}/${scheduleId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Schedule fetched:', data);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch schedule');
+			}
+		} catch (error) {
+			console.error('Error fetching schedule:', error);
+			throw error;
+		}
+	};
 	// ===== CHAT API FUNCTIONS =====
-// Fetch conversations for employee - URL ni o'zgartirish
-const fetchConversations = async () => {
-    if (!user || user.role !== 'employee') {
-        console.error('Only employees can fetch conversations');
-        return;
-    }
+	// Fetch conversations for employee - URL ni o'zgartirish
+	const fetchConversations = async () => {
+		if (!user || user.role !== 'employee') {
+			console.error('Only employees can fetch conversations');
+			return;
+		}
 
-    setConversationsLoading(true);
-    setConversationsError(null);
+		setConversationsLoading(true);
+		setConversationsError(null);
 
-    try {
-        const token = getAuthToken();
-        // ✅ Employee uchun alohida endpoint
-        const response = await fetch(`${messagesUrl}/employee/conversations`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
+		try {
+			const token = getAuthToken();
+			// ✅ Employee uchun alohida endpoint
+			const response = await fetch(`${messagesUrl}/employee/conversations`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
 
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Conversations fetched:', data);
-            setConversations(data.data || data || []);
-        } else {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to fetch conversations');
-        }
-    } catch (error) {
-        console.error('Error fetching conversations:', error);
-        setConversationsError(error.message);
-        setConversations([]);
-    } finally {
-        setConversationsLoading(false);
-    }
-};
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Conversations fetched:', data);
+				setConversations(data.data || data || []);
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch conversations');
+			}
+		} catch (error) {
+			console.error('Error fetching conversations:', error);
+			setConversationsError(error.message);
+			setConversations([]);
+		} finally {
+			setConversationsLoading(false);
+		}
+	};
 
-// Fetch messages for employee - URL ni o'zgartirish
-const fetchMessages = async (userId) => {
-    if (!user || user.role !== 'employee') {
-        console.error('Only employees can fetch messages');
-        return;
-    }
+	// Fetch messages for employee - URL ni o'zgartirish
+	const fetchMessages = async (userId) => {
+		if (!user || user.role !== 'employee') {
+			console.error('Only employees can fetch messages');
+			return;
+		}
 
-    setMessagesLoading(true);
-    setMessagesError(null);
+		setMessagesLoading(true);
+		setMessagesError(null);
 
-    try {
-        const token = getAuthToken();
-        // ✅ Employee uchun alohida endpoint
-        const response = await fetch(`${messagesUrl}/employee/conversation/${userId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
+		try {
+			const token = getAuthToken();
+			// ✅ Employee uchun alohida endpoint
+			const response = await fetch(`${messagesUrl}/employee/conversation/${userId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
 
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Messages fetched:', data);
-            setMessages(data.data?.messages || data || []);
-            setCurrentConversation(userId);
-        } else {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to fetch messages');
-        }
-    } catch (error) {
-        console.error('Error fetching messages:', error);
-        setMessagesError(error.message);
-        setMessages([]);
-    } finally {
-        setMessagesLoading(false);
-    }
-};
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Messages fetched:', data);
+				setMessages(data.data?.messages || data || []);
+				setCurrentConversation(userId);
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch messages');
+			}
+		} catch (error) {
+			console.error('Error fetching messages:', error);
+			setMessagesError(error.message);
+			setMessages([]);
+		} finally {
+			setMessagesLoading(false);
+		}
+	};
 
-// Send message from employee - URL ni o'zgartirish
-const sendMessage = async (receiverId, messageText, messageType = 'text') => {
-    if (!user || user.role !== 'employee') {
-        console.error('Only employees can send messages');
-        return;
-    }
+	// Send message from employee - URL ni o'zgartirish
+	const sendMessage = async (receiverId, messageText, messageType = 'text') => {
+		if (!user || user.role !== 'employee') {
+			console.error('Only employees can send messages');
+			return;
+		}
 
-    try {
-        const token = getAuthToken();
-        // ✅ Employee uchun alohida endpoint
-        const response = await fetch(`${messagesUrl}/employee/send`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                receiver_id: receiverId,
-                message_text: messageText,
-                message_type: messageType
-            }),
-        });
+		try {
+			const token = getAuthToken();
+			// ✅ Employee uchun alohida endpoint
+			const response = await fetch(`${messagesUrl}/employee/send`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					receiver_id: receiverId,
+					message_text: messageText,
+					message_type: messageType
+				}),
+			});
 
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Message sent:', data);
-            
-            if (currentConversation === receiverId) {
-                setMessages(prevMessages => [...prevMessages, {
-                    id: data.data?.id,
-                    sender_id: user.id,
-                    sender_type: 'employee',
-                    receiver_id: receiverId,
-                    receiver_type: 'user',
-                    message_text: messageText,
-                    message_type: messageType,
-                    is_read: false,
-                    created_at: data.data?.created_at || new Date().toISOString()
-                }]);
-            }
-            
-            await fetchConversations();
-            return data;
-        } else {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to send message');
-        }
-    } catch (error) {
-        console.error('Error sending message:', error);
-        throw error;
-    }
-};
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Message sent:', data);
 
-// Mark conversation as read for employee - URL ni o'zgartirish
-const markConversationAsRead = async (userId) => {
-    if (!user || user.role !== 'employee') {
-        console.error('Only employees can mark conversation as read');
-        return;
-    }
+				if (currentConversation === receiverId) {
+					setMessages(prevMessages => [...prevMessages, {
+						id: data.data?.id,
+						sender_id: user.id,
+						sender_type: 'employee',
+						receiver_id: receiverId,
+						receiver_type: 'user',
+						message_text: messageText,
+						message_type: messageType,
+						is_read: false,
+						created_at: data.data?.created_at || new Date().toISOString()
+					}]);
+				}
 
-    try {
-        const token = getAuthToken();
-        // ✅ Employee uchun alohida endpoint
-        const response = await fetch(`${messagesUrl}/employee/conversation/${userId}/mark-read`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
+				await fetchConversations();
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to send message');
+			}
+		} catch (error) {
+			console.error('Error sending message:', error);
+			throw error;
+		}
+	};
 
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Conversation marked as read:', data);
-            
-            setConversations(prevConversations => 
-                prevConversations.map(conv => 
-                    conv.participant?.id === userId 
-                        ? { ...conv, unread_count: 0 }
-                        : conv
-                )
-            );
-            
-            return data;
-        } else {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to mark conversation as read');
-        }
-    } catch (error) {
-        console.error('Error marking conversation as read:', error);
-        throw error;
-    }
-};
+	// Mark conversation as read for employee - URL ni o'zgartirish
+	const markConversationAsRead = async (userId) => {
+		if (!user || user.role !== 'employee') {
+			console.error('Only employees can mark conversation as read');
+			return;
+		}
+
+		try {
+			const token = getAuthToken();
+			// ✅ Employee uchun alohida endpoint
+			const response = await fetch(`${messagesUrl}/employee/conversation/${userId}/mark-read`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('Conversation marked as read:', data);
+
+				setConversations(prevConversations =>
+					prevConversations.map(conv =>
+						conv.participant?.id === userId
+							? { ...conv, unread_count: 0 }
+							: conv
+					)
+				);
+
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to mark conversation as read');
+			}
+		} catch (error) {
+			console.error('Error marking conversation as read:', error);
+			throw error;
+		}
+	};
 	// Get unread messages count
 	const getUnreadCount = async () => {
 		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
@@ -2143,172 +2147,178 @@ const markConversationAsRead = async (userId) => {
 		}
 	};
 
-    // Fetch employees - supports salon filter; robust to 404 "Topilmadi" by trying fallbacks
-    const fetchEmployees = async (overrideSalonId) => {
-      const idToUse = overrideSalonId ?? FORCE_SALON_ID ?? (salonProfile?.id) ?? (user && user.salon_id);
+	// Fetch employees - supports salon filter; robust to 404 "Topilmadi" by trying fallbacks
+	const fetchEmployees = async (overrideSalonId) => {
+		const idToUse = overrideSalonId ?? FORCE_SALON_ID ?? (salonProfile?.id) ?? (user && user.salon_id);
 
-      setEmployeesLoading(true);
-      setEmployeesError(null);
+		setEmployeesLoading(true);
+		setEmployeesError(null);
 
-      try {
-        const headers = getHeaders(true);
+		try {
+			const headers = {
+				'Content-Type': 'application/json',
+				...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+			};
 
-        // UUID formatni tekshirish (backend UUID talab qiladi)
-        const isValidUUID = (v) => typeof v === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v);
+			// UUID formatni tekshirish (backend UUID talab qiladi)
+			const isValidUUID = (v) => typeof v === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v);
 
-        // Try multiple URL variants to handle different backend routes, faqat ID to‘g‘ri bo‘lsa
-        const urlVariants = isValidUUID(idToUse)
-          ? [
-              `${employeesUrl}/salon/${idToUse}?page=1&limit=100`,
-              `${employeesUrl}/salon?id=${idToUse}&page=1&limit=100`,
-              `${employeesUrl}?salon_id=${idToUse}&page=1&limit=100`,
-            ]
-          : [
-              // ID yo‘q yoki noto‘g‘ri — umumiy ro‘yxatni olib, keyin UI’da filtr yoki kontekstdan foydalanamiz
-              `${employeesUrl}?page=1&limit=100`,
-            ];
+			// Try multiple URL variants to handle different backend routes, faqat ID to‘g‘ri bo‘lsa
+			const urlVariants = isValidUUID(idToUse)
+				? [
+					`${employeesUrl}/salon/${idToUse}?page=1&limit=100`,
+					`${employeesUrl}/salon?id=${idToUse}&page=1&limit=100`,
+					`${employeesUrl}?salon_id=${idToUse}&page=1&limit=100`,
+				]
+				: [
+					// ID yo‘q yoki noto‘g‘ri — umumiy ro‘yxatni olib, keyin UI’da filtr yoki kontekstdan foydalanamiz
+					`${employeesUrl}?page=1&limit=100`,
+				];
 
-        let success = false;
-        for (const url of urlVariants) {
-          console.log('Fetching employees from:', url);
-          const response = await fetch(url, { method: 'GET', headers });
+			let success = false;
+			for (const url of urlVariants) {
+				console.log('Fetching employees from:', url);
+				const response = await fetch(url, { method: 'GET', headers });
 
-          if (response.ok) {
-            const responseData = await response.json();
-            console.log('Employees response:', responseData);
+				if (response.ok) {
+					const responseData = await response.json();
+					console.log('Employees response:', responseData);
 
-            const items = responseData?.data ?? responseData ?? [];
-            setEmployees(items);
+					const items = responseData?.data ?? responseData ?? [];
+					setEmployees(items);
 
-            console.log('Employees loaded:', items.length);
-            success = true;
-            break;
-          }
+					console.log('Employees loaded:', items.length);
+					success = true;
+					break;
+				}
 
-          // Gracefully ignore 404 Topilmadi and try next variant
-          if (response.status === 404) {
-            let errJson = {};
-            try { errJson = await response.json(); } catch {}
-            console.warn('Employees endpoint 404, trying next variant:', errJson);
-            continue;
-          }
+				// Gracefully ignore 404 Topilmadi and try next variant
+				if (response.status === 404) {
+					let errJson = {};
+					try { errJson = await response.json(); } catch { }
+					console.warn('Employees endpoint 404, trying next variant:', errJson);
+					continue;
+				}
 
-          // Other errors: capture detail and stop
-          let errorData = {};
-          try { errorData = await response.json(); } catch {}
-          const detailText = Array.isArray(errorData?.detail)
-            ? errorData.detail.map(d => (typeof d === 'string' ? d : (d?.msg || d?.message || JSON.stringify(d)))).join('; ')
-            : (typeof errorData?.detail === 'string' ? errorData.detail : (errorData?.detail ? JSON.stringify(errorData.detail) : ''));
-          const msg = errorData?.message || errorData?.error || detailText || 'Failed to fetch employees';
-          console.error('Error response:', { status: response.status, error: msg, raw: errorData });
-          throw new Error(msg);
-        }
+				// Other errors: capture detail and stop
+				let errorData = {};
+				try { errorData = await response.json(); } catch { }
+				const detailText = Array.isArray(errorData?.detail)
+					? errorData.detail.map(d => (typeof d === 'string' ? d : (d?.msg || d?.message || JSON.stringify(d)))).join('; ')
+					: (typeof errorData?.detail === 'string' ? errorData.detail : (errorData?.detail ? JSON.stringify(errorData.detail) : ''));
+				const msg = errorData?.message || errorData?.error || detailText || 'Failed to fetch employees';
+				console.error('Error response:', { status: response.status, error: msg, raw: errorData });
+				throw new Error(msg);
+			}
 
-        if (!success) {
-          // No variant succeeded; treat as empty list rather than hard error
-          setEmployees([]);
+			if (!success) {
+				// No variant succeeded; treat as empty list rather than hard error
+				setEmployees([]);
 
-          setEmployeesError(null);
-          console.warn('No employees found for salon or endpoint; returned empty list.');
-        }
-      } catch (error) {
-        console.error('Error fetching employees:', error);
-        setEmployeesError(error.message);
-        setEmployees([]);
+				setEmployeesError(null);
+				console.warn('No employees found for salon or endpoint; returned empty list.');
+			}
+		} catch (error) {
+			console.error('Error fetching employees:', error);
+			setEmployeesError(error.message);
+			setEmployees([]);
 
-      } finally {
-        setEmployeesLoading(false);
-      }
-    };
+		} finally {
+			setEmployeesLoading(false);
+		}
+	};
 
 	// Create new employee
 	const createEmployee = async (employeeData) => {
-    setEmployeesLoading(true);
-    setEmployeesError(null);
+		setEmployeesLoading(true);
+		setEmployeesError(null);
 
-    try {
-        const token = getAuthToken();
-        
-        if (!token) {
-            throw new Error('Tizimga kirish tokeni topilmadi');
-        }
+		try {
+			const token = getAuthToken();
 
-        // Salon ID tekshirish
-        const salonId = FORCE_SALON_ID || employeeData.salon_id || user?.salon_id;
-        if (!salonId) {
-            throw new Error('Salon ID topilmadi');
-        }
+			if (!token) {
+				throw new Error('Tizimga kirish tokeni topilmadi');
+			}
 
-        // Backend kutgan formatda data tayyorlash
-        const dataToSend = {
-            salon_id: salonId,
-            employee_name: employeeData.employee_name,
-            employee_phone: employeeData.employee_phone,
-            employee_email: employeeData.employee_email,
-            employee_password: employeeData.employee_password,
-            username: employeeData.username,
-            profession: employeeData.profession,
-            role: employeeData.role || 'employee'
-        };
+			// Salon ID tekshirish
+			const salonId = FORCE_SALON_ID || employeeData.salon_id || user?.salon_id;
+			if (!salonId) {
+				throw new Error('Salon ID topilmadi');
+			}
 
-        console.log('📤 Yuborilayotgan ma\'lumot:', dataToSend);
-        console.log('🔗 URL:', employeesUrl);
+			// Backend kutgan formatda data tayyorlash
+			const dataToSend = {
+				salon_id: salonId,
+				employee_name: employeeData.employee_name,
+				employee_phone: employeeData.employee_phone,
+				employee_email: employeeData.employee_email,
+				employee_password: employeeData.employee_password,
+				username: employeeData.username,
+				profession: employeeData.profession,
+				role: employeeData.role || 'employee'
+			};
 
-        const response = await fetch(employeesUrl, {
-            method: 'POST',
-            headers: getHeaders(true),
-            body: JSON.stringify(dataToSend),
-        });
+			console.log('📤 Yuborilayotgan ma\'lumot:', dataToSend);
+			console.log('🔗 URL:', employeesUrl);
 
-        console.log('📥 Response status:', response.status);
+			const response = await fetch(employeesUrl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+				},
+				body: JSON.stringify(dataToSend),
+			});
 
-        if (!response.ok) {
-            const contentType = response.headers.get('content-type');
-            let errorMessage = `HTTP ${response.status}`;
-            
-            if (contentType?.includes('application/json')) {
-                const errorData = await response.json();
-                console.error('❌ Error response:', errorData);
-                
-                // FastAPI validation errors
-                if (Array.isArray(errorData?.detail)) {
-                    errorMessage = errorData.detail.map(err => {
-                        const field = err.loc ? err.loc[err.loc.length - 1] : '';
-                        return `${field}: ${err.msg}`;
-                    }).join(', ');
-                } else if (typeof errorData?.detail === 'string') {
-                    errorMessage = errorData.detail;
-                } else {
-                    errorMessage = errorData?.message || errorData?.error || errorMessage;
-                }
-            } else {
-                const errorText = await response.text();
-                console.error('❌ Error text:', errorText);
-                errorMessage = errorText || errorMessage;
-            }
+			console.log('📥 Response status:', response.status);
 
-            throw new Error(errorMessage);
-        }
+			if (!response.ok) {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = `HTTP ${response.status}`;
 
-        const data = await response.json();
-        console.log('✅ Xodim yaratildi:', data);
+				if (contentType?.includes('application/json')) {
+					const errorData = await response.json();
+					console.error('❌ Error response:', errorData);
 
-        // State'ni yangilash
-        const newEmployee = data?.data || data;
-        setEmployees(prev => [...prev, newEmployee]);
+					// FastAPI validation errors
+					if (Array.isArray(errorData?.detail)) {
+						errorMessage = errorData.detail.map(err => {
+							const field = err.loc ? err.loc[err.loc.length - 1] : '';
+							return `${field}: ${err.msg}`;
+						}).join(', ');
+					} else if (typeof errorData?.detail === 'string') {
+						errorMessage = errorData.detail;
+					} else {
+						errorMessage = errorData?.message || errorData?.error || errorMessage;
+					}
+				} else {
+					const errorText = await response.text();
+					console.error('❌ Error text:', errorText);
+					errorMessage = errorText || errorMessage;
+				}
 
-        // Ro'yxatni qayta yuklash
-        await fetchEmployees();
+				throw new Error(errorMessage);
+			}
 
-        return data;
-    } catch (error) {
-        console.error('❌ Xodim yaratishda xatolik:', error);
-        setEmployeesError(error.message);
-        throw error;
-    } finally {
-        setEmployeesLoading(false);
-    }
-};
+			const data = await response.json();
+			console.log('✅ Xodim yaratildi:', data);
+
+			// State'ni yangilash
+			const newEmployee = data?.data || data;
+			setEmployees(prev => [...prev, newEmployee]);
+
+			// Ro'yxatni qayta yuklash
+			await fetchEmployees();
+
+			return data;
+		} catch (error) {
+			console.error('❌ Xodim yaratishda xatolik:', error);
+			setEmployeesError(error.message);
+			throw error;
+		} finally {
+			setEmployeesLoading(false);
+		}
+	};
 
 	// Fetch services - all services from production server
 	const fetchServices = async () => {
@@ -2343,35 +2353,35 @@ const markConversationAsRead = async (userId) => {
 	};
 
 	// Fetch all data when user logs in and has salon_id
-    useEffect(() => {
-        if (isAuthenticated && user && user.salon_id) {
-            (async () => {
-                // Avval adminning salonini yuklab olaylik
-                try {
-                    await fetchAdminSalon();
-                } catch (e) {
-                    console.warn('Admin my-salon fetch failed, continue loading others:', e?.message || e);
-                }
-                // Keyin xodimlarni yuklaymiz
-                await fetchEmployees();
-                // Zarurat bo'lsa quyidagilarni ham ketma-ket chaqiramiz
-                // await fetchAppointments(user.salon_id);
-                // await fetchSchedules();
-                // await fetchServices();
-                // await fetchSalons();
-            })();
-        }
-    }, [isAuthenticated, user]);
+	useEffect(() => {
+		if (isAuthenticated && user && user.salon_id) {
+			(async () => {
+				// Avval adminning salonini yuklab olaylik
+				try {
+					await fetchAdminSalon();
+				} catch (e) {
+					console.warn('Admin my-salon fetch failed, continue loading others:', e?.message || e);
+				}
+				// Keyin xodimlarni yuklaymiz
+				await fetchEmployees();
+				// Zarurat bo'lsa quyidagilarni ham ketma-ket chaqiramiz
+				// await fetchAppointments(user.salon_id);
+				// await fetchSchedules();
+				// await fetchServices();
+				// await fetchSalons();
+			})();
+		}
+	}, [isAuthenticated, user]);
 
 	const handleConfirm = async () => {
-        try {
-            await updateAppointmentStatus(selectedElement.id, 'confirmed');
-            closeRightSidebar();
-        } catch (error) {
-            console.error('Status o\'zgartirishda xato:', error);
-            alert(error.message);
-        }
-    };
+		try {
+			await updateAppointmentStatus(selectedElement.id, 'confirmed');
+			closeRightSidebar();
+		} catch (error) {
+			console.error('Status o\'zgartirishda xato:', error);
+			alert(error.message);
+		}
+	};
 
 
 	// RightSidebar uchun state
@@ -2394,9 +2404,9 @@ const markConversationAsRead = async (userId) => {
 	// Schedule qo'shish uchun
 	const [addSched, setAddSched] = useState(false)
 	const [schedArr, setSchedArr] = useState([])
-	const [commentsArr , setCommentsArr] = useState([])
+	const [commentsArr, setCommentsArr] = useState([])
 
-	
+
 
 	// Profile uchun data: endi obyekt ko'rinishida saqlanadi
 	const [salonProfile, setSalonProfile] = useState(null)
@@ -2404,205 +2414,210 @@ const markConversationAsRead = async (userId) => {
 	const [adminSalonLoading, setAdminSalonLoading] = useState(false)
 	const [adminSalonError, setAdminSalonError] = useState(null)
 
-    // Admin salon ma'lumotlarini olish: avval GET `/admin/my-salon`, keyin kerak bo'lsa `/salons/:id`
-    const fetchAdminSalon = async (salonIdOverride = null) => {
-        setAdminSalonLoading(true);
-        setAdminSalonError(null);
+	// Admin salon ma'lumotlarini olish: avval GET `/admin/my-salon`, keyin kerak bo'lsa `/salons/:id`
+	const fetchAdminSalon = async (salonIdOverride = null) => {
+		setAdminSalonLoading(true);
+		setAdminSalonError(null);
 
-        try {
-            const token = getAuthToken();
+		try {
+			const token = getAuthToken();
 
-            // 1) Avvalo /admin/my-salon orqali aniq admin biriktirilgan salonni olishga urinamiz
-            if (token) {
-                console.log('[fetchAdminSalon] Trying GET /admin/my-salon');
-                const mySalonResp = await fetch(adminMySalonUrl, {
-                    method: 'GET',
-                    headers: getHeaders(true),
-                });
+			// 1) Avvalo /admin/my-salon orqali aniq admin biriktirilgan salonni olishga urinamiz
+			if (token) {
+				console.log('[fetchAdminSalon] Trying GET /admin/my-salon');
+				const mySalonResp = await fetch(adminMySalonUrl, {
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
+					},
+				});
 
-                if (mySalonResp.ok) {
-                    const mySalonData = await mySalonResp.json();
-                    const salonObj = mySalonData?.data || mySalonData;
-                    if (salonObj && salonObj.id) {
-                        setSalonProfile(salonObj);
-                        currentSalonIdRef.current = salonObj.id;
-                        console.log('✅ Admin my-salon fetched:', salonObj.id);
-                        return salonObj;
-                    }
-                } else {
-                    let mySalonMsg = `HTTP ${mySalonResp.status}`;
-                    try {
-                        const errJson = await mySalonResp.json();
-                        const detailText = Array.isArray(errJson?.detail)
-                            ? errJson.detail.map(d => (typeof d === 'string' ? d : (d?.msg || d?.message || JSON.stringify(d)))).join('; ')
-                            : (typeof errJson?.detail === 'string' ? errJson.detail : (errJson?.message || errJson?.error || ''));
-                        mySalonMsg = detailText || mySalonMsg;
-                    } catch {
-                        try { mySalonMsg = await mySalonResp.text(); } catch {}
-                    }
-                    console.warn('[fetchAdminSalon] /admin/my-salon failed:', mySalonMsg);
-                    // Tushunarli xabar bo'lishi uchun xatoni state'ga yozamiz, lekin ID orqali fallback qilamiz
-                    if (mySalonResp.status === 404) {
-                        setAdminSalonError('Admin uchun salon topilmadi');
-                    } else if (mySalonResp.status === 403) {
-                        setAdminSalonError('Ruxsat yo‘q: admin salon maʼlumotlariga kirish taqiqlangan');
-                    }
-                }
-            }
+				if (mySalonResp.ok) {
+					const mySalonData = await mySalonResp.json();
+					const salonObj = mySalonData?.data || mySalonData;
+					if (salonObj && salonObj.id) {
+						setSalonProfile(salonObj);
+						currentSalonIdRef.current = salonObj.id;
+						console.log('✅ Admin my-salon fetched:', salonObj.id);
+						return salonObj;
+					}
+				} else {
+					let mySalonMsg = `HTTP ${mySalonResp.status}`;
+					try {
+						const errJson = await mySalonResp.json();
+						const detailText = Array.isArray(errJson?.detail)
+							? errJson.detail.map(d => (typeof d === 'string' ? d : (d?.msg || d?.message || JSON.stringify(d)))).join('; ')
+							: (typeof errJson?.detail === 'string' ? errJson.detail : (errJson?.message || errJson?.error || ''));
+						mySalonMsg = detailText || mySalonMsg;
+					} catch {
+						try { mySalonMsg = await mySalonResp.text(); } catch { }
+					}
+					console.warn('[fetchAdminSalon] /admin/my-salon failed:', mySalonMsg);
+					// Tushunarli xabar bo'lishi uchun xatoni state'ga yozamiz, lekin ID orqali fallback qilamiz
+					if (mySalonResp.status === 404) {
+						setAdminSalonError('Admin uchun salon topilmadi');
+					} else if (mySalonResp.status === 403) {
+						setAdminSalonError('Ruxsat yo‘q: admin salon maʼlumotlariga kirish taqiqlangan');
+					}
+				}
+			}
 
-            // 2) Fallback: berilgan yoki foydalanuvchidan olingan ID orqali `/salons/:id`
-            const targetId = salonIdOverride || FORCE_SALON_ID || salonProfile?.id || user?.salon_id || currentSalonIdRef.current;
-            if (!targetId) {
-                throw new Error('Salon ID topilmadi. Iltimos, admin foydalanuvchiga salon biriktiring yoki ID kiriting.');
-            }
+			// 2) Fallback: berilgan yoki foydalanuvchidan olingan ID orqali `/salons/:id`
+			const targetId = salonIdOverride || FORCE_SALON_ID || salonProfile?.id || user?.salon_id || currentSalonIdRef.current;
+			if (!targetId) {
+				throw new Error('Salon ID topilmadi. Iltimos, admin foydalanuvchiga salon biriktiring yoki ID kiriting.');
+			}
 
-            console.log('[fetchAdminSalon] Fallback GET /salons/:id id=', targetId);
-            const detailResponse = await fetch(`${salonDetailUrl}/${targetId}`, {
-                method: 'GET',
-                headers: getHeaders(true),
-            });
+			console.log('[fetchAdminSalon] Fallback GET /salons/:id id=', targetId);
+			const detailResponse = await fetch(`${salonDetailUrl}/${targetId}`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					...(token ? { Authorization: `Bearer ${token}` } : {})
+				},
+			});
 
-            if (detailResponse.ok) {
-                const detailData = await detailResponse.json();
-                const salonObj = detailData?.data || detailData;
-                if (!salonObj || !salonObj.id) {
-                    throw new Error('Salon maʼlumotlari topilmadi');
-                }
-                setSalonProfile(salonObj);
-                currentSalonIdRef.current = salonObj.id;
-                console.log('✅ Salon fetched by ID:', salonObj.id);
-                return salonObj;
-            } else {
-                let message = `Failed to fetch salon by ID (HTTP ${detailResponse.status})`;
-                try {
-                    const errorData = await detailResponse.json();
-                    const detailText = Array.isArray(errorData?.detail)
-                        ? errorData.detail.map(d => (typeof d === 'string' ? d : (d?.msg || d?.message || JSON.stringify(d)))).join('; ')
-                        : (typeof errorData?.detail === 'string' ? errorData.detail : (errorData?.message || errorData?.error || ''));
-                    message = detailText || message;
-                } catch (_) {
-                    try { message = await detailResponse.text(); } catch {}
-                }
+			if (detailResponse.ok) {
+				const detailData = await detailResponse.json();
+				const salonObj = detailData?.data || detailData;
+				if (!salonObj || !salonObj.id) {
+					throw new Error('Salon maʼlumotlari topilmadi');
+				}
+				setSalonProfile(salonObj);
+				currentSalonIdRef.current = salonObj.id;
+				console.log('✅ Salon fetched by ID:', salonObj.id);
+				return salonObj;
+			} else {
+				let message = `Failed to fetch salon by ID (HTTP ${detailResponse.status})`;
+				try {
+					const errorData = await detailResponse.json();
+					const detailText = Array.isArray(errorData?.detail)
+						? errorData.detail.map(d => (typeof d === 'string' ? d : (d?.msg || d?.message || JSON.stringify(d)))).join('; ')
+						: (typeof errorData?.detail === 'string' ? errorData.detail : (errorData?.message || errorData?.error || ''));
+					message = detailText || message;
+				} catch (_) {
+					try { message = await detailResponse.text(); } catch { }
+				}
 
-                if (detailResponse.status === 404) {
-                    message = 'Salon topilmadi';
-                }
-                if (detailResponse.status === 401) {
-                    message = 'Avtorizatsiya xatosi: token yaroqsiz yoki berilmagan.';
-                }
-                throw new Error(message);
-            }
-        } catch (error) {
-            console.error('❌ Error fetching salon by ID:', error);
-            setAdminSalonError(error.message);
-            setSalonProfile(null);
-            throw error;
-        } finally {
-            setAdminSalonLoading(false);
-        }
-    };
+				if (detailResponse.status === 404) {
+					message = 'Salon topilmadi';
+				}
+				if (detailResponse.status === 401) {
+					message = 'Avtorizatsiya xatosi: token yaroqsiz yoki berilmagan.';
+				}
+				throw new Error(message);
+			}
+		} catch (error) {
+			console.error('❌ Error fetching salon by ID:', error);
+			setAdminSalonError(error.message);
+			setSalonProfile(null);
+			throw error;
+		} finally {
+			setAdminSalonLoading(false);
+		}
+	};
 
 
 
 	const handleAddWaitingEmp = async (ids) => {
-    try {
-      if (!Array.isArray(ids) || ids.length === 0) return;
+		try {
+			if (!Array.isArray(ids) || ids.length === 0) return;
 
-      const token = getAuthToken();
-      
-      // ✅ PUT ishlatamiz
-      const resp = await fetch(employeeBulkWaitingStatusUrl, {
-        method: 'PUT',  // PATCH → PUT
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ employee_ids: ids, is_waiting: true }),
-      });
+			const token = getAuthToken();
 
-      if (!resp.ok) {
-        let msg = `HTTP ${resp.status}`;
-        try {
-          const err = await resp.json();
-          msg = err?.message || err?.detail || msg;
-        } catch {
-          try { msg = await resp.text(); } catch {}
-        }
-        throw new Error(msg);
-      }
+			const resp = await fetch(employeeBulkWaitingStatusUrl, {
+				method: 'PATCH',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ employee_ids: ids, is_waiting: true }),
+			});
 
-      console.log('✅ Backend muvaffaqiyatli yangilandi');
+			if (!resp.ok) {
+				let msg = `HTTP ${resp.status}`;
+				try {
+					const err = await resp.json();
+					msg = err?.message || err?.detail || msg;
+				} catch {
+					try { msg = await resp.text(); } catch { }
+				}
+				throw new Error(msg);
+			}
 
-      // State'larni yangilash
-      setEmployees((prev) => 
-        prev.map(e => ids.includes(e.id) ? { ...e, is_waiting: true } : e)
-      );
+			console.log('✅ Backend muvaffaqiyatli yangilandi');
 
-      setWaitingEmp((prev) => {
-        const toAdd = employees.filter(
-          (employee) => ids.includes(employee.id) && !prev.some((emp) => emp.id === employee.id)
-        );
-        const newWaitingEmp = [...prev, ...toAdd];
-        localStorage.setItem('waitingEmp', JSON.stringify(newWaitingEmp));
-        return newWaitingEmp;
-      });
+			// State'larni yangilash
+			setEmployees((prev) =>
+				prev.map(e => ids.includes(e.id) ? { ...e, is_waiting: true } : e)
+			);
 
-      setIsCheckedItem([]);
-      console.log('✅ Xodimlar waiting holatiga o\'tkazildi:', ids);
-    } catch (error) {
-      console.error('❌ Xato:', error);
-      alert(`Xatolik: ${error.message}`);
-    }
-};
+			setWaitingEmp((prev) => {
+				const toAdd = employees.filter(
+					(employee) => ids.includes(employee.id) && !prev.some((emp) => emp.id === employee.id)
+				);
+				const newWaitingEmp = [...prev, ...toAdd];
+				localStorage.setItem('waitingEmp', JSON.stringify(newWaitingEmp));
+				return newWaitingEmp;
+			});
+
+			setIsCheckedItem([]);
+			console.log('✅ Xodimlar waiting holatiga o\'tkazildi:', ids);
+		} catch (error) {
+			console.error('❌ Xato:', error);
+			alert(`Xatolik: ${error.message}`);
+		}
+	};
 
 	const handleRemoveWaitingEmp = async (ids) => {
-    try {
-      if (!Array.isArray(ids) || ids.length === 0) return;
+		try {
+			if (!Array.isArray(ids) || ids.length === 0) return;
 
-      const token = getAuthToken();
-      const resp = await fetch(employeeBulkWaitingStatusUrl, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ employee_ids: ids, is_waiting: false }),
-      });
+			const token = getAuthToken();
+			const resp = await fetch(employeeBulkWaitingStatusUrl, {
+				method: 'PATCH',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ employee_ids: ids, is_waiting: false }),
+			});
 
-      if (!resp.ok) {
-        let msg = `HTTP ${resp.status}`;
-        try {
-          const err = await resp.json();
-          msg = err?.message || err?.detail || msg;
-        } catch {
-          try { msg = await resp.text(); } catch {}
-        }
-        throw new Error(msg);
-      }
+			if (!resp.ok) {
+				let msg = `HTTP ${resp.status}`;
+				try {
+					const err = await resp.json();
+					msg = err?.message || err?.detail || msg;
+				} catch {
+					try { msg = await resp.text(); } catch { }
+				}
+				throw new Error(msg);
+			}
 
-      // Backend muvaffaqiyatli yangilandi — UI state'ni sinxronlaymiz
-      setEmployees((prev) => prev.map(e => ids.includes(e.id) ? { ...e, is_waiting: false } : e));
+			// Backend muvaffaqiyatli yangilandi — UI state'ni sinxronlaymiz
+			setEmployees((prev) => prev.map(e => ids.includes(e.id) ? { ...e, is_waiting: false } : e));
 
-      // waitingEmp ro'yxatini yangilash (reloadsiz)
-      setWaitingEmp((prev) => {
-        const newWaitingEmp = prev.filter((emp) => !ids.includes(emp.id));
-        localStorage.setItem('waitingEmp', JSON.stringify(newWaitingEmp));
-        return newWaitingEmp;
-      });
-    } catch (error) {
-      console.error('❌ Waiting statusni yangilashda xato (remove):', error);
-    }
-  };
+			// waitingEmp ro'yxatini yangilash (reloadsiz)
+			setWaitingEmp((prev) => {
+				const newWaitingEmp = prev.filter((emp) => !ids.includes(emp.id));
+				localStorage.setItem('waitingEmp', JSON.stringify(newWaitingEmp));
+				return newWaitingEmp;
+			});
+		} catch (error) {
+			console.error('❌ Waiting statusni yangilashda xato (remove):', error);
+		}
+	};
 
-	const [isCheckedItem , setIsCheckedItem] = useState([])
+	const [isCheckedItem, setIsCheckedItem] = useState([])
 
 	const { t, i18n } = useTranslation();
 	const language = localStorage.getItem("i18nextLng")
-const handleChange = (event) => {
-    const selectedLang = event.target.value;
-    i18n.changeLanguage(selectedLang);
-    localStorage.setItem('language', selectedLang);
-}
+	const handleChange = (event) => {
+		const selectedLang = event.target.value;
+		i18n.changeLanguage(selectedLang);
+		localStorage.setItem('language', selectedLang);
+	}
 
 	// RightSidebar ochish funksiyasi
 	const openRightSidebar = (element) => {
@@ -2618,7 +2633,7 @@ const handleChange = (event) => {
 
 	const [confirmModal, setConfirmModal] = useState(true)
 
-	
+
 
 
 	// Schedule uchun funksiyalar
@@ -2650,215 +2665,215 @@ const handleChange = (event) => {
 
 
 
-// Bookings state
-const [bookings, setBookings] = useState([]);
-const [bookingsLoading, setBookingsLoading] = useState(false);
-const [bookingsError, setBookingsError] = useState(null);
+	// Bookings state
+	const [bookings, setBookings] = useState([]);
+	const [bookingsLoading, setBookingsLoading] = useState(false);
+	const [bookingsError, setBookingsError] = useState(null);
 
-// GET bookings by salon_id
-const fetchBookings = async (salonId) => {
-  if (!salonId) {
-    console.error('Salon ID is required to fetch bookings');
-    return;
-  }
+	// GET bookings by salon_id
+	const fetchBookings = async (salonId) => {
+		if (!salonId) {
+			console.error('Salon ID is required to fetch bookings');
+			return;
+		}
 
-  setBookingsLoading(true);
-  setBookingsError(null);
+		setBookingsLoading(true);
+		setBookingsError(null);
 
-  try {
-    const token = getAuthToken();
-    const response = await fetch(
-      `${bookingsUrl}?salon_id=${salonId}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+		try {
+			const token = getAuthToken();
+			const response = await fetch(
+				`${bookingsUrl}?salon_id=${salonId}`,
+				{
+					method: 'GET',
+					headers: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json',
+					},
+				}
+			);
 
-    if (response.ok) {
-      const data = await response.json();
-      console.log('✅ Bookings fetched:', data);
-      setBookings(data.data || data || []);
-      return data;
-    } else {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch bookings');
-    }
-  } catch (error) {
-    console.error('❌ Error fetching bookings:', error);
-    setBookingsError(error.message);
-    setBookings([]);
-  } finally {
-    setBookingsLoading(false);
-  }
-};
+			if (response.ok) {
+				const data = await response.json();
+				console.log('✅ Bookings fetched:', data);
+				setBookings(data.data || data || []);
+				return data;
+			} else {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to fetch bookings');
+			}
+		} catch (error) {
+			console.error('❌ Error fetching bookings:', error);
+			setBookingsError(error.message);
+			setBookings([]);
+		} finally {
+			setBookingsLoading(false);
+		}
+	};
 
-// POST new booking
-const createBooking = async (bookingData) => {
-  setBookingsLoading(true);
-  setBookingsError(null);
+	// POST new booking
+	const createBooking = async (bookingData) => {
+		setBookingsLoading(true);
+		setBookingsError(null);
 
-  try {
-    const token = getAuthToken();
-    
-    if (!token) {
-      throw new Error('Token topilmadi');
-    }
+		try {
+			const token = getAuthToken();
 
-    // Salon ID tekshirish
-    const salonId = bookingData.salon_id || user?.salon_id;
-    if (!salonId) {
-      throw new Error('Salon ID topilmadi');
-    }
+			if (!token) {
+				throw new Error('Token topilmadi');
+			}
 
-    const dataToSend = {
-      salon_id: salonId,
-      full_name: bookingData.full_name,
-      phone: bookingData.phone,
-      time: bookingData.time, // ISO string
-      employee_id: bookingData.employee_id
-    };
+			// Salon ID tekshirish
+			const salonId = bookingData.salon_id || user?.salon_id;
+			if (!salonId) {
+				throw new Error('Salon ID topilmadi');
+			}
 
-    console.log('📤 Creating booking:', dataToSend);
+			const dataToSend = {
+				salon_id: salonId,
+				full_name: bookingData.full_name,
+				phone: bookingData.phone,
+				time: bookingData.time, // ISO string
+				employee_id: bookingData.employee_id
+			};
 
-    const response = await fetch(
-      bookingsUrl,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dataToSend),
-      }
-    );
+			console.log('📤 Creating booking:', dataToSend);
 
-    console.log('📥 Response status:', response.status);
+			const response = await fetch(
+				bookingsUrl,
+				{
+					method: 'POST',
+					headers: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(dataToSend),
+				}
+			);
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ Error response:', errorData);
-      
-      let errorMessage = 'Booking yaratishda xatolik';
-      if (Array.isArray(errorData?.detail)) {
-        errorMessage = errorData.detail.map(err => {
-          const field = err.loc ? err.loc[err.loc.length - 1] : '';
-          return `${field}: ${err.msg}`;
-        }).join(', ');
-      } else if (typeof errorData?.detail === 'string') {
-        errorMessage = errorData.detail;
-      } else {
-        errorMessage = errorData?.message || errorData?.error || errorMessage;
-      }
-      
-      throw new Error(errorMessage);
-    }
+			console.log('📥 Response status:', response.status);
 
-    const data = await response.json();
-    console.log('✅ Booking created:', data);
+			if (!response.ok) {
+				const errorData = await response.json();
+				console.error('❌ Error response:', errorData);
 
-    // State'ni yangilash
-    const newBooking = data?.data || data;
-    setBookings(prev => [...prev, newBooking]);
+				let errorMessage = 'Booking yaratishda xatolik';
+				if (Array.isArray(errorData?.detail)) {
+					errorMessage = errorData.detail.map(err => {
+						const field = err.loc ? err.loc[err.loc.length - 1] : '';
+						return `${field}: ${err.msg}`;
+					}).join(', ');
+				} else if (typeof errorData?.detail === 'string') {
+					errorMessage = errorData.detail;
+				} else {
+					errorMessage = errorData?.message || errorData?.error || errorMessage;
+				}
 
-    // Bookinglar ro'yxatini qayta yuklash
-    if (salonId) {
-      await fetchBookings(salonId);
-    }
+				throw new Error(errorMessage);
+			}
 
-    return data;
-  } catch (error) {
-    console.error('❌ Booking yaratishda xatolik:', error);
-    setBookingsError(error.message);
-    throw error;
-  } finally {
-    setBookingsLoading(false);
-  }
-};
+			const data = await response.json();
+			console.log('✅ Booking created:', data);
+
+			// State'ni yangilash
+			const newBooking = data?.data || data;
+			setBookings(prev => [...prev, newBooking]);
+
+			// Bookinglar ro'yxatini qayta yuklash
+			if (salonId) {
+				await fetchBookings(salonId);
+			}
+
+			return data;
+		} catch (error) {
+			console.error('❌ Booking yaratishda xatolik:', error);
+			setBookingsError(error.message);
+			throw error;
+		} finally {
+			setBookingsLoading(false);
+		}
+	};
 
 
-// Context.jsx'ga qo'shish - Appointments va Bookings ni birlashtirish
-const [combinedAppointments, setCombinedAppointments] = useState([]);
+	// Context.jsx'ga qo'shish - Appointments va Bookings ni birlashtirish
+	const [combinedAppointments, setCombinedAppointments] = useState([]);
 
-// Appointments va Bookings ni birlashtirish va sanaga ko'ra saralash
-const fetchCombinedAppointments = async (salonId) => {
-  if (!salonId) {
-    console.error('Salon ID is required');
-    return;
-  }
+	// Appointments va Bookings ni birlashtirish va sanaga ko'ra saralash
+	const fetchCombinedAppointments = async (salonId) => {
+		if (!salonId) {
+			console.error('Salon ID is required');
+			return;
+		}
 
-  try {
-    // Parallel ravishda ikkala ma'lumotni olish
-    await Promise.all([
-      fetchAppointments(salonId),
-      fetchBookings(salonId)
-    ]);
+		try {
+			// Parallel ravishda ikkala ma'lumotni olish
+			await Promise.all([
+				fetchAppointments(salonId),
+				fetchBookings(salonId)
+			]);
 
-    // Appointments va Bookings ni birlashtirish
-    const combined = [
-      ...(appointments || []).map(app => ({
-        ...app,
-        type: 'appointment', // Type qo'shish - qaysi turligini bilish uchun
-        date: app.application_date,
-        time: app.application_time
-      })),
-      ...(bookings || []).map(book => ({
-        ...book,
-        type: 'booking',
-        date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
-        time: book.time ? new Date(book.time).toTimeString().split(' ')[0] : null
-      }))
-    ];
+			// Appointments va Bookings ni birlashtirish
+			const combined = [
+				...(appointments || []).map(app => ({
+					...app,
+					type: 'appointment', // Type qo'shish - qaysi turligini bilish uchun
+					date: app.application_date,
+					time: app.application_time
+				})),
+				...(bookings || []).map(book => ({
+					...book,
+					type: 'booking',
+					date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
+					time: book.time ? new Date(book.time).toTimeString().split(' ')[0] : null
+				}))
+			];
 
-    // Sanaga ko'ra saralash (eng yangi birinchi)
-    const sorted = combined.sort((a, b) => {
-      const dateA = new Date(`${a.date}T${a.time || '00:00:00'}`);
-      const dateB = new Date(`${b.date}T${b.time || '00:00:00'}`);
-      return dateB - dateA; // O'sish tartibi uchun dateA - dateB
-    });
+			// Sanaga ko'ra saralash (eng yangi birinchi)
+			const sorted = combined.sort((a, b) => {
+				const dateA = new Date(`${a.date}T${a.time || '00:00:00'}`);
+				const dateB = new Date(`${b.date}T${b.time || '00:00:00'}`);
+				return dateB - dateA; // O'sish tartibi uchun dateA - dateB
+			});
 
-    setCombinedAppointments(sorted);
-    console.log('✅ Combined appointments:', sorted.length);
-    return sorted;
-  } catch (error) {
-    console.error('❌ Error fetching combined appointments:', error);
-    return [];
-  }
-};
+			setCombinedAppointments(sorted);
+			console.log('✅ Combined appointments:', sorted.length);
+			return sorted;
+		} catch (error) {
+			console.error('❌ Error fetching combined appointments:', error);
+			return [];
+		}
+	};
 
-// useEffect - appointments yoki bookings o'zgarganda avtomatik birlashtirish
-useEffect(() => {
-  if (user?.salon_id) {
-    const combined = [
-      ...(appointments || []).map(app => ({
-        ...app,
-        type: 'appointment',
-        date: app.application_date,
-        time: app.application_time
-      })),
-      ...(bookings || []).map(book => ({
-        ...book,
-        type: 'booking',
-        date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
-        time: book.time ? new Date(book.time).toTimeString().split(' ')[0].substring(0, 5) : null
-      }))
-    ];
+	// useEffect - appointments yoki bookings o'zgarganda avtomatik birlashtirish
+	useEffect(() => {
+		if (user?.salon_id) {
+			const combined = [
+				...(appointments || []).map(app => ({
+					...app,
+					type: 'appointment',
+					date: app.application_date,
+					time: app.application_time
+				})),
+				...(bookings || []).map(book => ({
+					...book,
+					type: 'booking',
+					date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
+					time: book.time ? new Date(book.time).toTimeString().split(' ')[0].substring(0, 5) : null
+				}))
+			];
 
-    const sorted = combined.sort((a, b) => {
-      const dateA = new Date(`${a.date}T${a.time || '00:00:00'}`);
-      const dateB = new Date(`${b.date}T${b.time || '00:00:00'}`);
-      return dateB - dateA;
-    });
+			const sorted = combined.sort((a, b) => {
+				const dateA = new Date(`${a.date}T${a.time || '00:00:00'}`);
+				const dateB = new Date(`${b.date}T${b.time || '00:00:00'}`);
+				return dateB - dateA;
+			});
 
-    setCombinedAppointments(sorted);
-  }
-}, [appointments, bookings, user]);
+			setCombinedAppointments(sorted);
+		}
+	}, [appointments, bookings, user]);
 
-// Endi komponentlar appointments bilan bevosita ishlaydi
-	
+	// Endi komponentlar appointments bilan bevosita ishlaydi
+
 
 
 	let darkImg = [
@@ -2924,419 +2939,554 @@ useEffect(() => {
 
 	const whiteBoxRef = useRef(null);
 
-const moveWhiteBoxToElement = (element, save = true) => {
-	if (!element || !whiteBoxRef.current) return;
+	const moveWhiteBoxToElement = (element, save = true) => {
+		if (!element || !whiteBoxRef.current) return;
 
-	const rect = element.getBoundingClientRect();
-	const sidebar = element.closest(".sidebar");
-	const sidebarRect = sidebar.getBoundingClientRect();
+		const rect = element.getBoundingClientRect();
+		const sidebar = element.closest(".sidebar");
+		const sidebarRect = sidebar.getBoundingClientRect();
 
-	const whiteBox = whiteBoxRef.current;
+		const whiteBox = whiteBoxRef.current;
 
-	// px → vh/vw
-	const topVH = ((rect.top - sidebarRect.top) / window.innerHeight) * 100;
-	const leftVW = ((rect.left - sidebarRect.left) / window.innerWidth) * 100;
-	const heightVH = (rect.height / window.innerHeight) * 100;
-	const widthVW = (rect.width / window.innerWidth) * 100;
+		// px → vh/vw
+		const topVH = ((rect.top - sidebarRect.top) / window.innerHeight) * 100;
+		const leftVW = ((rect.left - sidebarRect.left) / window.innerWidth) * 100;
+		const heightVH = (rect.height / window.innerHeight) * 100;
+		const widthVW = (rect.width / window.innerWidth) * 100;
 
-	whiteBox.style.top = `${topVH - 2}vh`;
-	whiteBox.style.left = `${leftVW}vw`;
-	whiteBox.style.height = `${heightVH}vh`;
-	whiteBox.style.width = `${widthVW}vw`;
+		whiteBox.style.top = `${topVH - 2}vh`;
+		whiteBox.style.left = `${leftVW}vw`;
+		whiteBox.style.height = `${heightVH}vh`;
+		whiteBox.style.width = `${widthVW}vw`;
 
-	// localStorage ga saqlash
-	if (save) {
-		localStorage.setItem(
-			"whiteBoxPos",
-			JSON.stringify({ topVH, leftVW, heightVH, widthVW })
-		);
-		// ✅ Tanlangan element indexini ham saqlash
-		const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
-		const elementIndex = Array.from(sidebarItems).indexOf(element);
-		if (elementIndex !== -1) {
-			localStorage.setItem("selectedSidebarIndex", elementIndex.toString());
+		// localStorage ga saqlash
+		if (save) {
+			localStorage.setItem(
+				"whiteBoxPos",
+				JSON.stringify({ topVH, leftVW, heightVH, widthVW })
+			);
+			// ✅ Tanlangan element indexini ham saqlash
+			const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
+			const elementIndex = Array.from(sidebarItems).indexOf(element);
+			if (elementIndex !== -1) {
+				localStorage.setItem("selectedSidebarIndex", elementIndex.toString());
+			}
 		}
-	}
-};
+	};
 
-const handleClick = (e) => {
-	let index = e.currentTarget.id
-	moveWhiteBoxToElement(e.currentTarget);
-	const updatedIcons = [...darkImg];
-	if (index != 0) {
-		updatedIcons[0] = lightImg[0]
-		updatedIcons[index] = lightImg[index];
-		setSelectIcon(updatedIcons);
-	} else {
-		updatedIcons[0] = darkImg[0]
-		setSelectIcon(updatedIcons);
-	}
-};
+	const handleClick = (e) => {
+		let index = e.currentTarget.id
+		moveWhiteBoxToElement(e.currentTarget);
+		const updatedIcons = [...darkImg];
+		if (index != 0) {
+			updatedIcons[0] = lightImg[0]
+			updatedIcons[index] = lightImg[index];
+			setSelectIcon(updatedIcons);
+		} else {
+			updatedIcons[0] = darkImg[0]
+			setSelectIcon(updatedIcons);
+		}
+	};
 
-// ✅ WhiteBox pozitsiyasini yuklash
-useEffect(() => {
-	// Sidebar elementlari to'liq yuklangunga qadar kutish
-	const timer = setTimeout(() => {
-		const savedPosString = localStorage.getItem("whiteBoxPos");
-		const savedIndexString = localStorage.getItem("selectedSidebarIndex");
-		
-		if (savedPosString && savedIndexString && whiteBoxRef.current) {
-			// ✅ localStorage'da saqlangan pozitsiya va index bor
-			try {
-				const savedPos = JSON.parse(savedPosString);
-				const savedIndex = parseInt(savedIndexString);
-				const { topVH, leftVW, heightVH, widthVW } = savedPos;
-				const whiteBox = whiteBoxRef.current;
-				
-				// Pozitsiyani o'rnatish
-				whiteBox.style.top = `${topVH - 2}vh`;
-				whiteBox.style.left = `${leftVW}vw`;
-				whiteBox.style.height = `${heightVH}vh`;
-				whiteBox.style.width = `${widthVW}vw`;
-				
-				// ✅ Saqlangan element iconini yangilash
-				const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
-				if (sidebarItems[savedIndex]) {
-					const updatedIcons = [...darkImg];
-					if (savedIndex !== 0) {
-						updatedIcons[0] = lightImg[0];
-						updatedIcons[savedIndex] = lightImg[savedIndex];
-					} else {
-						updatedIcons[0] = darkImg[0];
+	// ✅ WhiteBox pozitsiyasini yuklash
+	useEffect(() => {
+		// Sidebar elementlari to'liq yuklangunga qadar kutish
+		const timer = setTimeout(() => {
+			const savedPosString = localStorage.getItem("whiteBoxPos");
+			const savedIndexString = localStorage.getItem("selectedSidebarIndex");
+
+			if (savedPosString && savedIndexString && whiteBoxRef.current) {
+				// ✅ localStorage'da saqlangan pozitsiya va index bor
+				try {
+					const savedPos = JSON.parse(savedPosString);
+					const savedIndex = parseInt(savedIndexString);
+					const { topVH, leftVW, heightVH, widthVW } = savedPos;
+					const whiteBox = whiteBoxRef.current;
+
+					// Pozitsiyani o'rnatish
+					whiteBox.style.top = `${topVH - 2}vh`;
+					whiteBox.style.left = `${leftVW}vw`;
+					whiteBox.style.height = `${heightVH}vh`;
+					whiteBox.style.width = `${widthVW}vw`;
+
+					// ✅ Saqlangan element iconini yangilash
+					const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
+					if (sidebarItems[savedIndex]) {
+						const updatedIcons = [...darkImg];
+						if (savedIndex !== 0) {
+							updatedIcons[0] = lightImg[0];
+							updatedIcons[savedIndex] = lightImg[savedIndex];
+						} else {
+							updatedIcons[0] = darkImg[0];
+						}
+						setSelectIcon(updatedIcons);
 					}
-					setSelectIcon(updatedIcons);
+				} catch (error) {
+					console.error('Error parsing saved data:', error);
+					setDefaultWhiteBoxPosition();
 				}
-			} catch (error) {
-				console.error('Error parsing saved data:', error);
+			} else {
+				// ✅ localStorage'da ma'lumot yo'q - birinchi elementga o'rnatish
 				setDefaultWhiteBoxPosition();
 			}
-		} else {
-			// ✅ localStorage'da ma'lumot yo'q - birinchi elementga o'rnatish
-			setDefaultWhiteBoxPosition();
+		}, 200);
+
+		return () => clearTimeout(timer);
+	}, []);
+
+
+	const setDefaultWhiteBoxPosition = () => {
+		if (!whiteBoxRef.current) return;
+
+		// Birinchi sidebar elementini topish (.sidebar-nav-item)
+		const firstSidebarElement = document.querySelector('.sidebar-nav-item');
+
+		if (firstSidebarElement) {
+			// Birinchi elementga avtomatik joylashtirish
+			moveWhiteBoxToElement(firstSidebarElement, true);
+
+			// ✅ Barcha iconlarni default holatga qaytarish
+			const updatedIcons = [
+				{ img: '/images/home-light.png', color: '#9C2BFF', style: 'none' },
+				{ img: '/images/schedule-dark.png', color: 'white', style: 'underline' },
+				{ img: '/images/group-dark.png', color: 'white', style: 'underline' },
+				{ img: '/images/chat-dark.png', color: 'white', style: 'underline' },
+				{ img: '/images/settings-dark.png', color: 'white', style: 'underline' }
+			];
+			setSelectIcon(updatedIcons);
+
+			// localStorage'ga index 0 ni saqlash
+			localStorage.setItem("selectedSidebarIndex", "0");
 		}
-	}, 200);
-
-	return () => clearTimeout(timer);
-}, []);
-
-// ✅ Default pozitsiya - birinchi sidebar elementiga (Home - index 0)
-// ✅ Default pozitsiya - birinchi sidebar elementiga (Home - index 0)
-const setDefaultWhiteBoxPosition = () => {
-	if (!whiteBoxRef.current) return;
-	
-	// Birinchi sidebar elementini topish (.sidebar-nav-item)
-	const firstSidebarElement = document.querySelector('.sidebar-nav-item');
-	
-	if (firstSidebarElement) {
-		// Birinchi elementga avtomatik joylashtirish
-		moveWhiteBoxToElement(firstSidebarElement, true);
-		
-		// ✅ Barcha iconlarni default holatga qaytarish
-		const updatedIcons = [
-			{ img: '/images/home-light.png', color: '#9C2BFF', style: 'none' },
-			{ img: '/images/schedule-dark.png', color: 'white', style: 'underline' },
-			{ img: '/images/group-dark.png', color: 'white', style: 'underline' },
-			{ img: '/images/chat-dark.png', color: 'white', style: 'underline' },
-			{ img: '/images/settings-dark.png', color: 'white', style: 'underline' }
-		];
-		setSelectIcon(updatedIcons);
-		
-		// localStorage'ga index 0 ni saqlash
-		localStorage.setItem("selectedSidebarIndex", "0");
-	}
-};
+	};
 
 
 
 
-// Icons localStorage'ga saqlash
-useEffect(() => {
-	localStorage.setItem("icons", JSON.stringify(selectIcon));
-}, [selectIcon]);
+	// Icons localStorage'ga saqlash
+	useEffect(() => {
+		localStorage.setItem("icons", JSON.stringify(selectIcon));
+	}, [selectIcon]);
 
 
 
 
-// ===== EMPLOYEE POSTS API FUNCTIONS =====
+	// ===== EMPLOYEE POSTS API FUNCTIONS =====
 
-// Employee uchun post yaratish
-const createEmployeePost = async (employeeId, postData) => {
-    try {
-        const token = getAuthToken();
-        
-        if (!token) {
-            throw new Error('Tizimga kirish tokeni topilmadi');
-        }
+	// Employee uchun post yaratish
+	const createEmployeePost = async (employeeId, postData) => {
+		try {
+			const token = getAuthToken();
 
-        console.log('📤 Creating employee post:', { employeeId, postData });
+			if (!token) {
+				throw new Error('Tizimga kirish tokeni topilmadi');
+			}
 
-        const response = await fetch(`${employeesUrl}/${employeeId}/posts`, {
-            method: 'POST',
-            headers: getHeaders(true),
-            body: JSON.stringify(postData),
-        });
+			console.log('📤 Creating employee post:', { employeeId, postData });
 
-        console.log('📥 Response status:', response.status);
+			const response = await fetch(`${employeesUrl}/${employeeId}/posts`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify(postData),
+			});
 
-        if (!response.ok) {
-            const contentType = response.headers.get('content-type');
-            let errorMessage = `HTTP ${response.status}`;
-            
-            if (contentType?.includes('application/json')) {
-                const errorData = await response.json();
-                console.error('❌ Error response:', errorData);
-                
-                // FastAPI validation errors
-                if (Array.isArray(errorData?.detail)) {
-                    errorMessage = errorData.detail.map(err => {
-                        const field = err.loc ? err.loc[err.loc.length - 1] : '';
-                        return `${field}: ${err.msg}`;
-                    }).join(', ');
-                } else if (typeof errorData?.detail === 'string') {
-                    errorMessage = errorData.detail;
-                } else {
-                    errorMessage = errorData?.message || errorData?.error || errorMessage;
-                }
-            } else {
-                const errorText = await response.text();
-                console.error('❌ Error text:', errorText);
-                errorMessage = errorText || errorMessage;
-            }
+			console.log('📥 Response status:', response.status);
 
-            throw new Error(errorMessage);
-        }
+			if (!response.ok) {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = `HTTP ${response.status}`;
 
-        const data = await response.json();
-        console.log('✅ Employee post created:', data);
+				if (contentType?.includes('application/json')) {
+					const errorData = await response.json();
+					console.error('❌ Error response:', errorData);
 
-        return data;
-    } catch (error) {
-        console.error('❌ Employee post yaratishda xatolik:', error);
-        throw error;
-    }
-};
+					// FastAPI validation errors
+					if (Array.isArray(errorData?.detail)) {
+						errorMessage = errorData.detail.map(err => {
+							const field = err.loc ? err.loc[err.loc.length - 1] : '';
+							return `${field}: ${err.msg}`;
+						}).join(', ');
+					} else if (typeof errorData?.detail === 'string') {
+						errorMessage = errorData.detail;
+					} else {
+						errorMessage = errorData?.message || errorData?.error || errorMessage;
+					}
+				} else {
+					const errorText = await response.text();
+					console.error('❌ Error text:', errorText);
+					errorMessage = errorText || errorMessage;
+				}
 
-// Employee postlarini olish (pagination bilan)
-const fetchEmployeePosts = async (employeeId, page = 1, limit = 10) => {
-    try {
-        const token = getAuthToken();
-        
-        if (!token) {
-            throw new Error('Tizimga kirish tokeni topilmadi');
-        }
+				throw new Error(errorMessage);
+			}
 
-        console.log('📤 Fetching employee posts:', { employeeId, page, limit });
+			const data = await response.json();
+			console.log('✅ Employee post created:', data);
 
-        const response = await fetch(
-            `${employeesUrl}/${employeeId}/posts?page=${page}&limit=${limit}`,
-            {
-                method: 'GET',
-                headers: getHeaders(true),
-            }
-        );
+			return data;
+		} catch (error) {
+			console.error('❌ Employee post yaratishda xatolik:', error);
+			throw error;
+		}
+	};
 
-        console.log('📥 Response status:', response.status);
+	// Employee postlarini olish (pagination bilan)
+	const fetchEmployeePosts = async (employeeId, page = 1, limit = 10) => {
+		try {
+			const token = getAuthToken();
 
-        if (!response.ok) {
-            const contentType = response.headers.get('content-type');
-            let errorMessage = `HTTP ${response.status}`;
-            
-            if (contentType?.includes('application/json')) {
-                const errorData = await response.json();
-                console.error('❌ Error response:', errorData);
-                
-                if (Array.isArray(errorData?.detail)) {
-                    errorMessage = errorData.detail.map(err => {
-                        const field = err.loc ? err.loc[err.loc.length - 1] : '';
-                        return `${field}: ${err.msg}`;
-                    }).join(', ');
-                } else if (typeof errorData?.detail === 'string') {
-                    errorMessage = errorData.detail;
-                } else {
-                    errorMessage = errorData?.message || errorData?.error || errorMessage;
-                }
-            } else {
-                const errorText = await response.text();
-                console.error('❌ Error text:', errorText);
-                errorMessage = errorText || errorMessage;
-            }
+			if (!token) {
+				throw new Error('Tizimga kirish tokeni topilmadi');
+			}
 
-            throw new Error(errorMessage);
-        }
+			console.log('📤 Fetching employee posts:', { employeeId, page, limit });
 
-        const data = await response.json();
-        console.log('✅ Employee posts fetched:', data);
+			const response = await fetch(
+				`${employeesUrl}/${employeeId}/posts?page=${page}&limit=${limit}`,
+				{
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						...(token ? { Authorization: `Bearer ${token}` } : {})
+					},
+				}
+			);
 
-        return data.data || data || [];
-    } catch (error) {
-        console.error('❌ Employee postlarni olishda xatolik:', error);
-        throw error;
-    }
-};
+			console.log('📥 Response status:', response.status);
 
-// Employee postini yangilash
-const updateEmployeePost = async (employeeId, postId, postData) => {
-    try {
-        const token = getAuthToken();
-        
-        if (!token) {
-            throw new Error('Tizimga kirish tokeni topilmadi');
-        }
+			if (!response.ok) {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = `HTTP ${response.status}`;
 
-        console.log('📤 Updating employee post:', { employeeId, postId, postData });
+				if (contentType?.includes('application/json')) {
+					const errorData = await response.json();
+					console.error('❌ Error response:', errorData);
 
-        const response = await fetch(`${employeesUrl}/${employeeId}/posts/${postId}`, {
-            method: 'PUT',
-            headers: getHeaders(true),
-            body: JSON.stringify(postData),
-        });
+					if (Array.isArray(errorData?.detail)) {
+						errorMessage = errorData.detail.map(err => {
+							const field = err.loc ? err.loc[err.loc.length - 1] : '';
+							return `${field}: ${err.msg}`;
+						}).join(', ');
+					} else if (typeof errorData?.detail === 'string') {
+						errorMessage = errorData.detail;
+					} else {
+						errorMessage = errorData?.message || errorData?.error || errorMessage;
+					}
+				} else {
+					const errorText = await response.text();
+					console.error('❌ Error text:', errorText);
+					errorMessage = errorText || errorMessage;
+				}
 
-        console.log('📥 Response status:', response.status);
+				throw new Error(errorMessage);
+			}
 
-        if (!response.ok) {
-            const contentType = response.headers.get('content-type');
-            let errorMessage = `HTTP ${response.status}`;
-            
-            if (contentType?.includes('application/json')) {
-                const errorData = await response.json();
-                console.error('❌ Error response:', errorData);
-                
-                if (Array.isArray(errorData?.detail)) {
-                    errorMessage = errorData.detail.map(err => {
-                        const field = err.loc ? err.loc[err.loc.length - 1] : '';
-                        return `${field}: ${err.msg}`;
-                    }).join(', ');
-                } else if (typeof errorData?.detail === 'string') {
-                    errorMessage = errorData.detail;
-                } else {
-                    errorMessage = errorData?.message || errorData?.error || errorMessage;
-                }
-            } else {
-                const errorText = await response.text();
-                console.error('❌ Error text:', errorText);
-                errorMessage = errorText || errorMessage;
-            }
+			const data = await response.json();
+			console.log('✅ Employee posts fetched:', data);
 
-            throw new Error(errorMessage);
-        }
+			return data.data || data || [];
+		} catch (error) {
+			console.error('❌ Employee postlarni olishda xatolik:', error);
+			throw error;
+		}
+	};
 
-        const data = await response.json();
-        console.log('✅ Employee post updated:', data);
+	// Employee postini yangilash
+	const updateEmployeePost = async (employeeId, postId, postData) => {
+		try {
+			const token = getAuthToken();
 
-        return data;
-    } catch (error) {
-        console.error('❌ Employee post yangilashda xatolik:', error);
-        throw error;
-    }
-};
+			if (!token) {
+				throw new Error('Tizimga kirish tokeni topilmadi');
+			}
 
-// Employee postini o'chirish
-const deleteEmployeePost = async (employeeId, postId) => {
-    try {
-        const token = getAuthToken();
-        
-        if (!token) {
-            throw new Error('Tizimga kirish tokeni topilmadi');
-        }
+			console.log('📤 Updating employee post:', { employeeId, postId, postData });
 
-        console.log('📤 Deleting employee post:', { employeeId, postId });
+			const response = await fetch(`${employeesUrl}/${employeeId}/posts/${postId}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify(postData),
+			});
 
-        const response = await fetch(`${employeesUrl}/${employeeId}/posts/${postId}`, {
-            method: 'DELETE',
-            headers: getHeaders(true),
-        });
+			console.log('📥 Response status:', response.status);
 
-        console.log('📥 Response status:', response.status);
+			if (!response.ok) {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = `HTTP ${response.status}`;
 
-        if (!response.ok) {
-            const contentType = response.headers.get('content-type');
-            let errorMessage = `HTTP ${response.status}`;
-            
-            if (contentType?.includes('application/json')) {
-                const errorData = await response.json();
-                console.error('❌ Error response:', errorData);
-                
-                if (typeof errorData?.detail === 'string') {
-                    errorMessage = errorData.detail;
-                } else {
-                    errorMessage = errorData?.message || errorData?.error || errorMessage;
-                }
-            } else {
-                const errorText = await response.text();
-                console.error('❌ Error text:', errorText);
-                errorMessage = errorText || errorMessage;
-            }
+				if (contentType?.includes('application/json')) {
+					const errorData = await response.json();
+					console.error('❌ Error response:', errorData);
 
-            throw new Error(errorMessage);
-        }
+					if (Array.isArray(errorData?.detail)) {
+						errorMessage = errorData.detail.map(err => {
+							const field = err.loc ? err.loc[err.loc.length - 1] : '';
+							return `${field}: ${err.msg}`;
+						}).join(', ');
+					} else if (typeof errorData?.detail === 'string') {
+						errorMessage = errorData.detail;
+					} else {
+						errorMessage = errorData?.message || errorData?.error || errorMessage;
+					}
+				} else {
+					const errorText = await response.text();
+					console.error('❌ Error text:', errorText);
+					errorMessage = errorText || errorMessage;
+				}
 
-        console.log('✅ Employee post deleted successfully');
-        return true;
-    } catch (error) {
-        console.error('❌ Employee post o\'chirishda xatolik:', error);
-        throw error;
-    }
-};
+				throw new Error(errorMessage);
+			}
 
-// Employee commentlarini olish (pagination bilan)
-const fetchEmployeeComments = async (employeeId, page = 1, limit = 10) => {
-    try {
-        const token = getAuthToken();
-        
-        console.log('📤 Fetching employee comments:', { employeeId, page, limit });
+			const data = await response.json();
+			console.log('✅ Employee post updated:', data);
 
-        const response = await fetch(
-            `${employeesUrl}/${employeeId}/comments?page=${page}&limit=${limit}`,
-            {
-                method: 'GET',
-                headers: getHeaders(true),
-            }
-        );
+			return data;
+		} catch (error) {
+			console.error('❌ Employee post yangilashda xatolik:', error);
+			throw error;
+		}
+	};
 
-        console.log('📥 Response status:', response.status);
+	// Employee postini o'chirish
+	const deleteEmployeePost = async (employeeId, postId) => {
+		try {
+			const token = getAuthToken();
 
-        if (!response.ok) {
-            const contentType = response.headers.get('content-type');
-            let errorMessage = `HTTP ${response.status}`;
-            
-            if (contentType?.includes('application/json')) {
-                const errorData = await response.json();
-                console.error('❌ Error response:', errorData);
-                
-                if (Array.isArray(errorData?.detail)) {
-                    errorMessage = errorData.detail.map(err => {
-                        const field = err.loc ? err.loc[err.loc.length - 1] : '';
-                        return `${field}: ${err.msg}`;
-                    }).join(', ');
-                } else if (typeof errorData?.detail === 'string') {
-                    errorMessage = errorData.detail;
-                } else {
-                    errorMessage = errorData?.message || errorData?.error || errorMessage;
-                }
-            } else {
-                const errorText = await response.text();
-                console.error('❌ Error text:', errorText);
-                errorMessage = errorText || errorMessage;
-            }
+			if (!token) {
+				throw new Error('Tizimga kirish tokeni topilmadi');
+			}
 
-            throw new Error(errorMessage);
-        }
+			console.log('📤 Deleting employee post:', { employeeId, postId });
 
-        const data = await response.json();
-        console.log('✅ Employee comments fetched:', data);
+			const response = await fetch(`${employeesUrl}/${employeeId}/posts/${postId}`, {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+			});
 
-        return {
-            comments: data.data || [],
-            pagination: data.pagination || {},
-            avg_rating: data.avg_rating || 0
-        };
-    } catch (error) {
-        console.error('❌ Employee commentlarni olishda xatolik:', error);
-        throw error;
-    }
-};
+			console.log('📥 Response status:', response.status);
+
+			if (!response.ok) {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = `HTTP ${response.status}`;
+
+				if (contentType?.includes('application/json')) {
+					const errorData = await response.json();
+					console.error('❌ Error response:', errorData);
+
+					if (typeof errorData?.detail === 'string') {
+						errorMessage = errorData.detail;
+					} else {
+						errorMessage = errorData?.message || errorData?.error || errorMessage;
+					}
+				} else {
+					const errorText = await response.text();
+					console.error('❌ Error text:', errorText);
+					errorMessage = errorText || errorMessage;
+				}
+
+				throw new Error(errorMessage);
+			}
+
+			console.log('✅ Employee post deleted successfully');
+			return true;
+		} catch (error) {
+			console.error('❌ Employee post o\'chirishda xatolik:', error);
+			throw error;
+		}
+	};
+
+	// Employee commentlarini olish (pagination bilan)
+	const fetchEmployeeComments = async (employeeId, page = 1, limit = 10) => {
+		try {
+			const token = getAuthToken();
+
+			console.log('📤 Fetching employee comments:', { employeeId, page, limit });
+
+			const response = await fetch(
+				`${employeesUrl}/${employeeId}/comments?page=${page}&limit=${limit}`,
+				{
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						...(token ? { Authorization: `Bearer ${token}` } : {})
+					},
+				}
+			);
+
+			console.log('📥 Response status:', response.status);
+
+			if (!response.ok) {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = `HTTP ${response.status}`;
+
+				if (contentType?.includes('application/json')) {
+					const errorData = await response.json();
+					console.error('❌ Error response:', errorData);
+
+					if (Array.isArray(errorData?.detail)) {
+						errorMessage = errorData.detail.map(err => {
+							const field = err.loc ? err.loc[err.loc.length - 1] : '';
+							return `${field}: ${err.msg}`;
+						}).join(', ');
+					} else if (typeof errorData?.detail === 'string') {
+						errorMessage = errorData.detail;
+					} else {
+						errorMessage = errorData?.message || errorData?.error || errorMessage;
+					}
+				} else {
+					const errorText = await response.text();
+					console.error('❌ Error text:', errorText);
+					errorMessage = errorText || errorMessage;
+				}
+
+				throw new Error(errorMessage);
+			}
+
+			const data = await response.json();
+			console.log('✅ Employee comments fetched:', data);
+
+			return {
+				comments: data.data || [],
+				pagination: data.pagination || {},
+				avg_rating: data.avg_rating || 0
+			};
+		} catch (error) {
+			console.error('❌ Employee commentlarni olishda xatolik:', error);
+			throw error;
+		}
+	};
 
 
+
+	// Employee avatarini yangilash funksiyasi
+	const updateEmployeeAvatar = async (employeeId, avatarFile) => {
+		try {
+			console.log('=== UPDATE EMPLOYEE AVATAR START ===');
+
+			const token = getAuthToken();
+			if (!token) {
+				throw new Error('Tizimga kirish tokeni topilmadi');
+			}
+
+			// Fayl tekshiruvi
+			if (!avatarFile) {
+				throw new Error('Avatar fayl tanlanmadi');
+			}
+
+			if (!avatarFile.type?.startsWith('image/')) {
+				throw new Error('Faqat rasm fayllarini yuklash mumkin');
+			}
+
+			const maxSize = 5 * 1024 * 1024; // 5MB
+			if (avatarFile.size > maxSize) {
+				throw new Error('Rasm hajmi 5MB dan oshmasligi kerak');
+			}
+
+			// FormData yaratish
+			const formData = new FormData();
+			formData.append('file', avatarFile);
+
+			console.log('📤 Uploading avatar for employee:', employeeId);
+			console.log('📤 File info:', {
+				name: avatarFile.name,
+				type: avatarFile.type,
+				size: avatarFile.size
+			});
+
+			// Avatar yuklash
+			const response = await fetch(
+				'https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/employees/me/avatar',
+				{
+					method: 'POST',
+					headers: {
+						'Authorization': `Bearer ${token}`,
+						// ❗ FormData ishlatganda Content-Type ni qo'shmaslik kerak
+					},
+					body: formData
+				}
+			);
+
+			console.log('📥 Response status:', response.status);
+
+			if (!response.ok) {
+				let errorMessage = `HTTP ${response.status}`;
+				const contentType = response.headers.get('content-type');
+
+				if (contentType?.includes('application/json')) {
+					const errorData = await response.json();
+					console.error('❌ Error response:', errorData);
+
+					if (Array.isArray(errorData?.detail)) {
+						errorMessage = errorData.detail.map(err => {
+							const field = err.loc ? err.loc[err.loc.length - 1] : '';
+							return `${field}: ${err.msg}`;
+						}).join(', ');
+					} else if (typeof errorData?.detail === 'string') {
+						errorMessage = errorData.detail;
+					} else {
+						errorMessage = errorData?.message || errorData?.error || errorMessage;
+					}
+				} else {
+					const errorText = await response.text();
+					console.error('❌ Error text:', errorText);
+					errorMessage = errorText || errorMessage;
+				}
+
+				throw new Error(errorMessage);
+			}
+
+			const data = await response.json();
+			console.log('✅ Avatar uploaded successfully:', data);
+
+			// Avatar URL ni olish
+			const avatarUrl = data?.data?.avatar || data?.avatar || data?.url;
+
+			if (!avatarUrl) {
+				throw new Error('Backend dan avatar URL qaytmadi');
+			}
+
+			// User state ni yangilash (agar current user o'zi bo'lsa)
+			if (user && (user.id === employeeId || user.employee_id === employeeId)) {
+				setUser(prev => ({
+					...prev,
+					avatar: avatarUrl,
+					profile_image: avatarUrl
+				}));
+
+				// LocalStorage ni ham yangilash
+				const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+				userData.avatar = avatarUrl;
+				userData.profile_image = avatarUrl;
+				localStorage.setItem('userData', JSON.stringify(userData));
+			}
+
+			// Employees ro'yxatini yangilash
+			setEmployees(prev =>
+				prev.map(emp =>
+					(emp.id === employeeId || emp.employee_id === employeeId)
+						? { ...emp, avatar: avatarUrl, profile_image: avatarUrl }
+						: emp
+				)
+			);
+
+			console.log('✅ Employee avatar updated:', avatarUrl);
+			return avatarUrl;
+
+		} catch (error) {
+			console.error('=== UPDATE EMPLOYEE AVATAR ERROR ===');
+			console.error('Error:', error);
+			throw error;
+		}
+	};
 
 
 
@@ -3391,63 +3541,63 @@ const fetchEmployeeComments = async (employeeId, page = 1, limit = 10) => {
 			currentConversation, setCurrentConversation,
 			messages, messagesLoading, messagesError, fetchMessages, sendMessage, getUnreadCount, markMessagesAsRead, markConversationAsRead,
 			// Salons state va funksiyalari
-	salons, salonsLoading, salonsError, fetchSalons, updateSalon,
-	// Salon rasmlarini yuklash va o'chirish funksiyalari
-	uploadPhotosToServer,
-	uploadSalonPhotos, 
-		uploadSalonLogo, // Yangi funksiya
-		deleteSalonPhoto, deleteSalonPhoto,
+			salons, salonsLoading, salonsError, fetchSalons, updateSalon,
+			// Salon rasmlarini yuklash va o'chirish funksiyalari
+			uploadPhotosToServer,
+			uploadSalonPhotos,
+			uploadSalonLogo, // Yangi funksiya
+			deleteSalonPhoto,  // Fixed: Removed duplicate
 
-	// ===== YANGI API FUNKSIYALARI =====
-	// Authentication functions (unUsed.jsx ga ko'chirildi)
-	// Admin functions (unUsed.jsx ga ko'chirildi)
-	// User functions
-	fetchAllUsers, fetchUserById,
-	// Payment functions
-	createPayment, verifyPayment, getPaymentStatus,
-	// SMS functions
-	sendSMS, getSMSStatus,
-	// Translation functions
-	translateText, getSupportedLanguages,
-	// Extended appointment functions
-	getAppointmentById,
-	// Extended employee functions
-	getEmployeeById, updateEmployee, deleteEmployee,
-	// Extended salon functions
-	getSalonById, createSalon, deleteSalon,
-	// Extended service functions
-	getServiceById, updateService, deleteService,
-	// Extended schedule functions
-	getScheduleById, updateSchedule, deleteSchedule,
-	// Statistics functions
-	getStatistics,
-	updateAppointmentStatus,
-        cancelAppointment,
+			// ===== YANGI API FUNKSIYALARI =====
+			// Authentication functions (unUsed.jsx ga ko'chirildi)
+			// Admin functions (unUsed.jsx ga ko'chirildi)
+			// User functions
+			fetchAllUsers, fetchUserById,
+			// Payment functions
+			createPayment, verifyPayment, getPaymentStatus,
+			// SMS functions
+			sendSMS, getSMSStatus,
+			// Translation functions
+			translateText, getSupportedLanguages,
+			// Extended appointment functions
+			getAppointmentById,
+			// Extended employee functions
+			getEmployeeById, updateEmployee, deleteEmployee,
+			// Extended salon functions
+			getSalonById, createSalon, deleteSalon,
+			// Extended service functions
+			getServiceById, updateService, deleteService,
+			// Extended schedule functions
+			getScheduleById, updateSchedule, deleteSchedule,
+			// Statistics functions
+			getStatistics,
+			updateAppointmentStatus,
+			cancelAppointment,
 
-// Bookings state va funksiyalari
-    bookings, 
-    bookingsLoading, 
-    bookingsError, 
-    fetchBookings, 
-    createBooking,
-
-
-	// Combined appointments
-    combinedAppointments,
-    fetchCombinedAppointments,
+			// Bookings state va funksiyalari
+			bookings,
+			bookingsLoading,
+			bookingsError,
+			fetchBookings,
+			createBooking,
 
 
-	// Employee Posts functions
-        createEmployeePost,
-        fetchEmployeePosts,
-        updateEmployeePost,
-        deleteEmployeePost,
-		fetchEmployeeComments,
+			// Combined appointments
+			combinedAppointments,
+			fetchCombinedAppointments,
 
 
-}}>
-	{children}
-</AppContext.Provider>
+			// Employee Posts functions
+			createEmployeePost,
+			fetchEmployeePosts,
+			updateEmployeePost,
+			deleteEmployeePost,
+			fetchEmployeeComments,
+			updateEmployeeAvatar,
+
+		}}>
+			{children}
+		</AppContext.Provider>
 	)
 }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../hooks/useI18n'
-import { UseGlobalContext, getHeaders } from '../Context'
+import { UseGlobalContext } from '../Context'
 
 const BookScheduleModal = (props) => {
   const {
@@ -96,7 +96,10 @@ const BookScheduleModal = (props) => {
 
       const response = await fetch('https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/book', {
         method: 'POST',
-        headers: getHeaders(true),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('authToken') ? { Authorization: `Bearer ${localStorage.getItem('authToken')}` } : {})
+        },
         body: JSON.stringify(bookingData),
       })
 

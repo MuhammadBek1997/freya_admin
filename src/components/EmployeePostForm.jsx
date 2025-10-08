@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { getHeaders } from '../Context';
+import { getAuthToken } from '../Context';
 import { UseGlobalContext } from '../Context';
 
 const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
@@ -27,7 +27,10 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
     const fetchPostLimits = async () => {
         try {
             const response = await axios.get(`/api/payments/employee/limits`, {
-                headers: getHeaders(true)
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+                }
             });
             setPostLimits(response.data.data);
         } catch (error) {
@@ -123,7 +126,12 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
             const response = await axios.post(
                 `/api/employees/${employeeId}/posts`,
                 postPayload,
-                { headers: getHeaders(true) }
+                { 
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+                    }
+                }
             );
 
             if (response.data.success) {
@@ -161,7 +169,12 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
         try {
             const response = await axios.post('/api/payments/employee/posts', 
                 { postCount }, 
-                { headers: getHeaders(true) }
+                { 
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+                    }
+                }
             );
 
             if (response.data.success) {

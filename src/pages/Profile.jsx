@@ -5,7 +5,7 @@ import { UseGlobalContext } from '../Context'
 import YandexMap from '../components/YandexMap'
 import ReadMoreReact from 'read-more-react';
 import { smsUrl } from '../apiUrls';
-import { getHeaders } from '../Context';
+import { getAuthToken } from '../Context';
 
 
 const Profile = () => {
@@ -664,7 +664,10 @@ const Profile = () => {
       // SMS yuborish API'sini chaqirish
       const response = await fetch(`${smsUrl}/send`, {
         method: 'POST',
-        headers: getHeaders(true),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+        },
         body: JSON.stringify({
           phone_number: phoneNumber.replace(/\s/g, '').replace(/\D/g, '') // Faqat raqamlarni qoldirish
         })
@@ -715,7 +718,10 @@ const Profile = () => {
       // SMS kodni tasdiqlash API'sini chaqirish
       const response = await fetch(`${smsUrl}/verify`, {
         method: 'POST',
-        headers: getHeaders(true),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+        },
         body: JSON.stringify({
           card_number: editPayment.card_number.replace(/\s/g, '').replace(/\D/g, ''),
           sms_code: smsCode,
