@@ -13,7 +13,7 @@ const BookScheduleModal = (props) => {
   } = props
 
   const { t } = useI18n()
-  const { user, employees, fetchEmployees } = UseGlobalContext()
+  const { user, employees, fetchEmployees, createBooking } = UseGlobalContext()
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -76,9 +76,6 @@ const BookScheduleModal = (props) => {
     setLoading(true)
 
     try {
-      const token = localStorage.getItem('authToken')
-      if (!token) throw new Error(t('tokenNotFound') || 'Token topilmadi')
-
       const resolvedSalonId = salon_id || user?.salon_id
       if (!resolvedSalonId) throw new Error(t('errors.salonIdMissing') || 'Salon ID topilmadi')
 
@@ -91,24 +88,10 @@ const BookScheduleModal = (props) => {
         full_name: formData.full_name.trim(),
         phone: formData.phone.trim(),
         time: scheduleDate.toISOString(),
-        employee_id: parseInt(formData.employee_id)
+        employee_id: String(formData.employee_id)
       }
 
-      const response = await fetch('https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/book', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(localStorage.getItem('authToken') ? { Authorization: `Bearer ${localStorage.getItem('authToken')}` } : {})
-        },
-        body: JSON.stringify(bookingData),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.detail || errorData.message || t('bookingFailed') || 'Booking failed')
-      }
-
-      const data = await response.json()
+      const data = await createBooking(bookingData)
       alert(t('bookingSuccess') || 'Бронирование успешно создано!')
       if (typeof setEditModal === 'function') setEditModal(false)
     } catch (e) {
