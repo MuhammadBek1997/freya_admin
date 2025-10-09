@@ -121,7 +121,7 @@ const handleAvatarUpload = async (event) => {
           <div className='employee-profile-modal-top' style={{ width: "100%", height: "10vh", display: "flex", background: "#9C2BFF", borderTopLeftRadius: "1vw", borderTopRightRadius: "1vw" }}>
             {user.role === 'employee' && (
               <div style={{ display: "flex", alignItems: "center", gap: "1vw", padding: "1vw" }}>
-                <img src="" alt="salonIcon" />
+                <img src="/sidebarLogo.svg" alt="salonIcon" />
                 <h2>Glamface</h2>
               </div>
             )}
