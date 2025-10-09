@@ -279,7 +279,7 @@ export const AppProvider = ({ children }) => {
 	const removeConversation = (id) => removeLocal(LS_KEYS.conversations, id, 'id', setConversations);
 	const upsertMessage = (item) => saveLocal(LS_KEYS.messages, item, 'id', setMessages);
 	const removeMessage = (id) => removeLocal(LS_KEYS.messages, id, 'id', setMessages);
-
+// 4302cd19-0f0e-4182-afaa-8dd152d0ed8d
 	// Fetch salons with authentication
 	const fetchSalons = async () => {
 		setSalonsLoading(true);
