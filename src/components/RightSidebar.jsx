@@ -92,7 +92,7 @@ const RightSidebar = () => {
                 return <img src={customerAvatar} alt="" className='right-sidebar-img' />
             })()}
             <h3>
-                {selectedElement.user_name || t('homeCmnFullName')}
+                {selectedElement.user_name || selectedElement.full_name || t('homeCmnFullName')}
             </h3>
 
             <div className='right-custNumb'>
