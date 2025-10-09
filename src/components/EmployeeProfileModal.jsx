@@ -9,7 +9,8 @@ const EmployeeProfileModal = ({ isOpen, onClose, user, handleChangeEmployeePage 
     uploadPhotosToServer,
     setUser,
     fetchEmployeeComments,
-    fetchEmployeePosts
+    fetchEmployeePosts,
+    updateEmployeeAvatar
   } = UseGlobalContext();
 
   const [commentsLoading, setCommentsLoading] = useState(false);

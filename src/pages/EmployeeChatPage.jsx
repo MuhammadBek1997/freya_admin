@@ -22,7 +22,8 @@ const EmployeeChatPage = () => {
     t,
     uploadPhotosToServer,
     updateEmployee,
-    setUser
+    setUser,
+    updateEmployeeAvatar
   } = UseGlobalContext();
 
   const [selectedUser, setSelectedUser] = useState(null);
