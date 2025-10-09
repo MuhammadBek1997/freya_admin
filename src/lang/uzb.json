@@ -248,5 +248,19 @@
   "mediaUrl": "Media URL",
   "optional": "ixtiyoriy",
   "imageOrVideoUrl": "Rasm yoki video URL",
-  "adding": "Qo'shilmoqda..."
+  "adding": "Qo'shilmoqda...",
+  "salon_types": {
+    "beauty_salon": "Go'zallik saloni",
+    "fitness": "Fitness",
+    "massage": "Massaj",
+    "yoga": "Yoga",
+    "barbershop": "Sartaroshxona",
+    "spa": "SPA",
+    "stretching": "Stretching",
+    "dance": "Raqs",
+    "pilates": "Pilates",
+    "boxing": "Boks",
+    "swimming": "Suzish",
+    "gym": "Sport zal"
+  }
 }

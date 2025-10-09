@@ -1570,7 +1570,9 @@ const Profile = () => {
                         <h3>тип конторы</h3>
                         <Field as='select' name='salon_type' style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }}>
                           {salonProfile.salon_types?.map((item, index) => (
-                            <option key={index} value={item.type}>{item.type}</option>
+                            <option key={index} value={item.type}>
+                              {t(`salon_types.${item.type}`) || item.type}
+                            </option>
                           ))}
                         </Field>
                         <div style={{ color: '#d32f2f', fontSize: '0.8vw' }}>

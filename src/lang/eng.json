@@ -248,5 +248,19 @@
   "mediaUrl": "Media URL",
   "optional": "optional",
   "imageOrVideoUrl": "Image or Video URL",
-  "adding": "Adding..."
+  "adding": "Adding...",
+  "salon_types": {
+    "beauty_salon": "Beauty Salon",
+    "fitness": "Fitness",
+    "massage": "Massage",
+    "yoga": "Yoga",
+    "barbershop": "Barbershop",
+    "spa": "Spa",
+    "stretching": "Stretching",
+    "dance": "Dance",
+    "pilates": "Pilates",
+    "boxing": "Boxing",
+    "swimming": "Swimming",
+    "gym": "Gym"
+  }
 }
