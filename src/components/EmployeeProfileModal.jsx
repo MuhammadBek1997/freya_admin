@@ -44,39 +44,10 @@ const handleAvatarUpload = async (event) => {
     try {
       const employeeId = user?.id || user?.employee_id;
       
-      // 1) Avval rasmni yuklash
-      console.log('📤 Uploading avatar...');
-      const uploadedUrls = await uploadPhotosToServer([file]);
+      // ✅ Faqat updateEmployeeAvatar chaqiriladi
+      const avatarUrl = await updateEmployeeAvatar(employeeId, file);
       
-      if (!uploadedUrls || uploadedUrls.length === 0) {
-        throw new Error('Avatar yuklanmadi');
-      }
-
-      const avatarUrl = uploadedUrls[0];
-      console.log('✅ Avatar uploaded:', avatarUrl);
-
-      // 2) Employee ni yangilash
-      const updateData = {
-        avatar: avatarUrl,
-        profile_image: avatarUrl
-      };
-
-      await updateEmployee(employeeId, updateData);
-      
-      console.log('✅ Employee avatar yangilandi');
-
-      // User state ni yangilash
-      setUser(prev => ({
-        ...prev,
-        avatar: avatarUrl,
-        profile_image: avatarUrl
-      }));
-
-      // LocalStorage ni ham yangilash
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      userData.avatar = avatarUrl;
-      userData.profile_image = avatarUrl;
-      localStorage.setItem('userData', JSON.stringify(userData));
+      console.log('✅ Avatar muvaffaqiyatli yangilandi:', avatarUrl);
 
     } catch (error) {
       console.error('Avatar yuklashda xatolik:', error);

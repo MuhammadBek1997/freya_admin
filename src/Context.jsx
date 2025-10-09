@@ -3368,6 +3368,7 @@ export const AppProvider = ({ children }) => {
 
 
 	// Employee avatarini yangilash funksiyasi
+// Employee avatarini yangilash funksiyasi
 	const updateEmployeeAvatar = async (employeeId, avatarFile) => {
 		try {
 			console.log('=== UPDATE EMPLOYEE AVATAR START ===');
@@ -3402,11 +3403,11 @@ export const AppProvider = ({ children }) => {
 				size: avatarFile.size
 			});
 
-			// Avatar yuklash
+			// Avatar yuklash - PUT method bilan
 			const response = await fetch(
-				'https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/employees/me/avatar',
+				`${API_BASE_URL}/employees/me/avatar`,
 				{
-					method: 'POST',
+					method: 'PUT',
 					headers: {
 						'Authorization': `Bearer ${token}`,
 						// ❗ FormData ishlatganda Content-Type ni qo'shmaslik kerak
