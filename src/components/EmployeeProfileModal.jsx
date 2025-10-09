@@ -122,7 +122,7 @@ const handleAvatarUpload = async (event) => {
             {user.role === 'employee' && (
               <div style={{ display: "flex", alignItems: "center", gap: "1vw", padding: "1vw" }}>
                 <img src="/sidebarLogo.svg" alt="salonIcon" />
-                <h2>Glamface</h2>
+                <h2>ФРЕЯ</h2>
               </div>
             )}
             <button
