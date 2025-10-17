@@ -73,9 +73,10 @@ const AppointCard = (props) => {
         });
     }
 
-    // Derive employee name from employee_id using global employees list
+    // Derive employee name: prefer provided employee_name, else lookup by employee_id
     const masterName = (() => {
-        if (type === 'appointment' && employee_id) {
+        if (employee_name) return employee_name;
+        if (employee_id) {
             const emp = employees?.find(e => String(e.id) === String(employee_id));
             if (emp) {
                 const parts = [emp.name, emp.surname].filter(Boolean);
@@ -117,16 +118,14 @@ const AppointCard = (props) => {
             </div>
             <div className='appoint-card-master'>
                 {(() => {
-                    const emp = (type === 'appointment' && employee_id) ? employees?.find(e => String(e.id) === String(employee_id)) : null;
+                    const emp = employee_id ? employees?.find(e => String(e.id) === String(employee_id)) : null;
                     const masterAvatar = emp?.avatar_url || emp?.photo || emp?.profile_image || "/images/masterImage.png";
                     return <img src={masterAvatar} alt="" />
                 })()}
                 <div className='appoint-card-master-text'>
                     <div className='appoint-card-masterName'>
                             <p>
-                                {type === 'appointment'
-                                ? (masterName ? masterName.split(" ").at(0) : t('notAvailable'))
-                                : t('notAvailable')}
+                                {masterName ? masterName.split(" ").at(0) : t('notAvailable')}
                             </p>
                         <div className='appoint-card-masterJob'>
                             <p>

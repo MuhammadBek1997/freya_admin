@@ -74,11 +74,11 @@ const Profile = () => {
 
   // Formik/Yup: profil tahrir formasi uchun validatsiya va boshlang'ich qiymatlar
   const profileValidationSchema = Yup.object({
-    salon_name: Yup.string().min(2, 'Kamida 2 belgi').max(100, 'Ko‘pi bilan 100 belgi').required('Majburiy maydon'),
-    work_hours: Yup.string().max(100, 'Ko‘pi bilan 100 belgi'),
-    work_dates: Yup.string().max(100, 'Ko‘pi bilan 100 belgi'),
-    salon_type: Yup.string().required('Majburiy maydon'),
-    salon_format: Yup.string().required('Majburiy maydon'),
+    salon_name: Yup.string().min(2, t('validation.min2')).max(100, t('validation.max100')).required(t('validation.required')),
+    work_hours: Yup.string().max(100, t('validation.max100')),
+    work_dates: Yup.string().max(100, t('validation.max100')),
+    salon_type: Yup.string().required(t('validation.required')),
+    salon_format: Yup.string().required(t('validation.required')),
   })
 
   const getInitialFormValues = (sp) => {
@@ -136,7 +136,7 @@ const Profile = () => {
 
       if (Object.keys(updateData).length > 0) {
         await updateSalon(salonId, updateData);
-        console.log('Salon ma\'lumotlari (rasm yuksiz) muvaffaqiyatli yangilandi');
+        console.log(t('salonUpdated'));
       }
     } catch (error) {
       console.error('Salon ma\'lumotlarini saqlashda xatolik:', error);
@@ -232,6 +232,7 @@ const Profile = () => {
       // Logo yuklash (alohida)
       if (pendingLogo?.file) {
         if (pendingLogo.file.size > maxBytes) {
+          alert(t('logoTooLarge'));
           setSubmitting(false);
           return;
         }
@@ -240,7 +241,7 @@ const Profile = () => {
 
         if (pendingLogo?.preview) URL.revokeObjectURL(pendingLogo.preview);
         setPendingLogo(null);
-        console.log('✅ Logo muvaffaqiyatli yuklandi');
+        console.log(t('imagesUploaded'));
       }
 
       // Photos yuklash (alohida)
@@ -254,7 +255,7 @@ const Profile = () => {
 
           pendingImages.forEach(img => img?.preview && URL.revokeObjectURL(img.preview));
           setPendingImages([]);
-          console.log('✅ Rasmlar muvaffaqiyatli yuklandi');
+          console.log(t('imagesUploaded'));
         }
       }
 
@@ -421,7 +422,7 @@ const Profile = () => {
     const maxBytes = 4 * 1024 * 1024
     const validImages = files.filter(f => f && f.type && f.type.startsWith('image/') && f.size <= maxBytes)
     if (validImages.length < files.length) {
-      alert('Faqat rasm fayllari va 4MB dan kichik fayllar ruxsat etiladi.')
+      alert(t('onlyImageAndSmallFiles'))
     }
 
     // Fayllarni preview uchun URL yaratish
@@ -436,7 +437,7 @@ const Profile = () => {
 
   // Rasmni o'chirish funksiyasi
   const handleDeleteImage = async (index) => {
-    if (!window.confirm('Rasmni o\'chirishni xohlaysizmi?')) {
+    if (!window.confirm(t('confirmDeleteImage'))) {
       return;
     }
 
@@ -445,7 +446,7 @@ const Profile = () => {
     if (index < totalExistingImages) {
       // Mavjud rasmni serverdan o'chirish
       if (!salonProfile) {
-        alert('Salon ma\'lumotlari yuklanmagan');
+        alert(t('salonDataNotLoaded'));
         return;
       }
 
@@ -460,10 +461,10 @@ const Profile = () => {
         const deletedImages = result?.photos || result?.salon_photos || [];
         setCompanyImages(Array.isArray(deletedImages) ? deletedImages : []);
 
-        alert('Rasm muvaffaqiyatli o\'chirildi!');
+        alert(t('imageDeleted'));
       } catch (error) {
         console.error('Error deleting photo:', error);
-        alert('Rasmni o\'chirishda xatolik yuz berdi: ' + error.message);
+        alert(t('imageDeleteError') + error.message);
       }
     } else {
       // Pending rasmni o'chirish (faqat local state dan)
@@ -582,18 +583,18 @@ const Profile = () => {
       // Fayl hajmini tekshirish (<= 4MB)
       const maxBytes = 4 * 1024 * 1024;
       if (pendingLogo?.file && pendingLogo.file.size > maxBytes) {
-        alert('Logo fayli 4MB dan katta. Iltimos, kichikroq fayl tanlang.');
+        alert(t('logoTooLarge'));
         return;
       }
       const tooLargePhoto = pendingImages.find(img => img?.file?.size > maxBytes);
       if (tooLargePhoto) {
-        alert('Baʼzi rasmlar juda katta (4MB dan katta). Iltimos, kichikroq rasmlarni yuklang.');
+        alert(t('someImagesTooLarge'));
         return;
       }
       // Avval matn ma'lumotlarini yangilash
       if (Object.keys(updateData).length > 0) {
         await updateSalon(salonId, updateData);
-        console.log('Salon ma\'lumotlari muvaffaqiyatli yangilandi');
+        console.log(t('salonUpdated'));
       }
 
       // Keyin rasmlarni alohida endpoint orqali yuklaymiz (agar bor bo'lsa)
@@ -606,7 +607,7 @@ const Profile = () => {
         const uploaded = await uploadSalonPhotos(salonId, filesToUpload);
         const freshImages = uploaded?.photos || uploaded?.salon_photos || (Array.isArray(uploaded) ? uploaded : []);
         setCompanyImages(Array.isArray(freshImages) ? freshImages : []);
-        console.log('Salon rasmlari muvaffaqiyatli yuklandi');
+        console.log(t('imagesUploaded'));
         // Pending previewlarni tozalash
         if (pendingLogo?.preview) URL.revokeObjectURL(pendingLogo.preview);
         pendingImages.forEach(img => img?.preview && URL.revokeObjectURL(img.preview));
@@ -680,22 +681,22 @@ const Profile = () => {
         setIsSmsSent(true)
 
         // Muvaffaqiyatli xabar
-        alert(`SMS kod yuborildi: ${data.phone}`)
-        console.log(`SMS kod yuborildi: ${data.phone}`)
+        alert(t('smsCodeSent', { phone: data.phone }))
+        console.log(t('smsCodeSent', { phone: data.phone }))
 
         // Test uchun verification code'ni console'ga chiqarish
         if (data.verificationCode) {
-          console.log(`Test uchun SMS kod: ${data.verificationCode}`)
+          console.log(t('testSmsCode', { code: data.verificationCode }))
         }
       } else {
         // Xatolik holatini ko'rsatish
-        const errorMessage = data.message || 'SMS yuborishda xatolik'
+        const errorMessage = data.message || t('smsSendError')
         alert(errorMessage)
         console.error('SMS yuborishda xatolik:', errorMessage)
       }
     } catch (error) {
       console.error('SMS yuborishda xatolik:', error)
-      alert('SMS yuborishda xatolik yuz berdi')
+      alert(t('smsSendError'))
     } finally {
       setSmsLoading(false)
     }
@@ -704,12 +705,12 @@ const Profile = () => {
   // SMS kodni tasdiqlash
   const handleVerifySms = async () => {
     if (!smsCode || smsCode.length !== 6) {
-      alert('SMS kodni to\'liq kiriting (6 ta raqam)')
+      alert(t('smsCodeInvalidLength'))
       return
     }
 
     if (!editPayment.card_number || !editPayment.phone_number || !editPayment.card_type) {
-      alert('Barcha ma\'lumotlarni to\'ldiring')
+      alert(t('fillAllFields'))
       return
     }
 
@@ -733,7 +734,7 @@ const Profile = () => {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        alert('Karta muvaffaqiyatli qo\'shildi va tasdiqlandi!')
+        alert(t('cardAddedSuccessfully'))
 
         // SMS tasdiqlandi deb belgilash
         setIsSmsVerified(true)
@@ -756,11 +757,11 @@ const Profile = () => {
         // Salon ma'lumotlarini qayta yuklash
         await fetchAdminSalon()
       } else {
-        setSmsError(data.message || 'SMS kod noto\'g\'ri')
+        setSmsError(data.message || t('smsCodeIncorrect'))
       }
     } catch (error) {
       console.error('SMS tasdiqlashda xatolik:', error)
-      setSmsError('Tasdiqlashda xatolik yuz berdi')
+      setSmsError(t('verificationError'))
     } finally {
       setSmsLoading(false)
     }
@@ -778,7 +779,7 @@ const Profile = () => {
         fontSize: '18px',
         color: '#d32f2f'
       }}>
-        <p>Xatolik yuz berdi: {adminSalonError}</p>
+        <p>{t('errorOccurred')}{adminSalonError}</p>
         <button
           onClick={() => fetchAdminSalon()}
           style={{
@@ -791,7 +792,7 @@ const Profile = () => {
             cursor: 'pointer'
           }}
         >
-          Qayta urinish
+          {t('retryAttempt')}
         </button>
       </div>
     );
@@ -933,7 +934,7 @@ const Profile = () => {
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button onClick={handleSave} style={{ backgroundColor: '#4CAF50', color: 'white' }}>
                         <img src="/images/editPen.png" alt="" />
-                        {t('profileSave')}
+                        {t('save')}
                       </button>
                       <button onClick={() => {
                         setChangeMode(false)
@@ -942,7 +943,7 @@ const Profile = () => {
                         setEditComfort([])
                         setEditSale({ amount: '', date: '' })
                       }} style={{ backgroundColor: '#f44336', color: 'white' }}>
-                        Bekor qilish
+                        {t('cancel')}
                       </button>
                     </div>
                   ) : (
@@ -1212,15 +1213,15 @@ const Profile = () => {
 
                 <div className='company-sale'>
                   <div className='company-sale-amount'>
-                    <h3>Скидка</h3>
+                    <h3>{t('discountPercent')}</h3>
                     <div className='sale-info'>
-                      {currentSale?.amount ? `${currentSale.amount}%` : 'Скидка не установлена'}
+                      {currentSale?.amount ? `${currentSale.amount}%` : t('saleNotSet')}
                     </div>
                   </div>
                   <div className='company-sale-date'>
-                    <h3>Срок действия</h3>
+                    <h3>{t('validityPeriod')}</h3>
                     <div className='sale-info'>
-                      {currentSale?.date ? new Date(currentSale.date).toLocaleDateString('ru-RU') : 'Не указан'}
+                      {currentSale?.date ? new Date(currentSale.date).toLocaleDateString('ru-RU') : t('dateNotSet')}
                     </div>
                   </div>
                 </div>
@@ -1278,7 +1279,7 @@ const Profile = () => {
             </div>
             <div className="company-comments">
               <h3>
-                Комментарии ({salonComments.length})
+                {t('commentsTitle')} ({salonComments.length})
               </h3>
               {
                 salonComments.length == 0
@@ -1293,7 +1294,7 @@ const Profile = () => {
                     <h2 style={{
                       color: "#A8A8B3"
                     }}>
-                      Комментарии пока что нет
+                      {t('noCommentsYet')}
                     </h2>
                   </div>
                   :
@@ -1345,7 +1346,7 @@ const Profile = () => {
             <div className="company-location">
               <div className='company-location-top'>
                 <h3>
-                  Местоположение
+                  {t('location')}
                 </h3>
               </div>
               <div className='company-location-map'>
@@ -1368,7 +1369,7 @@ const Profile = () => {
             </div>
             <div className="company-clients">
               <h3>
-                Постоянные клиенты
+                {t('regularClients')}
               </h3>
               <div>
                 {
@@ -1389,7 +1390,7 @@ const Profile = () => {
                             </a>
                             <img src="/images/visitsIcon.png" alt="" />
                             <p>
-                              {item.visits} посещений
+                              {item.visits} {t('visits')}
                             </p>
                           </div>
                         </div>
@@ -1406,7 +1407,7 @@ const Profile = () => {
                         alt=""
                       />
                       <p style={{ color: "#A8A8B3", textAlign: "center", fontSize: "1vw" }}>
-                        Постоянных клиентов пока что нет
+                        {t('noRegularClients')}
                       </p>
                     </div>
                 }
@@ -1424,7 +1425,7 @@ const Profile = () => {
             <div className='profile-nav-logo'>
               <img src="/images/editProfile.png" alt="" />
               <h2>
-                Редактировать Профиль
+                {t('editProfile')}
               </h2>
             </div>
             <div className="profile-nav-buttons">
@@ -1447,12 +1448,12 @@ const Profile = () => {
                   setEditComfort([])
                   setEditSale({ amount: '', date: '' })
                 }}>
-                Отмена
+                {t('cancel')}
               </button>
               <button
                 className='profile-nav-save'
                 onClick={submitProfileForm}>
-                Сохранить
+                {t('save')}
               </button>
             </div>
           </div>
@@ -1463,7 +1464,7 @@ const Profile = () => {
               {/* Salon logo / asosiy rasmni yangilash */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '1vw' }}>
                 <div>
-                  <h3 style={{ fontSize: '1vw', marginBottom: '0.5vw' }}>Salon logosi</h3>
+                  <h3 style={{ fontSize: '1vw', marginBottom: '0.5vw' }}>{t('salonLogo')}</h3>
                   <div style={{
                     width: '10vw',
                     height: '10vw',
@@ -1484,12 +1485,12 @@ const Profile = () => {
                       if (currentLogo && typeof currentLogo === 'string') {
                         return <img src={currentLogo} alt="Salon logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       }
-                      return <span style={{ color: '#999' }}>Logo yo'q</span>
+                      return <span style={{ color: '#999' }}>{t('noLogo')}</span>
                     })()}
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5vw' }}>
-                  <label htmlFor="logoUpload" style={{ fontSize: '0.9vw' }}>Yangi logo tanlang</label>
+                  <label htmlFor="logoUpload" style={{ fontSize: '0.9vw' }}>{t('selectNewLogo')}</label>
                   <input
                     id="logoUpload"
                     type="file"
@@ -1497,7 +1498,7 @@ const Profile = () => {
                     onChange={(e) => {
                       // Admin guard: faqat admin token bilan ruxsat
                       if (!user || (user.role !== 'admin' && user.role !== 'super_admin' && user.role !== 'superadmin')) {
-                        alert('Faqat admin foydalanuvchilar rasmlar yuklay oladi');
+                        alert(t('onlyAdminsCanUpload'));
                         e.target.value = '';
                         return;
                       }
@@ -1505,14 +1506,14 @@ const Profile = () => {
                       const file = e.target.files && e.target.files[0];
                       if (!file) return;
                       if (!file.type || !file.type.startsWith('image/')) {
-                        alert('Faqat rasm fayllarini yuklash mumkin');
+                        alert(t('onlyImageFiles'));
                         e.target.value = '';
                         return;
                       }
                       // Fayl hajmini tekshirish (<= 4MB tavsiya)
                       const maxBytes = 4 * 1024 * 1024;
                       if (file.size > maxBytes) {
-                        alert('Rasm fayli juda katta. Iltimos, 4MB dan kichik rasm yuklang.');
+                        alert(t('imageTooLarge'));
                         e.target.value = '';
                         return;
                       }
@@ -1526,7 +1527,7 @@ const Profile = () => {
                         e.target.value = '';
                       } catch (err) {
                         console.error('Logo tayyorlashda xatolik:', err);
-                        alert('Logo tayyorlashda xatolik yuz berdi');
+                        alert(t('logoPrepareError'));
                         e.target.value = '';
                       }
                     }}
@@ -1545,7 +1546,7 @@ const Profile = () => {
                 {({ isSubmitting }) => (
                   <Form id='profile-edit-form'>
                     <h3 style={{ fontSize: "1vw", marginBottom: "0.3vw", marginLeft: "1vw", marginTop: "1vw" }}>
-                      Название
+                      {t('salonName')}
                     </h3>
                     <Field name='salon_name' type="text" style={{ width: "95%", margin: " 0 0 0 1vw", padding: '0.5vw 1vw', border: '0.1vw solid #ddd', borderRadius: '0.5vw', fontSize: '1.1vw' }} />
                     <div style={{ color: '#d32f2f', marginLeft: '1vw', fontSize: '0.9vw' }}>
@@ -1553,21 +1554,21 @@ const Profile = () => {
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1vw", padding: "1vw" }}>
                       <div>
-                        <h3>время работы</h3>
+                        <h3>{t('workHours')}</h3>
                         <Field name='work_hours' type="text" style={{ width: '100%', padding: '0.5vw 1vw', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }} />
                         <div style={{ color: '#d32f2f', fontSize: '0.8vw' }}>
                           <ErrorMessage name='work_hours' />
                         </div>
                       </div>
                       <div>
-                        <h3>Даты работы</h3>
+                        <h3>{t('workDates')}</h3>
                         <Field name='work_dates' type="text" style={{ width: '100%', padding: '0.5vw 1vw', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }} />
                         <div style={{ color: '#d32f2f', fontSize: '0.8vw' }}>
                           <ErrorMessage name='work_dates' />
                         </div>
                       </div>
                       <div>
-                        <h3>тип конторы</h3>
+                        <h3>{t('salonType')}</h3>
                         <Field as='select' name='salon_type' style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }}>
                           {salonProfile.salon_types?.map((item, index) => (
                             <option key={index} value={item.type}>
@@ -1671,7 +1672,7 @@ const Profile = () => {
             </div>
             <div className='company-sale'>
               <div className='company-sale-amount'>
-                <h4>Скидка (%)</h4>
+                <h4>{t('discountPercent')}</h4>
                 <input
                   type="text"
                   value={editSale.amount ?? ''}
@@ -1689,12 +1690,12 @@ const Profile = () => {
                 />
               </div>
               <div className='company-sale-date'>
-                <h4>Срок действия</h4>
+                <h4>{t('validityPeriod')}</h4>
                 <input
                   type="text"
                   value={editSale.date ?? ''}
                   onChange={(e) => setEditSale({ ...editSale, date: e.target.value })}
-                  placeholder='7 (дней)'
+                  placeholder='7 (kun)'
                   style={{
                     width: '100%',
                     padding: '10px',
@@ -1708,7 +1709,7 @@ const Profile = () => {
           </div>
           <div className="profile-body-right">
             <div className='profile-images'>
-              <h3>Компания расмлари</h3>
+              <h3>{t('companyImages')}</h3>
               <div className='profile-image-container'>
                 <div className='profile-image-list' ref={imageListRef}>
                   {/* Mavjud rasmlar */}
@@ -1733,14 +1734,14 @@ const Profile = () => {
                           <div className='profile-image-delete' onClick={() => handleDeleteImage(companyImages.length + index, true)}>
                             <img src="/images/company-image-delete.png" alt="" />
                           </div>
-                          <div className='profile-image-pending-badge'>Yangi</div>
+                          <div className='profile-image-pending-badge'>{t('new')}</div>
                         </div>
                       )
                     })
                   }
                   <div className='profile-add-imageBtn' onClick={() => fileInputRef.current?.click()}>
                     <img src="/images/+.png" alt="" />
-                    <span>Rasm qo'shish</span>
+                    <span>{t('addImage')}</span>
                   </div>
                 </div>
                 <div className='profile-image-nav'>
@@ -1752,7 +1753,7 @@ const Profile = () => {
                     ‹
                   </button>
                   <div className='profile-image-counter'>
-                    {companyImages?.length || 0} ta rasm
+                    {companyImages?.length || 0} {t('images')}
                   </div>
                   <button
                     className='profile-image-nav-btn'
@@ -1813,7 +1814,7 @@ const Profile = () => {
                       color: '#374151',
                       marginBottom: '8px'
                     }}>
-                      Номер телефона
+                      {t('phoneNumber')}
                     </label>
                     {changeMode ? (
                       <input
@@ -1857,7 +1858,7 @@ const Profile = () => {
                       color: '#374151',
                       marginBottom: '8px'
                     }}>
-                      2-Номер телефона (необязательно)
+                      {t('secondPhoneOptional')}
                     </label>
                     {changeMode ? (
                       <input
@@ -1902,7 +1903,7 @@ const Profile = () => {
                     color: '#374151',
                     marginBottom: '8px'
                   }}>
-                    Ссылка на Instagram
+                    {t('instagramLink')}
                   </label>
                   {changeMode ? (
                     <input

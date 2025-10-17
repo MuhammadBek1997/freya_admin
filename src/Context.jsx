@@ -2818,13 +2818,19 @@ export const AppProvider = ({ children }) => {
 					...app,
 					type: 'appointment', // Type qo'shish - qaysi turligini bilish uchun
 					date: app.application_date,
-					time: app.application_time
+					time: app.application_time,
+					employee_name: app.employee_name || app.master_name || app.employee || null
 				})),
 				...(bookings || []).map(book => ({
 					...book,
 					type: 'booking',
 					date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
-					time: book.time ? new Date(book.time).toTimeString().split(' ')[0] : null
+					time: book.time ? new Date(book.time).toTimeString().split(' ')[0] : null,
+					employee_name: (() => {
+						const emp = (employees || []).find(e => String(e.id) === String(book.employee_id));
+						if (!emp) return null;
+						return [emp.name, emp.surname].filter(Boolean).join(' ').trim();
+					})()
 				}))
 			];
 
@@ -2847,20 +2853,26 @@ export const AppProvider = ({ children }) => {
 	// useEffect - appointments yoki bookings o'zgarganda avtomatik birlashtirish
 	useEffect(() => {
 		if (user?.salon_id) {
-			const combined = [
-				...(appointments || []).map(app => ({
-					...app,
-					type: 'appointment',
-					date: app.application_date,
-					time: app.application_time
-				})),
-				...(bookings || []).map(book => ({
-					...book,
-					type: 'booking',
-					date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
-					time: book.time ? new Date(book.time).toTimeString().split(' ')[0].substring(0, 5) : null
-				}))
-			];
+		const combined = [
+			...(appointments || []).map(app => ({
+				...app,
+				type: 'appointment',
+				date: app.application_date,
+				time: app.application_time,
+				employee_name: app.employee_name || app.master_name || app.employee || null
+			})),
+			...(bookings || []).map(book => ({
+				...book,
+				type: 'booking',
+				date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
+				time: book.time ? new Date(book.time).toTimeString().split(' ')[0].substring(0, 5) : null,
+				employee_name: (() => {
+					const emp = (employees || []).find(e => String(e.id) === String(book.employee_id));
+					if (!emp) return null;
+					return [emp.name, emp.surname].filter(Boolean).join(' ').trim();
+				})()
+			}))
+		];
 
 			const sorted = combined.sort((a, b) => {
 				const dateA = new Date(`${a.date}T${a.time || '00:00:00'}`);
