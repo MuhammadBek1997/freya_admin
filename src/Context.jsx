@@ -3103,6 +3103,38 @@ export const AppProvider = ({ children }) => {
 		localStorage.setItem("icons", JSON.stringify(selectIcon));
 	}, [selectIcon]);
 
+	// ✅ Component mount bo'lganda pozitsiyani yuklash - SHU YERGA
+	useEffect(() => {
+		const initializeSidebar = () => {
+			const savedIndexString = localStorage.getItem("selectedSidebarIndex");
+			// ... qolgan kod
+		};
+
+		const timer1 = setTimeout(initializeSidebar, 50);
+		const timer2 = setTimeout(initializeSidebar, 150);
+		const timer3 = setTimeout(initializeSidebar, 300);
+
+		return () => {
+			clearTimeout(timer1);
+			clearTimeout(timer2);
+			clearTimeout(timer3);
+		};
+	}, []);
+
+	// ✅ Window resize eventini kuzatish - SHU YERDAN KEYIN
+	useEffect(() => {
+		let resizeTimeout;
+		// ... resize kod
+	}, []);
+
+	// ✅ Route o'zgarganda pozitsiyani yangilash - ENG OXIRIDA
+	useEffect(() => {
+		const updatePositionOnRoute = () => {
+			// ... route kod
+		};
+		// ...
+	}, [window.location.pathname]);
+
 
 	// ===== EMPLOYEE POSTS API FUNCTIONS =====
 

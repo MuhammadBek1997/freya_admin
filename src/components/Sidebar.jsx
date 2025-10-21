@@ -4,8 +4,6 @@ import { UseGlobalContext } from '../Context'
 const Sidebar = () => {
   let { t, selectIcon, whiteBoxRef, handleClick, user } = UseGlobalContext();
 
-
-
   return (
     <div className='sidebar'>
       <div className="sidebar-logo">
@@ -15,7 +13,7 @@ const Sidebar = () => {
         </h1>
       </div>
 
-      {/* WhiteBox — ref qo‘yib olish */}
+      {/* WhiteBox — ref qo'yib olish */}
       <div ref={whiteBoxRef} className="sidebar-whitebox">
         <div className="sidebar-whiteboxtop-cont">
         </div>
@@ -66,69 +64,62 @@ const Sidebar = () => {
           </p>
         </Link>
 
-        {
-          user?.role !== 'private_admin'
-            ?
-            <Link
-              to={'/employees'}
-              style={{ textDecoration: selectIcon[2]?.style || 'underline' }}
-              className='sidebar-nav-item'
-              onClick={handleClick}
-              id='2'
-              key={2}
+        {user?.role !== 'private_admin' ? (
+          <Link
+            to={'/employees'}
+            style={{ textDecoration: selectIcon[2]?.style || 'underline' }}
+            className='sidebar-nav-item'
+            onClick={handleClick}
+            id='2'
+            key={2}
+          >
+            <img src={selectIcon[2]?.img || '/images/group-dark.png'} alt="" />
+            <p
+              style={{
+                textDecoration: selectIcon[2]?.style || 'underline',
+                color: selectIcon[2]?.color || 'white'
+              }}
             >
-              <img src={selectIcon[2]?.img || '/images/group-dark.png'} alt="" />
-              <p
-                style={{
-                  textDecoration: selectIcon[2]?.style || 'underline',
-                  color: selectIcon[2]?.color || 'white'
-                }}
-              >
-                {t("sidebarEmp")}
-              </p>
-            </Link>
-            : 
-            <>
-              <h2
-                style={{ 
-                  textDecoration: selectIcon[2]?.style || 'underline'
-                  
-                 }}
-                className='sidebar-nav-item'
-                id='2'
-                key={2}
-              >
-                <img src={selectIcon[2]?.img || '/images/group-dark.png'} alt="" />
-                <p
-                  style={{
-                    textDecoration: selectIcon[2]?.style || 'underline',
-                    color: selectIcon[2]?.color || 'white'
-                  }}
-                >
-                  {t("sidebarEmp")}
-                </p>
-              </h2>
-              <Link
-                to={'/chat'}
-                style={{ textDecoration: selectIcon[3]?.style || 'underline' }}
-                className='sidebar-nav-item'
-                onClick={handleClick}
-                id='3'
-                key={3}
-              >
-                <img src={selectIcon[3]?.img || '/images/chat-dark.png'} alt="" />
-                <p
-                  style={{
-                    textDecoration: selectIcon[3]?.style || 'underline',
-                    color: selectIcon[3]?.color || 'white'
-                  }}
-                >
-                  {t('chat')}
-                </p>
-              </Link>
-            </>
-          }
+              {t("sidebarEmp")}
+            </p>
+          </Link>
+        ) : (
+          <div
+            style={{ textDecoration: selectIcon[2]?.style || 'underline' }}
+            className='sidebar-nav-item'
+            id='2'
+            key={2}
+          >
+            <img src={selectIcon[2]?.img || '/images/group-dark.png'} alt="" />
+            <p
+              style={{
+                textDecoration: selectIcon[2]?.style || 'underline',
+                color: selectIcon[2]?.color || 'white'
+              }}
+            >
+              {t("sidebarEmp")}
+            </p>
+          </div>
+        )}
 
+        <Link
+          to={'/chat'}
+          style={{ textDecoration: selectIcon[3]?.style || 'underline' }}
+          className='sidebar-nav-item'
+          onClick={handleClick}
+          id='3'
+          key={3}
+        >
+          <img src={selectIcon[3]?.img || '/images/chat-dark.png'} alt="" />
+          <p
+            style={{
+              textDecoration: selectIcon[3]?.style || 'underline',
+              color: selectIcon[3]?.color || 'white'
+            }}
+          >
+            {t('chat')}
+          </p>
+        </Link>
 
         <Link
           to={'/profile'}
@@ -148,10 +139,6 @@ const Sidebar = () => {
             {t("sidebarPro")}
           </p>
         </Link>
-
-
-
-
       </div>
 
       <div className='sidebar-illustration'>
@@ -159,7 +146,6 @@ const Sidebar = () => {
       </div>
     </div>
   )
-
 }
 
 export default Sidebar
