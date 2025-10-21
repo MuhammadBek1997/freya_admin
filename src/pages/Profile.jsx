@@ -915,16 +915,6 @@ const Profile = () => {
               </div>
                 )
               })()}
-              {/* <div className='company-image' style={{
-                backgroundImage: (salonProfile.icon || (companyImages && companyImages[0]))
-                  ? `url(${salonProfile.icon || companyImages[0]})`
-                  : `url(/images/ForCompanyImage.png)`,
-                backgroundSize: (salonProfile.icon || (companyImages && companyImages[0])) ? "cover" : "30%",
-                backgroundPosition: "center center",
-                backgroundRepeat: "no-repeat"
-              }}>
-
-              </div> */}
               <div className='profile-nav-info'>
                 <div className='profile-salon-name'>
                   <h2>
@@ -965,18 +955,7 @@ const Profile = () => {
                   </p>
                 </div>
                 <div className='profile-salon-sale'>
-                  {/* {salonProfile.is_top} */}
-                  {/* <div className='profile-salon-top'>
-                  <img src="/images/Star2.png" alt="" />
-                  <p>
-                    {t("top")}
-                  </p>
-                  </div> */}
-                  {/* <div className='profile-salon-new'>
-                    <p>
-                      {t("new")}
-                    </p>
-                  </div> */}
+                  
                   {salonProfile.salon_sale 
                   &&
                   <div className='profile-salon-salecount'>
@@ -1033,10 +1012,8 @@ const Profile = () => {
                       {(() => {
                         const allImages = [...companyImages, ...pendingImages];
                         if (allImages.length === 0) return null;
-
                         const currentImage = allImages[currentSlide];
                         const isExisting = currentSlide < companyImages.length;
-
                         return (
                           <div className="w-full h-full">
                             <img
@@ -1279,7 +1256,7 @@ const Profile = () => {
             </div>
             <div className="company-comments">
               <h3>
-                {t('commentsTitle')} ({salonComments.length})
+                {t('Mijoz kommentlari')} ({salonComments.length})
               </h3>
               {
                 salonComments.length == 0
