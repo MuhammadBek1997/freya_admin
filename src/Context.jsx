@@ -2990,6 +2990,10 @@ export const AppProvider = ({ children }) => {
 		if (index !== 0) {
 			updatedIcons[0] = lightImg[0];
 			updatedIcons[index] = lightImg[index];
+			// Non-admin profil: index 3 bo'lsa, settings iconni lighten qilish
+			if (user?.role !== 'private_admin' && index === 3) {
+				updatedIcons[4] = lightImg[4];
+			}
 		} else {
 			updatedIcons[0] = darkImg[0];
 		}
