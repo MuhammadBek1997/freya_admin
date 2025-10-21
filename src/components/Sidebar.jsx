@@ -131,17 +131,32 @@ const Sidebar = () => {
         {/* Profile link - barcha userlar uchun */}
         <Link
           to={'/profile'}
-          style={{ textDecoration: selectIcon[user?.role === 'private_admin' ? 4 : 3]?.style || 'underline' }}
+          style={{ 
+            textDecoration: user?.role === 'private_admin' 
+              ? (selectIcon[4]?.style || 'underline')
+              : (selectIcon[3]?.style || 'underline')
+          }}
           className='sidebar-nav-item'
           onClick={handleClick}
           id={user?.role === 'private_admin' ? '4' : '3'}
           key={user?.role === 'private_admin' ? 4 : 3}
         >
-          <img src={selectIcon[user?.role === 'private_admin' ? 4 : 3]?.img || '/images/settings-dark.png'} alt="" />
+          <img 
+            src={
+              user?.role === 'private_admin' 
+                ? (selectIcon[4]?.img || '/images/settings-dark.png')
+                : (selectIcon[3]?.img || '/images/settings-dark.png')
+            } 
+            alt="" 
+          />
           <p
             style={{
-              textDecoration: selectIcon[user?.role === 'private_admin' ? 4 : 3]?.style || 'underline',
-              color: selectIcon[user?.role === 'private_admin' ? 4 : 3]?.color || 'white'
+              textDecoration: user?.role === 'private_admin' 
+                ? (selectIcon[4]?.style || 'underline')
+                : (selectIcon[3]?.style || 'underline'),
+              color: user?.role === 'private_admin' 
+                ? (selectIcon[4]?.color || 'white')
+                : (selectIcon[3]?.color || 'white')
             }}
           >
             {t("sidebarPro")}
