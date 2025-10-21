@@ -64,81 +64,84 @@ const Sidebar = () => {
           </p>
         </Link>
 
-        {
-          user?.role !== 'private_admin'
-            ?
-            <Link
-              to={'/employees'}
-              style={{ textDecoration: selectIcon[2]?.style || 'underline' }}
-              className='sidebar-nav-item'
-              onClick={handleClick}
-              id='2'
-              key={2}
+        {user?.role !== 'private_admin' ? (
+          // Admin/Employee uchun - Employees link
+          <Link
+            to={'/employees'}
+            style={{ textDecoration: selectIcon[2]?.style || 'underline' }}
+            className='sidebar-nav-item'
+            onClick={handleClick}
+            id='2'
+            key={2}
+          >
+            <img src={selectIcon[2]?.img || '/images/group-dark.png'} alt="" />
+            <p
+              style={{
+                textDecoration: selectIcon[2]?.style || 'underline',
+                color: selectIcon[2]?.color || 'white'
+              }}
             >
-              <img src={selectIcon[2]?.img || '/images/group-dark.png'} alt="" />
-              <p
-                style={{
-                  textDecoration: selectIcon[2]?.style || 'underline',
-                  color: selectIcon[2]?.color || 'white'
-                }}
-              >
-                {t("sidebarEmp")}
-              </p>
-            </Link>
-            : 
-            <>
-              <h2
-                style={{ 
-                  textDecoration: selectIcon[2]?.style || 'underline'
-                }}
-                className='sidebar-nav-item'
-                id='2'
-                key={2}
-              >
-                <img src={selectIcon[2]?.img || '/images/group-dark.png'} alt="" />
-                <p
-                  style={{
-                    textDecoration: selectIcon[2]?.style || 'underline',
-                    color: selectIcon[2]?.color || 'white'
-                  }}
-                >
-                  {t("sidebarEmp")}
-                </p>
-              </h2>
-              <Link
-                to={'/chat'}
-                style={{ textDecoration: selectIcon[3]?.style || 'underline' }}
-                className='sidebar-nav-item'
-                onClick={handleClick}
-                id='3'
-                key={3}
-              >
-                <img src={selectIcon[3]?.img || '/images/chat-dark.png'} alt="" />
-                <p
-                  style={{
-                    textDecoration: selectIcon[3]?.style || 'underline',
-                    color: selectIcon[3]?.color || 'white'
-                  }}
-                >
-                  {t('chat')}
-                </p>
-              </Link>
-            </>
-        }
+              {t("sidebarEmp")}
+            </p>
+          </Link>
+        ) : (
+          // Private admin uchun - Employees disabled
+          <h2
+            style={{ 
+              textDecoration: selectIcon[2]?.style || 'underline'
+            }}
+            className='sidebar-nav-item'
+            id='2'
+            key={2}
+          >
+            <img src={selectIcon[2]?.img || '/images/group-dark.png'} alt="" />
+            <p
+              style={{
+                textDecoration: selectIcon[2]?.style || 'underline',
+                color: selectIcon[2]?.color || 'white'
+              }}
+            >
+              {t("sidebarEmp")}
+            </p>
+          </h2>
+        )}
 
+        {/* Chat link - faqat private_admin uchun */}
+        {user?.role === 'private_admin' && (
+          <Link
+            to={'/chat'}
+            style={{ textDecoration: selectIcon[3]?.style || 'underline' }}
+            className='sidebar-nav-item'
+            onClick={handleClick}
+            id='3'
+            key={3}
+          >
+            <img src={selectIcon[3]?.img || '/images/chat-dark.png'} alt="" />
+            <p
+              style={{
+                textDecoration: selectIcon[3]?.style || 'underline',
+                color: selectIcon[3]?.color || 'white'
+              }}
+            >
+              {t('chat')}
+            </p>
+          </Link>
+        )}
+
+        {/* Profile link - barcha userlar uchun */}
         <Link
           to={'/profile'}
-          style={{ textDecoration: selectIcon[4]?.style || 'underline' }}
+          style={{ textDecoration: selectIcon[user?.role === 'private_admin' ? 4 : 3]?.style || 'underline' }}
           className='sidebar-nav-item'
           onClick={handleClick}
-          id='4'
-          key={4}
+          id={user?.role === 'private_admin' ? '4' : '3'}
+          key={user?.role === 'private_admin' ? 4 : 3}
         >
-          <img src={selectIcon[4]?.img || '/images/settings-dark.png'} alt="" />
+          <img src={selectIcon[user?.role === 'private_admin' ? 4 : 3]?.img || '/images/settings-dark.png'} alt="" />
           <p
             style={{
-              textDecoration: selectIcon[4]?.style || 'underline',
-              color: selectIcon[4]?.color || 'white'
+              textDecoration: selectIcon[user?.role === 'private_admin' ? 4 : 3]?.style || 'underline',
+              color: selectIcon[user?.role === 'private_admin' ? 4 : 3]?.color || 'white'
             }}
           >
             {t("sidebarPro")}
