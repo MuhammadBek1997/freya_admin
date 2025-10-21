@@ -279,7 +279,7 @@ export const AppProvider = ({ children }) => {
 	const removeConversation = (id) => removeLocal(LS_KEYS.conversations, id, 'id', setConversations);
 	const upsertMessage = (item) => saveLocal(LS_KEYS.messages, item, 'id', setMessages);
 	const removeMessage = (id) => removeLocal(LS_KEYS.messages, id, 'id', setMessages);
-// 4302cd19-0f0e-4182-afaa-8dd152d0ed8d
+	// 4302cd19-0f0e-4182-afaa-8dd152d0ed8d
 	// Fetch salons with authentication
 	const fetchSalons = async () => {
 		setSalonsLoading(true);
@@ -2853,26 +2853,26 @@ export const AppProvider = ({ children }) => {
 	// useEffect - appointments yoki bookings o'zgarganda avtomatik birlashtirish
 	useEffect(() => {
 		if (user?.salon_id) {
-		const combined = [
-			...(appointments || []).map(app => ({
-				...app,
-				type: 'appointment',
-				date: app.application_date,
-				time: app.application_time,
-				employee_name: app.employee_name || app.master_name || app.employee || null
-			})),
-			...(bookings || []).map(book => ({
-				...book,
-				type: 'booking',
-				date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
-				time: book.time ? new Date(book.time).toTimeString().split(' ')[0].substring(0, 5) : null,
-				employee_name: (() => {
-					const emp = (employees || []).find(e => String(e.id) === String(book.employee_id));
-					if (!emp) return null;
-					return [emp.name, emp.surname].filter(Boolean).join(' ').trim();
-				})()
-			}))
-		];
+			const combined = [
+				...(appointments || []).map(app => ({
+					...app,
+					type: 'appointment',
+					date: app.application_date,
+					time: app.application_time,
+					employee_name: app.employee_name || app.master_name || app.employee || null
+				})),
+				...(bookings || []).map(book => ({
+					...book,
+					type: 'booking',
+					date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
+					time: book.time ? new Date(book.time).toTimeString().split(' ')[0].substring(0, 5) : null,
+					employee_name: (() => {
+						const emp = (employees || []).find(e => String(e.id) === String(book.employee_id));
+						if (!emp) return null;
+						return [emp.name, emp.surname].filter(Boolean).join(' ').trim();
+					})()
+				}))
+			];
 
 			const sorted = combined.sort((a, b) => {
 				const dateA = new Date(`${a.date}T${a.time || '00:00:00'}`);
@@ -2885,8 +2885,6 @@ export const AppProvider = ({ children }) => {
 	}, [appointments, bookings, user]);
 
 	// Endi komponentlar appointments bilan bevosita ishlaydi
-
-
 
 	let darkImg = [
 		{
@@ -2914,7 +2912,7 @@ export const AppProvider = ({ children }) => {
 			color: 'white',
 			style: 'underline'
 		}
-	]
+	];
 
 	let lightImg = [
 		{
@@ -2942,22 +2940,21 @@ export const AppProvider = ({ children }) => {
 			color: '#9C2BFF',
 			style: 'none'
 		}
-	]
+	];
 
-	let selectedIcon = JSON.parse(localStorage.getItem("icons"))
-	let selectedTop = localStorage.getItem("sidebarTop")
-	const [sidebarTop, setSidebarTop] = useState(selectedTop || '19vh')
-	const [selectIcon, setSelectIcon] = useState(selectedIcon || darkImg)
-
+	let selectedIcon = JSON.parse(localStorage.getItem("icons"));
+	const [selectIcon, setSelectIcon] = useState(selectedIcon || darkImg);
 	const whiteBoxRef = useRef(null);
 
+	// ✅ WhiteBox pozitsiyasini hisoblash va o'rnatish
 	const moveWhiteBoxToElement = (element, save = true) => {
 		if (!element || !whiteBoxRef.current) return;
 
 		const rect = element.getBoundingClientRect();
 		const sidebar = element.closest(".sidebar");
-		const sidebarRect = sidebar.getBoundingClientRect();
+		if (!sidebar) return;
 
+		const sidebarRect = sidebar.getBoundingClientRect();
 		const whiteBox = whiteBoxRef.current;
 
 		// px → vh/vw
@@ -2973,11 +2970,6 @@ export const AppProvider = ({ children }) => {
 
 		// localStorage ga saqlash
 		if (save) {
-			localStorage.setItem(
-				"whiteBoxPos",
-				JSON.stringify({ topVH, leftVW, heightVH, widthVW })
-			);
-			// ✅ Tanlangan element indexini ham saqlash
 			const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
 			const elementIndex = Array.from(sidebarItems).indexOf(element);
 			if (elementIndex !== -1) {
@@ -2986,78 +2978,32 @@ export const AppProvider = ({ children }) => {
 		}
 	};
 
+	// ✅ Link bosilganda ishlaydigan handler
 	const handleClick = (e) => {
-		let index = e.currentTarget.id
-		moveWhiteBoxToElement(e.currentTarget);
+		const index = parseInt(e.currentTarget.id);
+
+		// WhiteBox pozitsiyasini yangilash
+		moveWhiteBoxToElement(e.currentTarget, true);
+
+		// Iconlarni yangilash
 		const updatedIcons = [...darkImg];
-		if (index != 0) {
-			updatedIcons[0] = lightImg[0]
+		if (index !== 0) {
+			updatedIcons[0] = lightImg[0];
 			updatedIcons[index] = lightImg[index];
-			setSelectIcon(updatedIcons);
 		} else {
-			updatedIcons[0] = darkImg[0]
-			setSelectIcon(updatedIcons);
+			updatedIcons[0] = darkImg[0];
 		}
+		setSelectIcon(updatedIcons);
 	};
 
-	// ✅ WhiteBox pozitsiyasini yuklash
-	useEffect(() => {
-		// Sidebar elementlari to'liq yuklangunga qadar kutish
-		const timer = setTimeout(() => {
-			const savedPosString = localStorage.getItem("whiteBoxPos");
-			const savedIndexString = localStorage.getItem("selectedSidebarIndex");
-
-			if (savedPosString && savedIndexString && whiteBoxRef.current) {
-				// ✅ localStorage'da saqlangan pozitsiya va index bor
-				try {
-					const savedPos = JSON.parse(savedPosString);
-					const savedIndex = parseInt(savedIndexString);
-					const { topVH, leftVW, heightVH, widthVW } = savedPos;
-					const whiteBox = whiteBoxRef.current;
-
-					// Pozitsiyani o'rnatish
-					whiteBox.style.top = `${topVH - 2}vh`;
-					whiteBox.style.left = `${leftVW}vw`;
-					whiteBox.style.height = `${heightVH}vh`;
-					whiteBox.style.width = `${widthVW}vw`;
-
-					// ✅ Saqlangan element iconini yangilash
-					const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
-					if (sidebarItems[savedIndex]) {
-						const updatedIcons = [...darkImg];
-						if (savedIndex !== 0) {
-							updatedIcons[0] = lightImg[0];
-							updatedIcons[savedIndex] = lightImg[savedIndex];
-						} else {
-							updatedIcons[0] = darkImg[0];
-						}
-						setSelectIcon(updatedIcons);
-					}
-				} catch (error) {
-					console.error('Error parsing saved data:', error);
-					setDefaultWhiteBoxPosition();
-				}
-			} else {
-				// ✅ localStorage'da ma'lumot yo'q - birinchi elementga o'rnatish
-				setDefaultWhiteBoxPosition();
-			}
-		}, 200);
-
-		return () => clearTimeout(timer);
-	}, []);
-
-
+	// ✅ Default pozitsiyani o'rnatish
 	const setDefaultWhiteBoxPosition = () => {
 		if (!whiteBoxRef.current) return;
 
-		// Birinchi sidebar elementini topish (.sidebar-nav-item)
 		const firstSidebarElement = document.querySelector('.sidebar-nav-item');
-
 		if (firstSidebarElement) {
-			// Birinchi elementga avtomatik joylashtirish
 			moveWhiteBoxToElement(firstSidebarElement, true);
 
-			// ✅ Barcha iconlarni default holatga qaytarish
 			const updatedIcons = [
 				{ img: '/images/home-light.png', color: '#9C2BFF', style: 'none' },
 				{ img: '/images/schedule-dark.png', color: 'white', style: 'underline' },
@@ -3066,21 +3012,96 @@ export const AppProvider = ({ children }) => {
 				{ img: '/images/settings-dark.png', color: 'white', style: 'underline' }
 			];
 			setSelectIcon(updatedIcons);
-
-			// localStorage'ga index 0 ni saqlash
 			localStorage.setItem("selectedSidebarIndex", "0");
 		}
 	};
 
+	// ✅ Pozitsiyani qayta hisoblash (resize uchun)
+	const recalculateWhiteBoxPosition = () => {
+		const savedIndexString = localStorage.getItem("selectedSidebarIndex");
+		if (!savedIndexString) return;
 
+		const savedIndex = parseInt(savedIndexString);
+		const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
 
+		if (sidebarItems[savedIndex]) {
+			// false = localStorage ga qayta saqlamaslik
+			moveWhiteBoxToElement(sidebarItems[savedIndex], false);
+		}
+	};
 
-	// Icons localStorage'ga saqlash
+	// ✅ Component mount bo'lganda pozitsiyani yuklash
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			const savedIndexString = localStorage.getItem("selectedSidebarIndex");
+
+			if (savedIndexString && whiteBoxRef.current) {
+				try {
+					const savedIndex = parseInt(savedIndexString);
+					const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
+
+					if (sidebarItems[savedIndex]) {
+						// Pozitsiyani o'rnatish
+						moveWhiteBoxToElement(sidebarItems[savedIndex], false);
+
+						// Iconlarni yangilash
+						const updatedIcons = [...darkImg];
+						if (savedIndex !== 0) {
+							updatedIcons[0] = lightImg[0];
+							updatedIcons[savedIndex] = lightImg[savedIndex];
+						} else {
+							updatedIcons[0] = darkImg[0];
+						}
+						setSelectIcon(updatedIcons);
+					} else {
+						setDefaultWhiteBoxPosition();
+					}
+				} catch (error) {
+					console.error('Error parsing saved data:', error);
+					setDefaultWhiteBoxPosition();
+				}
+			} else {
+				setDefaultWhiteBoxPosition();
+			}
+		}, 100);
+
+		return () => clearTimeout(timer);
+	}, []);
+
+	// ✅ Window resize eventini kuzatish
+	useEffect(() => {
+		let resizeTimeout;
+
+		const handleResize = () => {
+			// Debounce - resize tugagandan keyin ishga tushadi
+			clearTimeout(resizeTimeout);
+			resizeTimeout = setTimeout(() => {
+				recalculateWhiteBoxPosition();
+			}, 150);
+		};
+
+		window.addEventListener('resize', handleResize);
+
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			clearTimeout(resizeTimeout);
+		};
+	}, []);
+
+	// ✅ Route o'zgarganda pozitsiyani yangilash
+	useEffect(() => {
+		// React Router location o'zgarganda
+		const timer = setTimeout(() => {
+			recalculateWhiteBoxPosition();
+		}, 100);
+
+		return () => clearTimeout(timer);
+	}, [window.location.pathname]); // yoki useLocation() hook ishlatish mumkin
+
+	// ✅ Icons localStorage'ga saqlash
 	useEffect(() => {
 		localStorage.setItem("icons", JSON.stringify(selectIcon));
 	}, [selectIcon]);
-
-
 
 
 	// ===== EMPLOYEE POSTS API FUNCTIONS =====
@@ -3380,7 +3401,7 @@ export const AppProvider = ({ children }) => {
 
 
 	// Employee avatarini yangilash funksiyasi
-// Employee avatarini yangilash funksiyasi
+	// Employee avatarini yangilash funksiyasi
 	const updateEmployeeAvatar = async (employeeId, avatarFile) => {
 		try {
 			console.log('=== UPDATE EMPLOYEE AVATAR START ===');
@@ -3505,7 +3526,7 @@ export const AppProvider = ({ children }) => {
 
 	return (
 		<AppContext.Provider value={{
-			t, handleChange, language, sidebarTop,
+			t, handleChange, language,
 			lightImg, darkImg, selectedIcon,
 			selectedElement, setSelectedElement, isRightSidebarOpen,
 			openRightSidebar, closeRightSidebar, selectIcon, handleClick,

@@ -817,3 +817,38 @@ section{
 .confirm-btns button:first-child{
   background-color: #FF0000;
 }
+.sidebar-whitebox {
+  transition: top 300ms ease, left 300ms ease, 
+              height 300ms ease, width 300ms ease !important;
+}
+
+/* Responsive da sidebar elementlari */
+@media screen and (max-width: 1440px) {
+  .sidebar-nav-item {
+    padding: 0.8vw;
+    padding-left: 2vw;
+  }
+  
+  .sidebar-nav-item img {
+    width: 1.2vw;
+  }
+  
+  .sidebar-nav-item p {
+    font-size: 1vw;
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  .sidebar-nav-item {
+    padding: 1vw;
+    padding-left: 2.5vw;
+  }
+  
+  .sidebar-nav-item img {
+    width: 1.5vw;
+  }
+  
+  .sidebar-nav-item p {
+    font-size: 1.2vw;
+  }
+}
