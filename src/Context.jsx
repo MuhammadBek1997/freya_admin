@@ -3117,11 +3117,18 @@ export const AppProvider = ({ children }) => {
 						// Pozitsiyani o'rnatish
 						moveWhiteBoxToElement(sidebarItems[savedIndex], false);
 
-						// Iconlarni yangilash
+						// Iconlarni yangilash - role'ga qarab
 						const updatedIcons = [...darkImg];
 						if (savedIndex !== 0) {
 							updatedIcons[0] = lightImg[0];
-							updatedIcons[savedIndex] = lightImg[savedIndex];
+							
+							// Admin/Employee uchun profile
+							if (user?.role !== 'private_admin' && savedIndex === 3) {
+								// Profile - index 3, lekin icon 4-dan olish
+								updatedIcons[4] = lightImg[4];
+							} else {
+								updatedIcons[savedIndex] = lightImg[savedIndex];
+							}
 						} else {
 							updatedIcons[0] = darkImg[0];
 						}
@@ -3148,7 +3155,7 @@ export const AppProvider = ({ children }) => {
 			clearTimeout(timer2);
 			clearTimeout(timer3);
 		};
-	}, []);
+	}, [user?.role]);
 
 	// ✅ Window resize eventini kuzatish - SHU YERDAN KEYIN
 	useEffect(() => {

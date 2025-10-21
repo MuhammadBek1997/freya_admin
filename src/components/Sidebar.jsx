@@ -145,7 +145,7 @@ const Sidebar = () => {
             src={
               user?.role === 'private_admin' 
                 ? (selectIcon[4]?.img || '/images/settings-dark.png')
-                : (selectIcon[4]?.img || '/images/settings-dark.png')
+                : (selectIcon[3]?.img || '/images/settings-dark.png')
             } 
             alt="" 
           />
