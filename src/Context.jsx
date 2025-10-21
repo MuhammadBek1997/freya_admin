@@ -3103,13 +3103,42 @@ export const AppProvider = ({ children }) => {
 		localStorage.setItem("icons", JSON.stringify(selectIcon));
 	}, [selectIcon]);
 
-	// ✅ Component mount bo'lganda pozitsiyani yuklash - SHU YERGA
+	// ✅ Component mount bo'lganda pozitsiyani yuklash
 	useEffect(() => {
 		const initializeSidebar = () => {
 			const savedIndexString = localStorage.getItem("selectedSidebarIndex");
-			// ... qolgan kod
+
+			if (savedIndexString && whiteBoxRef.current) {
+				try {
+					const savedIndex = parseInt(savedIndexString);
+					const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
+
+					if (sidebarItems[savedIndex]) {
+						// Pozitsiyani o'rnatish
+						moveWhiteBoxToElement(sidebarItems[savedIndex], false);
+
+						// Iconlarni yangilash
+						const updatedIcons = [...darkImg];
+						if (savedIndex !== 0) {
+							updatedIcons[0] = lightImg[0];
+							updatedIcons[savedIndex] = lightImg[savedIndex];
+						} else {
+							updatedIcons[0] = darkImg[0];
+						}
+						setSelectIcon(updatedIcons);
+					} else {
+						setDefaultWhiteBoxPosition();
+					}
+				} catch (error) {
+					console.error('Error parsing saved data:', error);
+					setDefaultWhiteBoxPosition();
+				}
+			} else {
+				setDefaultWhiteBoxPosition();
+			}
 		};
 
+		// Bir necha marta tekshirish (DOM tayyor bo'lguncha)
 		const timer1 = setTimeout(initializeSidebar, 50);
 		const timer2 = setTimeout(initializeSidebar, 150);
 		const timer3 = setTimeout(initializeSidebar, 300);
