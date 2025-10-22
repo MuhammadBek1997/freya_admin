@@ -127,47 +127,47 @@ const Schedule = () => {
 
               return (
                 <button
-                  className='sched-dayList-item'
-                  onClick={() => handleSelectDay(itemArr)}
-                  key={firstItem.id}
-                  style={{
-                    color: selectDay.length > 0 && selectDay[0].id === firstItem.id && (firstItem.dayOfWeek === weekdays[5] || firstItem.dayOfWeek === weekdays[6])
-                      ? 'white'
-                      : selectDay.length > 0 && selectDay[0].id === firstItem.id
-                        ? 'white'
-                        : (firstItem.dayOfWeek === weekdays[5] || firstItem.dayOfWeek === weekdays[6])
-                          ? '#FF0000'
-                          : '#9C2BFF',
-                    backgroundColor: selectDay.length > 0 && selectDay[0].id === firstItem.id && (firstItem.dayOfWeek === weekdays[5] || firstItem.dayOfWeek === weekdays[6])
-                      ? '#FF0000'
-                      : selectDay.length > 0 && selectDay[0].id === firstItem.id
-                        ? '#9C2BFF'
-                        : 'white'
-                  }}
-                >
-                  <div
-                    className='sum-of-orders'
+                    className='sched-dayList-item'
+                    onClick={() => handleSelectDay(itemArr)}
+                    key={firstItem.id}
                     style={{
-                      backgroundColor: selectDay.length > 0 && selectDay[0].id === firstItem.id && (firstItem.dayOfWeek === weekdays[5] || firstItem.dayOfWeek === weekdays[6])
+                      color: selectDay.length > 0 && selectDay[0].id === firstItem.id && (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
                         ? 'white'
-                        : (firstItem.dayOfWeek === weekdays[5] || firstItem.dayOfWeek === weekdays[6])
-                          ? '#FF0000'
-                          : selectDay.length > 0 && selectDay[0].id === firstItem.id ?
-                            "white"
-                            : '#9C2BFF',
-                      color: selectDay.length > 0 && selectDay[0].id === firstItem.id && (firstItem.dayOfWeek === weekdays[5] || firstItem.dayOfWeek === weekdays[6])
-                        ? '#FF0000'
-                        : (firstItem.dayOfWeek === weekdays[5] || firstItem.dayOfWeek === weekdays[6])
+                        : selectDay.length > 0 && selectDay[0].id === firstItem.id
                           ? 'white'
-                          : selectDay.length > 0 && selectDay[0].id === firstItem.id ?
-                            "#9C2BFF"
-                            : 'white'
+                          : (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                            ? '#FF0000'
+                            : '#9C2BFF',
+                      backgroundColor: selectDay.length > 0 && selectDay[0].id === firstItem.id && (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                        ? '#FF0000'
+                        : selectDay.length > 0 && selectDay[0].id === firstItem.id
+                          ? '#9C2BFF'
+                          : 'white'
                     }}
                   >
-                    {itemArr.length}
-                  </div>
-                  {t(firstItem.dayOfWeek)}
-                </button>
+                    <div
+                      className='sum-of-orders'
+                      style={{
+                        backgroundColor: selectDay.length > 0 && selectDay[0].id === firstItem.id && (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                          ? 'white'
+                          : (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                            ? '#FF0000'
+                            : selectDay.length > 0 && selectDay[0].id === firstItem.id ?
+                              "white"
+                              : '#9C2BFF',
+                        color: selectDay.length > 0 && selectDay[0].id === firstItem.id && (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                          ? '#FF0000'
+                          : (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                            ? 'white'
+                            : selectDay.length > 0 && selectDay[0].id === firstItem.id ?
+                              "#9C2BFF"
+                              : 'white'
+                      }}
+                    >
+                      {itemArr.length}
+                    </div>
+                    {t(firstItem.dayOfWeek)}
+                  </button>
               )
             })}
           </div>

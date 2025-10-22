@@ -3128,7 +3128,8 @@ export const AppProvider = ({ children }) => {
 							
 							// Admin/Employee uchun profile
 							if (user?.role !== 'private_admin' && savedIndex === 3) {
-								// Profile - index 3, lekin icon 4-dan olish
+								// Profile - index 3 va settings - index 4 lighten
+								updatedIcons[3] = lightImg[3];
 								updatedIcons[4] = lightImg[4];
 							} else {
 								updatedIcons[savedIndex] = lightImg[savedIndex];

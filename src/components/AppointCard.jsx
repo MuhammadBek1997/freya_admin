@@ -86,6 +86,33 @@ const AppointCard = (props) => {
         return null;
     })();
 
+    // Derive employee profession (kasbi)
+    const masterProfession = (() => {
+        if (employee_id) {
+            const emp = employees?.find(e => String(e.id) === String(employee_id));
+            if (emp) {
+                return emp.profession || emp.spec || null;
+            }
+        }
+        return null;
+    })();
+
+    // Map profession to color (same logic as EmployeeCard)
+    let employeeColor;
+    if (masterProfession === "Стилист" || masterProfession === "Stilist" || masterProfession === "Stylist") {
+        employeeColor = "#CA940099";
+    } else if (masterProfession === "Косметолог" || masterProfession === "Kosmetolog" || masterProfession === "Cosmetologist") {
+        employeeColor = "#00CA1E99";
+    } else if (masterProfession === "Визажист" || masterProfession === "Visualist" || masterProfession === "Visualizer") {
+        employeeColor = "#1E00CA99";
+    } else if (masterProfession === "Бровист" || masterProfession === "Eyebrowist" || masterProfession === "Eyebrowist") {
+        employeeColor = "#CA940099";
+    } else if (masterProfession === "Лэшмейкер" || masterProfession === "Lashmaker" || masterProfession === "Lashmaker") {
+        employeeColor = "#CA009899";
+    } else if (masterProfession === "Массажист" || masterProfession === "Massageist" || masterProfession === "Massageist") {
+        employeeColor = "#CA000099";
+    }
+
     return (
         <div onClick={() => handleCardClick()} className='appoint-card'>
             <div className='appoint-card-customer' style={{
@@ -127,9 +154,9 @@ const AppointCard = (props) => {
                             <p>
                                 {masterName ? masterName.split(" ").at(0) : t('notAvailable')}
                             </p>
-                        <div className='appoint-card-masterJob'>
+                        <div className='appoint-card-masterJob' style={{ backgroundColor: employeeColor }}>
                             <p>
-                                {type === 'appointment' ? service_name : t('appointmentTypeBooking')}
+                                {masterProfession || t('notAvailable')}
                             </p>
                         </div>
                     </div>
