@@ -1961,42 +1961,76 @@ export const AppProvider = ({ children }) => {
 
 	// Fetch messages for employee - URL ni o'zgartirish
 	const fetchMessages = async (userId) => {
-		if (!user || user.role !== 'employee') {
-			console.error('Only employees can fetch messages');
-			return;
-		}
+  // ✅ userId tekshirish
+  if (!userId) {
+    console.error('❌ fetchMessages: userId is required');
+    setMessagesError('User ID topilmadi');
+    return;
+  }
 
-		setMessagesLoading(true);
-		setMessagesError(null);
+  if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin')) {
+    console.error('Only employees and admins can fetch messages');
+    return;
+  }
 
-		try {
-			const token = getAuthToken();
-			// ✅ Employee uchun alohida endpoint
-			const response = await fetch(`${messagesUrl}/employee/conversation/${userId}`, {
-				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
+  setMessagesLoading(true);
+  setMessagesError(null);
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Messages fetched:', data);
-				setMessages(data.data?.messages || data || []);
-				setCurrentConversation(userId);
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to fetch messages');
-			}
-		} catch (error) {
-			console.error('Error fetching messages:', error);
-			setMessagesError(error.message);
-			setMessages([]);
-		} finally {
-			setMessagesLoading(false);
-		}
-	};
+  try {
+    const token = getAuthToken();
+    
+    console.log('📤 Fetching messages for user:', userId);
+    
+    const response = await fetch(`${messagesUrl}/employee/conversation/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('📥 Messages response status:', response.status);
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Messages fetched:', data);
+      
+      const messagesList = data.data?.messages || data.messages || data.data || data || [];
+      console.log('📊 Messages list length:', messagesList.length);
+      
+      setMessages(messagesList);
+      setCurrentConversation(userId);
+    } else {
+      const contentType = response.headers.get('content-type');
+      let errorMessage = `HTTP ${response.status}`;
+
+      if (contentType?.includes('application/json')) {
+        const errorData = await response.json();
+        console.error('❌ Error response:', errorData);
+        
+        if (Array.isArray(errorData?.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || JSON.stringify(err)).join(', ');
+        } else if (typeof errorData?.detail === 'string') {
+          errorMessage = errorData.detail;
+        } else {
+          errorMessage = errorData?.message || errorData?.error || errorMessage;
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Error text:', errorText);
+        errorMessage = errorText || errorMessage;
+      }
+
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    console.error('❌ Error fetching messages:', error);
+    setMessagesError(error.message);
+    setMessages([]);
+  } finally {
+    setMessagesLoading(false);
+  }
+};
 
 	// Send message from employee - URL ni o'zgartirish
 	const sendMessage = async (receiverId, messageText, messageType = 'text') => {
@@ -2053,44 +2087,76 @@ export const AppProvider = ({ children }) => {
 
 	// Mark conversation as read for employee - URL ni o'zgartirish
 	const markConversationAsRead = async (userId) => {
-		if (!user || user.role !== 'employee') {
-			console.error('Only employees can mark conversation as read');
-			return;
-		}
+  // ✅ userId tekshirish
+  if (!userId) {
+    console.error('❌ markConversationAsRead: userId is required');
+    return;
+  }
 
-		try {
-			const token = getAuthToken();
-			// ✅ Employee uchun alohida endpoint
-			const response = await fetch(`${messagesUrl}/employee/conversation/${userId}/mark-read`, {
-				method: 'PUT',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
+  if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin')) {
+    console.error('Only employees and admins can mark conversation as read');
+    return;
+  }
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Conversation marked as read:', data);
+  try {
+    const token = getAuthToken();
+    
+    console.log('📤 Marking conversation as read for user:', userId);
+    
+    const response = await fetch(`${messagesUrl}/employee/conversation/${userId}/mark-read`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-				setConversations(prevConversations =>
-					prevConversations.map(conv =>
-						conv.participant?.id === userId
-							? { ...conv, unread_count: 0 }
-							: conv
-					)
-				);
+    console.log('📥 Mark read response status:', response.status);
 
-				return data;
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to mark conversation as read');
-			}
-		} catch (error) {
-			console.error('Error marking conversation as read:', error);
-			throw error;
-		}
-	};
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Conversation marked as read:', data);
+
+      // ✅ Conversations ro'yxatini yangilash
+      setConversations(prevConversations =>
+        prevConversations.map(conv => {
+          const convUserId = conv.other_user_id || conv.user_id || conv.id;
+          return convUserId === userId
+            ? { ...conv, unread_count: 0 }
+            : conv;
+        })
+      );
+
+      return data;
+    } else {
+      const contentType = response.headers.get('content-type');
+      let errorMessage = `HTTP ${response.status}`;
+
+      if (contentType?.includes('application/json')) {
+        const errorData = await response.json();
+        console.error('❌ Error response:', errorData);
+        
+        if (typeof errorData?.detail === 'string') {
+          errorMessage = errorData.detail;
+        } else {
+          errorMessage = errorData?.message || errorData?.error || errorMessage;
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Error text:', errorText);
+        errorMessage = errorText || errorMessage;
+      }
+
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    console.error('❌ Error marking conversation as read:', error);
+    // ✅ Xatolikni throw qilmaslik - faqat log
+    // throw error;
+  }
+};
+
+
 	// Get unread messages count
 	const getUnreadCount = async () => {
 		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
