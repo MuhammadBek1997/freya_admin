@@ -1921,43 +1921,89 @@ export const AppProvider = ({ children }) => {
 		}
 	};
 	// ===== CHAT API FUNCTIONS =====
-	// Fetch conversations for employee - URL ni o'zgartirish
-	const fetchConversations = async () => {
-		if (!user || user.role !== 'employee') {
-			console.error('Only employees can fetch conversations');
-			return;
-		}
+	// ===== CHAT API FUNCTIONS =====
+// Fetch conversations for employee - URL ni o'zgartirish
+const fetchConversations = async () => {
+	if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin')) {
+		console.error('Only employees and admins can fetch conversations');
+		return;
+	}
 
-		setConversationsLoading(true);
-		setConversationsError(null);
+	setConversationsLoading(true);
+	setConversationsError(null);
 
-		try {
-			const token = getAuthToken();
-			// ✅ Employee uchun alohida endpoint
-			const response = await fetch(`${messagesUrl}/employee/conversations`, {
-				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
+	try {
+		const token = getAuthToken();
+		console.log('📤 Fetching conversations for user:', user.id, 'Role:', user.role);
+		
+		// ✅ Employee va Admin uchun alohida endpoint
+		const response = await fetch(`${messagesUrl}/employee/conversations`, {
+			method: 'GET',
+			headers: {
+				'Authorization': `Bearer ${token}`,
+				'Content-Type': 'application/json',
+			},
+		});
+
+		console.log('📥 Conversations response status:', response.status);
+
+		if (response.ok) {
+			const data = await response.json();
+			console.log('✅ Conversations fetched:', data);
+			
+			// Backend dan kelgan ma'lumotlarni normalize qilish
+			const conversationsList = data.data || data || [];
+			
+			// ✅ participant obyektidan ma'lumotlarni olish
+			const normalizedConversations = conversationsList.map(conv => {
+				const participant = conv.participant || {};
+				
+				return {
+					...conv,
+					// participant dan ma'lumotlarni olish
+					other_user_id: participant.id || conv.other_user_id || conv.user_id || conv.id,
+					other_user_name: participant.name || conv.other_user_name || conv.user_name || conv.name || 'Unknown User',
+					other_user_avatar: participant.avatar_url || conv.user_avatar_url || conv.other_user_avatar || conv.user_avatar || conv.avatar || null,
+					// Qo'shimcha ma'lumotlar
+					chat_id: conv.chat_id,
+					chat_type: conv.chat_type,
+					last_message: conv.last_message || '',
+					last_message_time: conv.last_message_time || null,
+					unread_count: conv.unread_count || 0
+				};
 			});
+			
+			console.log('📊 Normalized conversations:', normalizedConversations);
+			setConversations(normalizedConversations);
+		} else {
+			const contentType = response.headers.get('content-type');
+			let errorMessage = `HTTP ${response.status}`;
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Conversations fetched:', data);
-				setConversations(data.data || data || []);
-			} else {
+			if (contentType?.includes('application/json')) {
 				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to fetch conversations');
+				console.error('❌ Error response:', errorData);
+				
+				if (typeof errorData?.detail === 'string') {
+					errorMessage = errorData.detail;
+				} else {
+					errorMessage = errorData?.message || errorData?.error || errorMessage;
+				}
+			} else {
+				const errorText = await response.text();
+				console.error('❌ Error text:', errorText);
+				errorMessage = errorText || errorMessage;
 			}
-		} catch (error) {
-			console.error('Error fetching conversations:', error);
-			setConversationsError(error.message);
-			setConversations([]);
-		} finally {
-			setConversationsLoading(false);
+
+			throw new Error(errorMessage);
 		}
-	};
+	} catch (error) {
+		console.error('❌ Error fetching conversations:', error);
+		setConversationsError(error.message);
+		setConversations([]);
+	} finally {
+		setConversationsLoading(false);
+	}
+};
 
 	// Fetch messages for employee - URL ni o'zgartirish
 	const fetchMessages = async (userId) => {
