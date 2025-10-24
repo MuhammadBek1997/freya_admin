@@ -3474,7 +3474,6 @@ export const AppProvider = ({ children }) => {
 
 
 	// Employee avatarini yangilash funksiyasi
-	// Employee avatarini yangilash funksiyasi
 	const updateEmployeeAvatar = async (employeeId, avatarFile) => {
 		try {
 			console.log('=== UPDATE EMPLOYEE AVATAR START ===');
@@ -3498,38 +3497,42 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Rasm hajmi 5MB dan oshmasligi kerak');
 			}
 
-			// FormData yaratish
-			const formData = new FormData();
-			formData.append('file', avatarFile);
+			// 1️⃣ BIRINCHI: Rasmni uploadPhotosToServer orqali yuklash
+			console.log('📤 Step 1: Uploading avatar file...');
+			const uploadedUrls = await uploadPhotosToServer([avatarFile]);
 
-			console.log('📤 Uploading avatar for employee:', employeeId);
-			console.log('📤 File info:', {
-				name: avatarFile.name,
-				type: avatarFile.type,
-				size: avatarFile.size
+			if (!uploadedUrls || uploadedUrls.length === 0) {
+				throw new Error('Rasm yuklashda xatolik yuz berdi');
+			}
+
+			const avatarUrl = uploadedUrls[0];
+			console.log('✅ Avatar uploaded successfully:', avatarUrl);
+
+			// 2️⃣ IKKINCHI: Employee ma'lumotlarini yangilash (avatar_url ga saqlash)
+			console.log('📤 Step 2: Updating employee data with avatar URL...');
+			const updateData = {
+				avatar_url: avatarUrl,
+				avatar: avatarUrl,
+				profile_image: avatarUrl
+			};
+
+			const updateResponse = await fetch(`${employeesUrl}/${employeeId}`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(updateData),
 			});
 
-			// Avatar yuklash - PUT method bilan
-			const response = await fetch(
-				`${API_BASE_URL}/employees/me/avatar`,
-				{
-					method: 'PUT',
-					headers: {
-						'Authorization': `Bearer ${token}`,
-						// ❗ FormData ishlatganda Content-Type ni qo'shmaslik kerak
-					},
-					body: formData
-				}
-			);
+			console.log('📥 Update response status:', updateResponse.status);
 
-			console.log('📥 Response status:', response.status);
-
-			if (!response.ok) {
-				let errorMessage = `HTTP ${response.status}`;
-				const contentType = response.headers.get('content-type');
+			if (!updateResponse.ok) {
+				let errorMessage = `HTTP ${updateResponse.status}`;
+				const contentType = updateResponse.headers.get('content-type');
 
 				if (contentType?.includes('application/json')) {
-					const errorData = await response.json();
+					const errorData = await updateResponse.json();
 					console.error('❌ Error response:', errorData);
 
 					if (Array.isArray(errorData?.detail)) {
@@ -3543,7 +3546,7 @@ export const AppProvider = ({ children }) => {
 						errorMessage = errorData?.message || errorData?.error || errorMessage;
 					}
 				} else {
-					const errorText = await response.text();
+					const errorText = await updateResponse.text();
 					console.error('❌ Error text:', errorText);
 					errorMessage = errorText || errorMessage;
 				}
@@ -3551,27 +3554,23 @@ export const AppProvider = ({ children }) => {
 				throw new Error(errorMessage);
 			}
 
-			const data = await response.json();
-			console.log('✅ Avatar uploaded successfully:', data);
+			const updatedData = await updateResponse.json();
+			console.log('✅ Employee updated successfully:', updatedData);
 
-			// Avatar URL ni olish
-			const avatarUrl = data?.data?.avatar || data?.avatar || data?.url;
-
-			if (!avatarUrl) {
-				throw new Error('Backend dan avatar URL qaytmadi');
-			}
-
+			// 3️⃣ UCHINCHI: Local state'ni yangilash
 			// User state ni yangilash (agar current user o'zi bo'lsa)
 			if (user && (user.id === employeeId || user.employee_id === employeeId)) {
 				setUser(prev => ({
 					...prev,
 					avatar: avatarUrl,
+					avatar_url: avatarUrl,
 					profile_image: avatarUrl
 				}));
 
 				// LocalStorage ni ham yangilash
 				const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 				userData.avatar = avatarUrl;
+				userData.avatar_url = avatarUrl;
 				userData.profile_image = avatarUrl;
 				localStorage.setItem('userData', JSON.stringify(userData));
 			}
@@ -3580,12 +3579,17 @@ export const AppProvider = ({ children }) => {
 			setEmployees(prev =>
 				prev.map(emp =>
 					(emp.id === employeeId || emp.employee_id === employeeId)
-						? { ...emp, avatar: avatarUrl, profile_image: avatarUrl }
+						? { 
+							...emp, 
+							avatar: avatarUrl, 
+							avatar_url: avatarUrl,
+							profile_image: avatarUrl 
+						}
 						: emp
 				)
 			);
 
-			console.log('✅ Employee avatar updated:', avatarUrl);
+			console.log('✅ Employee avatar fully updated:', avatarUrl);
 			return avatarUrl;
 
 		} catch (error) {
