@@ -677,11 +677,7 @@ const EmployeeChatPage = () => {
                           } else if (date.toDateString() === yesterday.toDateString()) {
                             return t('yesterday') || 'Kecha';
                           } else {
-                            return date.toLocaleDateString('uz-UZ', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
-                            });
+                            return date;
                           }
                         };
 
