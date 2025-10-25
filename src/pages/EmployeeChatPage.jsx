@@ -297,57 +297,57 @@ const EmployeeChatPage = () => {
     const list = data?.data || data || [];
     setEmployeePosts(list);
   };
-// Avatar upload state
-const [avatarUploading, setAvatarUploading] = useState(false);
-const [avatarError, setAvatarError] = useState(null);
-const fileInputRef = useRef(null);
+  // Avatar upload state
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState(null);
+  const fileInputRef = useRef(null);
 
-// Avatar yuklash funksiyasi - TO'G'RILANGAN
-const handleAvatarUpload = async (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
+  // Avatar yuklash funksiyasi - TO'G'RILANGAN
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  // Fayl validatsiyasi
-  if (!file.type?.startsWith('image/')) {
-    alert('Faqat rasm fayllarini yuklash mumkin');
-    return;
-  }
-
-  const maxSize = 5 * 1024 * 1024; // 5MB
-  if (file.size > maxSize) {
-    alert('Rasm hajmi 5MB dan oshmasligi kerak');
-    return;
-  }
-
-  setAvatarUploading(true);
-  setAvatarError(null);
-
-  try {
-    const employeeId = user?.id || user?.employee_id;
-    
-    // ✅ Faqat updateEmployeeAvatar chaqiriladi
-    const avatarUrl = await updateEmployeeAvatar(employeeId, file);
-    
-    console.log('✅ Avatar muvaffaqiyatli yangilandi:', avatarUrl);
-
-  } catch (error) {
-    console.error('Avatar yuklashda xatolik:', error);
-    setAvatarError(error.message);
-    alert(error.message);
-  } finally {
-    setAvatarUploading(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    // Fayl validatsiyasi
+    if (!file.type?.startsWith('image/')) {
+      alert('Faqat rasm fayllarini yuklash mumkin');
+      return;
     }
-  }
-};
 
-// Avatar click handler
-const handleAvatarClick = () => {
-  if (fileInputRef.current) {
-    fileInputRef.current.click();
-  }
-};
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      alert('Rasm hajmi 5MB dan oshmasligi kerak');
+      return;
+    }
+
+    setAvatarUploading(true);
+    setAvatarError(null);
+
+    try {
+      const employeeId = user?.id || user?.employee_id;
+
+      // ✅ Faqat updateEmployeeAvatar chaqiriladi
+      const avatarUrl = await updateEmployeeAvatar(employeeId, file);
+
+      console.log('✅ Avatar muvaffaqiyatli yangilandi:', avatarUrl);
+
+    } catch (error) {
+      console.error('Avatar yuklashda xatolik:', error);
+      setAvatarError(error.message);
+      alert(error.message);
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Avatar click handler
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
   return (
     <div>
@@ -508,55 +508,63 @@ const handleAvatarClick = () => {
                 <h3 className="chat-section-title">
                   {t('conversations') || 'Suhbatlar'} ({conversations.length})
                 </h3>
-                {conversations.map((conversation, index) => (
-                  <div
-                    key={conversation.other_user_id || index}
-                    className={`chat-item ${selectedUser?.id === conversation.other_user_id ? 'selected' : ''}`}
-                    onClick={() => handleSelectConversation(
-                      conversation.other_user_id,
-                      conversation.other_user_name,
-                      conversation.other_user_avatar
-                    )}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="chat-avatar-wrapper">
-                      <img
-                        className="chat-avatar"
-                        src={conversation.other_user_avatar || "ChatAvatar.svg"}
-                        alt={conversation.other_user_name || "User"}
-                      />
-                      {conversation.unread_count > 0 && <span className="unread-dot"></span>}
-                    </div>
-                    <div className="chat-info">
-                      <span className="chat-info-logo">
+                {conversations.map((conversation, index) => {
+                  // ✅ Yangi API strukturasiga mos ravishda ma'lumotlarni olish
+                  const participant = conversation.participant || {};
+                  const userId = participant.id || conversation.other_user_id || conversation.userId;
+                  const userName = participant.name || conversation.other_user_name || conversation.userName || 'Unknown User';
+                  const userAvatar = participant.avatar_url || conversation.other_user_avatar || conversation.user_avatar_url || conversation.avatar || "ChatAvatar.svg";
+
+                  // ✅ userId yo'q bo'lsa, konsolga ogohlantirish va skip qilish
+                  if (!userId) {
+                    console.warn('⚠️ Conversation without userId:', conversation);
+                    return null;
+                  }
+
+                  return (
+                    <div
+                      key={userId}
+                      className={`chat-item ${selectedUser?.id === userId ? 'selected' : ''}`}
+                      onClick={() => handleSelectConversation(userId, userName, userAvatar)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="chat-avatar-wrapper">
                         <img
-                          className="chat-info-logo-img"
-                          src={conversation.other_user_avatar || "ChatAvatar.svg"}
-                          alt={conversation.other_user_name || "User"}
+                          className="chat-avatar"
+                          src={userAvatar}
+                          alt={userName}
                         />
-                        <p className="chat-name">
-                          {conversation.other_user_name || `User ${conversation.other_user_id}`}
+                        {conversation.unread_count > 0 && <span className="unread-dot"></span>}
+                      </div>
+                      <div className="chat-info">
+                        <span className="chat-info-logo">
+                          <img
+                            className="chat-info-logo-img"
+                            src={userAvatar}
+                            alt={userName}
+                          />
+                          <p className="chat-name">{userName}</p>
+                        </span>
+                        <p className="chat-msg">
+                          {conversation.last_message || t('noMessage') || 'Xabar yo\'q'}
                         </p>
-                      </span>
-                      <p className="chat-msg">
-                        {conversation.last_message || t('noMessage') || 'Xabar yo\'q'}
-                      </p>
+                      </div>
+                      <div className="chat-header-info">
+                        {conversation.unread_count > 0 && (
+                          <span className="chat-badge">{conversation.unread_count}</span>
+                        )}
+                        <span className="chat-time">
+                          {conversation.last_message_time ?
+                            new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) : ''
+                          }
+                        </span>
+                      </div>
                     </div>
-                    <div className="chat-header-info">
-                      {conversation.unread_count > 0 && (
-                        <span className="chat-badge">{conversation.unread_count}</span>
-                      )}
-                      <span className="chat-time">
-                        {conversation.last_message_time ?
-                          new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          }) : ''
-                        }
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </>
             )}
           </div>
@@ -1148,3 +1156,5 @@ const handleAvatarClick = () => {
 };
 
 export default EmployeeChatPage;
+
+
