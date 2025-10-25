@@ -360,57 +360,44 @@ const EmployeeChatPage = () => {
           <div className="chatSidebar-top">
             <img className="chatSidebarLogo" src="sidebarLogo.svg" alt="Logo" />
 
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-              <img
-                src={user?.avatar || user?.profile_image || user?.avatar_url || user?.photo || "Avatar.svg"}
-                alt="User"
-                className="profile-avatar"
-              />
-              <button
-                onClick={handleAvatarClick}
-                disabled={avatarUploading}
-                title={avatarUploading ? (t('uploading') || 'Yuklanmoqda...') : (t('changePhoto') || 'Rasmni almashtirish')}
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  background: '#9C2BFF',
-                  color: '#FFF',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '28px',
-                  height: '28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: avatarUploading ? 'not-allowed' : 'pointer',
-                  opacity: avatarUploading ? 0.7 : 1
-                }}
-              >
-                ✎
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                style={{ display: 'none' }}
-              />
-            </div>
+            <div className="avatar-logout-wrapper">
+              <div className="avatar-wrapper">
+                <img
+                  src={user?.avatar || user?.profile_image || user?.avatar_url || user?.photo || "Avatar.svg"}
+                  alt="User"
+                  className="profile-avatar"
+                />
+                <button
+                  className="avatar-edit-btn"
+                  onClick={handleAvatarClick}
+                  disabled={avatarUploading}
+                  title={avatarUploading ? (t('uploading') || 'Yuklanmoqda...') : (t('changePhoto') || 'Rasmni almashtirish')}
+                >
+                  ✎
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  style={{ display: 'none' }}
+                />
+              </div>
 
-            {user.role !== 'private_admin' && (
-              <button
-                style={{ marginLeft: "15%" }}
-                onClick={() => {
-                  localStorage.removeItem('authToken');
-                  localStorage.removeItem('userData');
-                  localStorage.removeItem('whiteBoxPos');
-                  window.location.href = '/login';
-                }}
-              >
-                <img src="/images/exit.png" alt="" style={{ width: "3vw" }} />
-              </button>
-            )}
+              {user.role !== 'private_admin' && (
+                <button
+                  className="logout-btn"
+                  onClick={() => {
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('userData');
+                    localStorage.removeItem('whiteBoxPos');
+                    window.location.href = '/login';
+                  }}
+                >
+                  <img src="/images/exit.png" alt="" className="logout-img" />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="chat-profile-card">
