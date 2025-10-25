@@ -43,7 +43,6 @@ body {
   cursor: pointer;
   font-size: 24px;
 }
-
 @media screen and (max-width: 768px) {
   .back-button {
     display: flex;
@@ -75,13 +74,29 @@ body {
 .chatSidebar-top {
   width: 100%;
   display: flex;
+  align-items: center;
   gap: 0.8vw;
   padding: 1.4vh 1.0vw;
   background-color: #8d2afd;
   flex-shrink: 0;
   box-sizing: border-box;
 }
-
+.avatar-logout-wrapper{
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.avatar-wrapper{
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.avatar-wrapper button{
+  width: 3rem;
+  height: 2rem;
+  background-color: #8c4eff;
+  border-radius: 30vw;
+}
 .chat-profile-card {
   background-color: #8d2afd;
   text-align: center;
@@ -96,7 +111,7 @@ body {
 }
 
 .profile-avatar {
-  width: 5.2vw;
+  width: 4vw;
   border-radius: 50%;
   object-fit: cover;
   margin-left: 20%;
@@ -186,6 +201,10 @@ body {
   font-size: 0.7vw;
   font-weight: 400;
   opacity: 0.8;
+}
+
+.logout-btn img{
+  width: 3rem;
 }
 
 /* CHAT LIST STYLES */
@@ -735,7 +754,7 @@ body {
   }
 
   .profile-avatar {
-    width: 6vw;
+    width: 4vw;
   }
 
   .chat-profile-name {
@@ -751,8 +770,12 @@ body {
 @media (max-width: 1024px) and (min-width: 769px) {
   .chatSidebar {
     width: 30vw;
+    justify-content: space-between;
+    
   }
-
+  .avatar-logout-wrapper{
+    justify-content: space-between;
+  }
   .chat-window,
   .chat-posts,
   .chat-comments {
@@ -760,7 +783,7 @@ body {
   }
 
   .profile-avatar {
-    width: 7vw;
+    width: 5vw;
   }
 
   .chat-profile-name {
@@ -845,7 +868,6 @@ body {
     min-height: 100vh !important;
   }
   .chatSidebar-top {
-    padding: 2vh 2vw;
     gap: 1.5vw;
   }
 
@@ -854,8 +876,8 @@ body {
   }
 
   .profile-avatar {
-    width: 10vw;
-    height: 10vw;
+    width: 7vw;
+    height: 7vw;
   }
 
   .chat-profile-name {
@@ -1024,10 +1046,14 @@ body {
   }
 
   .chatSidebar-top {
-    padding: 3vh 4vw;
+    padding: 1vh 0;
     gap: 3vw;
+    justify-content: space-between;
   }
-
+  .avatar-logout-wrapper{
+    width: 60%;
+    justify-content: space-between;
+  }
   .chatSidebarLogo {
     width: 15vw;
   }
