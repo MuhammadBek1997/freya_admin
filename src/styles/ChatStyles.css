@@ -841,7 +841,9 @@ body {
   .chat-comments {
     padding-left: 35vw;
   }
-  
+  .chat-window{
+    min-height: 100vh !important;
+  }
   .chatSidebar-top {
     padding: 2vh 2vw;
     gap: 1.5vw;
