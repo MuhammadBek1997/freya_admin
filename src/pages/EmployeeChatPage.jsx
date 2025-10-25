@@ -48,6 +48,8 @@ const EmployeeChatPage = () => {
   // ✅ Post modal state
   const [isAddPostModalOpen, setIsAddPostModalOpen] = useState(false);
 
+
+
   useEffect(() => {
     const loadPosts = async () => {
       if (!user) return;
@@ -183,6 +185,9 @@ const EmployeeChatPage = () => {
     handleChangeEmployeePage('chat');
     setSelectedUser({ id: userId, name: userName, avatar: userAvatar });
 
+    // ✅ SHU QATORNI QO'SHING
+    setIsMobileChatOpen(true);
+
     try {
       await fetchMessages(userId);
       await markConversationAsRead(userId);
@@ -301,6 +306,11 @@ const EmployeeChatPage = () => {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
   const fileInputRef = useRef(null);
+  // ✅ SHU FUNKSIYANI QO'SHING
+  const handleMobileBack = () => {
+    setIsMobileChatOpen(false);
+    setSelectedUser(null);
+  };
 
   // Avatar yuklash funksiyasi - TO'G'RILANGAN
   const handleAvatarUpload = async (event) => {
@@ -351,7 +361,8 @@ const EmployeeChatPage = () => {
 
   return (
     <div>
-      <div className="chat-container" style={user.role === 'private_admin' ? { flexDirection: "row-reverse" } : {}}>
+      {/* ✅ SHU JOYNI O'ZGARTIRING */}
+      <div className={`chat-container ${isMobileChatOpen ? 'chat-open' : ''}`} style={user.role === 'private_admin' ? { flexDirection: "row-reverse" } : {}}>
         <aside className="chatSidebar">
           <div className="chatSidebar-top">
             <img className="chatSidebarLogo" src="sidebarLogo.svg" alt="Logo" />
@@ -571,6 +582,28 @@ const EmployeeChatPage = () => {
             {selectedUser ? (
               <>
                 <div className="chat-header">
+                  {/* ✅ SHU TUGMANI QO'SHING */}
+                  <button
+                    className="mobile-back-button"
+                    onClick={handleMobileBack}
+                    style={{
+                      display: 'none',
+                      position: 'absolute',
+                      left: '4vw',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '1vh',
+                      zIndex: 10
+                    }}
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                      <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                    </svg>
+                  </button>
+
                   <div className="chat-partner-info">
                     <div className="avatar-container">
                       <img

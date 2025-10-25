@@ -1421,3 +1421,680 @@ header{
     width: 0.5vw;
   }
 }
+
+/* RESPONSIVE DESIGN */
+
+/* Tablet landscape (1024px - 1366px) */
+@media (max-width: 1366px) and (min-width: 1025px) {
+  .chatSidebar {
+    width: 25vw;
+  }
+  
+  .chat-window {
+    padding-left: 25vw;
+  }
+  
+  .profile-avatar {
+    width: 6vw;
+  }
+  
+  .chat-profile-name {
+    font-size: 1.1vw;
+  }
+  
+  .chat-header-name {
+    font-size: 1.8vw;
+  }
+}
+
+/* Tablet portrait (768px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .chatSidebar {
+    width: 30vw;
+  }
+  
+  .chat-window {
+    padding-left: 30vw;
+  }
+  
+  .profile-avatar {
+    width: 7vw;
+  }
+  
+  .chat-profile-name {
+    font-size: 1.3vw;
+  }
+  
+  .chat-profile-role {
+    font-size: 0.7vw;
+  }
+  
+  .profile-btn {
+    font-size: 0.9vw;
+    padding: 1.2vh 1vw;
+  }
+  
+  .chat-stats-number {
+    font-size: 2.5vw;
+  }
+  
+  .chat-stats-label {
+    font-size: 0.9vw;
+  }
+  
+  .chat-avatar {
+    width: 4.5vw;
+  }
+  
+  .chat-name {
+    font-size: 1.2vw;
+  }
+  
+  .chat-msg {
+    font-size: 1vw;
+  }
+  
+  .chat-header-avatar {
+    width: 4vw;
+  }
+  
+  .chat-header-name {
+    font-size: 2vw;
+  }
+  
+  .message-receive-text,
+  .message-send-text {
+    font-size: 1vw;
+  }
+  
+  .employee-header {
+    left: 30vw;
+    width: 70vw;
+    font-size: 1.8vw;
+  }
+  
+  .posts-body {
+    padding-left: 30vw;
+    margin-left: 5vw;
+  }
+  
+  .comments-body {
+    margin-left: 31vw;
+    width: 69vw;
+  }
+}
+
+/* Mobile Landscape (481px - 768px) - back button hidden */
+@media (max-width: 768px) and (min-width: 481px) {
+  .mobile-back-button {
+    display: none !important;
+  }
+  
+  .chat-partner-info {
+    margin-left: 0 !important;
+  }
+}
+  .chat-container {
+    flex-direction: row;
+  }
+  
+  .chatSidebar {
+    width: 35vw;
+    font-size: 1.8vw;
+  }
+  
+  .chat-window {
+    padding-left: 35vw;
+  }
+  
+  .chatSidebar-top {
+    padding: 2vh 2vw;
+    gap: 1.5vw;
+  }
+  
+  .chatSidebarLogo {
+    width: 8vw;
+  }
+  
+  .profile-avatar {
+    width: 10vw;
+    height: 10vw;
+  }
+  
+  .chat-profile-name {
+    font-size: 2vw;
+  }
+  
+  .chat-profile-role {
+    font-size: 1.2vw;
+    padding: 0.5vh 1vw;
+  }
+  
+  .profile-btn {
+    font-size: 1.4vw;
+    padding: 1.5vh 1.5vw;
+    border-radius: 2vw;
+  }
+  
+  .profile-btn-icon {
+    width: 2vw;
+    height: 2vh;
+  }
+  
+  .chat-stats-number {
+    font-size: 3.5vw;
+  }
+  
+  .chat-stats-label {
+    font-size: 1.3vw;
+  }
+  
+  .chat-section-title {
+    font-size: 1.2vw;
+  }
+  
+  .chat-avatar {
+    width: 6vw;
+    height: 6vw;
+  }
+  
+  .chat-name {
+    font-size: 1.6vw;
+  }
+  
+  .chat-msg {
+    font-size: 1.3vw;
+  }
+  
+  .chat-time {
+    font-size: 1vw;
+  }
+  
+  .chat-badge {
+    font-size: 1.1vw;
+    padding: 0.5vh 1vw;
+    min-width: 2.5vw;
+  }
+  
+  .chat-header {
+    padding: 2vh 4vw;
+    position: relative;
+  }
+  
+  /* Mobile back button */
+  .mobile-back-button {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 10vw;
+    height: 10vw;
+  }
+  
+  .mobile-back-button svg {
+    width: 6vw;
+    height: 6vw;
+  }
+  
+  .chat-partner-info {
+    margin-left: 12vw;
+  }
+  
+  .chat-header-avatar {
+    width: 6vw;
+    height: 6vw;
+    margin-right: 3vw;
+  }
+  
+  .chat-header-name {
+    font-size: 2.5vw;
+  }
+  
+  .chat-header-status {
+    font-size: 1.2vw;
+  }
+  
+  .online-status {
+    width: 1vw;
+    height: 1vw;
+  }
+  
+  .message {
+    max-width: 45vw;
+  }
+  
+  .message-receive-text,
+  .message-send-text {
+    font-size: 1.5vw;
+  }
+  
+  .message-time,
+  .message-time-sent {
+    font-size: 1.1vw;
+  }
+  
+  .chat-input input {
+    font-size: 1.3vw;
+  }
+  
+  .message-pdf {
+    width: 4vw;
+    height: 4vw;
+  }
+  
+  .send-button {
+    width: 4vw;
+    height: 4vw;
+  }
+  
+  .employee-header {
+    left: 35vw;
+    width: 65vw;
+    font-size: 2.5vw;
+    height: 8vh;
+  }
+  
+  .posts-body {
+    padding-left: 35vw;
+    margin-left: 3vw;
+  }
+  
+  .schedule-cont {
+    width: 50vw;
+    left: 25%;
+  }
+}
+
+/* Mobile portrait (320px - 480px) */
+@media (max-width: 480px) {
+  .chat-container {
+    flex-direction: column;
+    position: relative;
+  }
+  
+  .chatSidebar {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: transform 0.3s ease;
+    z-index: 100;
+  }
+  
+  /* Sidebar hidden when chat is open */
+  .chat-container.chat-open .chatSidebar {
+    transform: translateX(-100vw);
+  }
+  
+  .chat-window {
+    padding-left: 0;
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: translateX(100vw);
+    transition: transform 0.3s ease;
+    z-index: 90;
+  }
+  
+  /* Chat window visible when chat is open */
+  .chat-container.chat-open .chat-window {
+    transform: translateX(0);
+  }
+  
+  .chatSidebar-top {
+    padding: 3vh 4vw;
+    gap: 3vw;
+  }
+  
+  .chatSidebarLogo {
+    width: 15vw;
+  }
+  
+  .profile-avatar {
+    width: 18vw;
+    height: 18vw;
+    margin-left: 0;
+  }
+  
+  .chat-profile-card {
+    padding: 0 5vw 3vh 5vw;
+  }
+  
+  .chat-profile-name {
+    font-size: 4.5vw;
+  }
+  
+  .chat-profile-role {
+    font-size: 2.5vw;
+    padding: 1vh 2vw;
+  }
+  
+  .profile-btn {
+    font-size: 3.5vw;
+    padding: 2vh 4vw;
+    border-radius: 4vw;
+  }
+  
+  .profile-btn-icon {
+    width: 4vw;
+    height: 4vw;
+    margin-right: 2vw;
+  }
+  
+  .chat-stats {
+    gap: 8vw;
+    margin-top: 3vh;
+  }
+  
+  .chat-stats-number {
+    font-size: 8vw;
+  }
+  
+  .chat-stats-label {
+    font-size: 3vw;
+  }
+  
+  .chat-list {
+    padding: 0 3vw;
+  }
+  
+  .chat-section-title {
+    font-size: 3vw;
+    margin: 3vh 0 2vh;
+  }
+  
+  .chat-item {
+    padding: 2vh 3vw;
+    margin-bottom: 2vh;
+    border-radius: 3vw;
+  }
+  
+  .chat-avatar {
+    width: 12vw;
+    height: 12vw;
+  }
+  
+  .chat-name {
+    font-size: 4vw;
+  }
+  
+  .chat-msg {
+    font-size: 3.5vw;
+  }
+  
+  .chat-time {
+    font-size: 2.8vw;
+  }
+  
+  .chat-badge {
+    font-size: 3vw;
+    padding: 0.8vh 2.5vw;
+    min-width: 6vw;
+    min-height: 3vh;
+  }
+  
+  .chat-header {
+    padding: 2vh 4vw;
+  }
+  
+  .chat-header-avatar {
+    width: 12vw;
+    height: 12vw;
+    margin-right: 4vw;
+  }
+  
+  .chat-header-name {
+    font-size: 5vw;
+  }
+  
+  .chat-header-status {
+    font-size: 3vw;
+  }
+  
+  .online-status {
+    width: 2vw;
+    height: 2vw;
+  }
+  
+  .online-status-wrapper {
+    gap: 1.5vw;
+  }
+  
+  .chat-body {
+    padding: 3vh 4vw 5vh;
+    max-height: calc(100vh - 20vh);
+  }
+  
+  .chat-date {
+    font-size: 3vw;
+    padding: 1.5vh 4vw;
+    border-radius: 3vw;
+    margin: 3vh auto;
+    min-width: 20vw;
+  }
+  
+  .message {
+    max-width: 75vw;
+    padding-top: 2vh;
+    margin-bottom: 2vh;
+  }
+  
+  .message-content,
+  .message-content-sent {
+    padding: 2vh 4vw;
+    border-radius: 4vw;
+  }
+  
+  .message-receive-text,
+  .message-send-text {
+    font-size: 3.8vw;
+    margin-bottom: 1vh;
+    line-height: 1.5;
+  }
+  
+  .message-time,
+  .message-time-sent {
+    font-size: 2.8vw;
+  }
+  
+  .chat-input-container {
+    padding: 2vh 4vw 3vh;
+  }
+  
+  .chat-input {
+    padding: 1.5vh 3vw;
+    border-radius: 4vw;
+  }
+  
+  .chat-input input {
+    font-size: 3.8vw;
+    padding: 1vh 0;
+  }
+  
+  .message-pdf {
+    width: 10vw;
+    height: 10vw;
+    padding: 2vw;
+    margin-right: 3vw;
+  }
+  
+  .send-button {
+    width: 10vw;
+    height: 10vw;
+    margin-left: 3vw;
+  }
+  
+  .send-button img {
+    width: 6vw;
+  }
+  
+  .employee-header {
+    left: 0;
+    width: 100vw;
+    font-size: 5vw;
+    height: 10vh;
+    gap: 10vw;
+    padding: 0 4vw;
+    flex-wrap: wrap;
+  }
+  
+  .posts-body {
+    padding-left: 0;
+    margin-left: 0;
+    padding: 12vh 4vw 4vh;
+  }
+  
+  .posts-body > div {
+    width: 92vw !important;
+    margin: 0 auto 6vh;
+  }
+  
+  .posts-body > div > div {
+    width: 92vw !important;
+    height: 60vh !important;
+  }
+  
+  .add-post-button {
+    padding: 2vw 4vw;
+    font-size: 3.5vw;
+    gap: 2vw;
+    border-radius: 4vw;
+  }
+  
+  .add-post-button img {
+    width: 5vw !important;
+    height: 5vw !important;
+  }
+  
+  .comments-body {
+    margin-left: 0;
+    width: 100vw;
+    padding: 12vh 4vw 4vh;
+  }
+  
+  .comments-list-item {
+    width: 92vw;
+    padding: 3vh 4vw;
+    font-size: 3.5vw;
+    border-radius: 3vw;
+    margin-bottom: 3vh;
+    flex-direction: column;
+    gap: 2vh;
+  }
+  
+  .comments-list-item img {
+    width: 20vw;
+    height: 20vw;
+  }
+  
+  .comments-list-item-user {
+    font-size: 4.5vw;
+    gap: 3vw;
+    margin-bottom: 2vh;
+  }
+  
+  .comments-list-item-rating {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2vh;
+    height: auto;
+  }
+  
+  .comments-list-item-rating .stars {
+    --star-size: 5vw;
+    margin-right: 0;
+  }
+  
+  .schedule-cont {
+    width: 90vw;
+    height: 80vh;
+    left: 5vw;
+    top: 10vh;
+    border-radius: 4vw;
+  }
+  
+  .schedule-header {
+    padding: 3vh 4vw;
+  }
+  
+  .schedule-header p {
+    font-size: 5vw;
+  }
+  
+  .schedule-back-button img {
+    width: 6vw;
+  }
+  
+  .schedule-nav {
+    padding: 2vh 4vw;
+    gap: 2vw;
+  }
+  
+  .schedule-nav-item {
+    font-size: 3.5vw;
+    padding: 2vh 4vw;
+    border-radius: 3vw;
+  }
+  
+  .scheduleEmployee-body {
+    padding: 2vh 4vw;
+    max-height: 55vh;
+  }
+  
+  .scheduleEmployee-body h3 {
+    font-size: 4.5vw;
+    margin-bottom: 3vh;
+  }
+  
+  .scheduleEmployee-list-item {
+    padding: 3vh 4vw;
+    font-size: 3.5vw;
+    border-radius: 3vw;
+    margin-bottom: 3vh;
+    gap: 2vh;
+  }
+  
+  .scheduleEmployee-list-item > div:first-child {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2vh;
+  }
+  
+  .scheduleEmployee-list-item > div:first-child span:first-child {
+    font-size: 5vw;
+  }
+  
+  .scheduleEmployee-list-item > div:first-child span:last-child {
+    font-size: 3vw;
+  }
+  
+  .scheduleEmployee-list-item > div:last-child {
+    font-size: 3.5vw;
+  }
+  
+  .scheduleEmployee-list-item > div:last-child > div {
+    margin-bottom: 1.5vh;
+  }
+  
+  /* Modal responsive */
+  .employee-profile-modal {
+    width: 90vw;
+    max-width: 90vw;
+    padding: 4vh 6vw;
+  }
+  
+  .employee-profile-modal-edit-button,
+  .employee-profile-modal-button {
+    width: 100%;
+    padding: 3vh 0;
+    font-size: 4vw;
+    border-radius: 3vw;
+    gap: 3vw;
+  }
+  
+  ::-webkit-scrollbar {
+    width: 0.5vw;
+  }
+}
