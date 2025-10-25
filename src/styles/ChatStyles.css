@@ -397,12 +397,13 @@ header{
   color: var(--text-light);
 }
 
-/* CHAT BODY STYLES */
+/* CHAT BODY STYLES - TO'G'RILANGAN */
 .chat-body {
   flex-grow: 1;
   padding-left: 1.6vw;
   padding-right: 1.6vw;
   padding-bottom: 3.8vh;
+  padding-top: 2vh; /* ✅ Qo'shildi */
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
@@ -414,66 +415,40 @@ header{
   max-height: calc(100vh - 14vh);
 }
 
-/* Custom scrollbar for chat body */
-.chat-body::-webkit-scrollbar {
-  width: 0.3vw;
-}
-
-.chat-body::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 0.2vw;
-}
-
-.chat-body::-webkit-scrollbar-thumb {
-  background: rgba(195, 163, 209, 0.6);
-  border-radius: 0.2vw;
-}
-
-.chat-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(195, 163, 209, 0.8);
-}
-
-.chat-date {
-  align-self: center;
-  background: linear-gradient(90deg, #c3a3d1, #ff79de);
-  padding: 0.3vh 1.1vw 0.4vh 1.0vw;
-  border-radius: 0.6vw;
-  font-size: 0.6vw;
-  font-weight: 600;
-  color: var(--text-light);
-  margin: 1vw auto;
-  min-width: 4vw;
-  max-width: fit-content;
-}
-
+/* MESSAGE STYLES - TO'G'RILANGAN */
 .message {
   display: flex;
   max-width: 16.9vw;
   animation: fadeIn 0.3s ease;
-  padding-top: 2vw;
+  padding-top: 1vh; /* ✅ 2vw dan 1vh ga o'zgartirildi */
+  margin-bottom: 1vh; /* ✅ Qo'shildi */
+  position: relative; /* ✅ Qo'shildi */
 }
 
 .message.receive {
   align-self: flex-start;
   flex-direction: row;
+  /* ✅ position: absolute o'chirildi */
 }
 
 .message.send {
   align-self: flex-end;
   flex-direction: row-reverse;
-  position: absolute;
-  right: 0;
+  /* ✅ position: absolute O'CHIRILDI - bu asosiy muammo edi! */
+  margin-left: auto; /* ✅ Qo'shildi */
 }
 
+/* MESSAGE CONTENT - TO'G'RILANGAN */
 .message-content {
-  padding: 0.7vh 1.6vw 0.1vh 0.5vw;
+  padding: 0.7vh 1.6vw 0.7vh 0.5vw; /* ✅ Pastki padding qo'shildi */
   border-radius: 1.0vw;
   box-shadow: var(--shadow);
+  position: relative; /* ✅ Qo'shildi */
 }
 
 .message-content-sent {
   position: relative;
-  padding: 0.7vh 2.1vw 1.0vh 0.7vw;
+  padding: 0.7vh 2.1vw 1.4vh 0.7vw; /* ✅ Pastki padding oshirildi */
   border-radius: 1.0vw;
   box-shadow: var(--shadow);
   background: var(--button-color, #c3a3d1);
@@ -490,13 +465,15 @@ header{
   border-bottom-right-radius: 0;
 }
 
+/* TEXT STYLES - TO'G'RILANGAN */
 .message-receive-text {
   font-size: 0.8vw;
   font-weight: 300;
   color: #2c2c2c;
-  margin-bottom: 2.2vh;
+  margin-bottom: 0.4vh; /* ✅ 2.2vh dan 0.4vh ga o'zgartirildi */
   line-height: 1.4;
   padding-left: 1.0vw;
+  padding-right: 0.5vw; /* ✅ Qo'shildi */
 }
 
 .message-send-text {
@@ -504,19 +481,25 @@ header{
   font-weight: 300;
   color: #ffffff;
   margin-bottom: 0.4vh;
+  padding-right: 2vw; /* ✅ Vaqt uchun joy */
+  line-height: 1.4; /* ✅ Qo'shildi */
 }
 
+/* TIME STYLES - TO'G'RILANGAN */
 .message-time {
-  align-self: flex-end;
+  display: block; /* ✅ Qo'shildi */
+  text-align: right; /* ✅ Qo'shildi */
   font-size: 0.6vw;
   color: #2c2c2c;
   font-weight: 500;
+  margin-top: 0.3vh; /* ✅ Qo'shildi */
+  padding-right: 0.5vw; /* ✅ Qo'shildi */
 }
 
 .message-time-sent {
   position: absolute;
-  right: 0.4vw;
-  bottom: 0.1vh;
+  right: 0.5vw; /* ✅ 0.4vw dan 0.5vw ga */
+  bottom: 0.3vh; /* ✅ 0.1vh dan 0.3vh ga */
   font-size: 0.6vw;
   color: #ffffff;
   font-weight: 500;
