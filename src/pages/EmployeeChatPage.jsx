@@ -529,17 +529,13 @@ const EmployeeChatPage = () => {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="chat-avatar-wrapper">
-                        <img
-                          className="chat-avatar"
-                          src={userAvatar}
-                          alt={userName}
-                        />
+                        
                         {conversation.unread_count > 0 && <span className="unread-dot"></span>}
                       </div>
                       <div className="chat-info">
                         <span className="chat-info-logo">
                           <img
-                            className="chat-info-logo-img"
+                            className="chat-avatar"
                             src={userAvatar}
                             alt={userName}
                           />
