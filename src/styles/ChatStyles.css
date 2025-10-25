@@ -316,14 +316,14 @@ header{
 }
 
 .chat-time {
-  font-size: 0.5vw;
+  font-size: 0.6vw;
   color: #212121;
   opacity: 0.7;
   font-weight: 10px;
 }
 
 .chat-msg {
-  font-size: 0.5vw;
+  font-size: 0.8vw;
   font-weight: 300;
   color: var(--text-dark);
   white-space: nowrap;
