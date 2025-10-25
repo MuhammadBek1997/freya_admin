@@ -415,6 +415,22 @@ header{
   max-height: calc(100vh - 14vh);
 }
 
+.chat-date {
+  align-self: center;
+  background: linear-gradient(90deg, #c3a3d1, #ff79de);
+  padding: 0.5vh 1.5vw; /* ✅ Padding oshirildi */
+  border-radius: 0.8vw; /* ✅ Border radius oshirildi */
+  font-size: 0.7vw; /* ✅ Font size biroz kattaroq */
+  font-weight: 600;
+  color: var(--text-light);
+  margin: 1.5vh auto; /* ✅ Margin oshirildi */
+  min-width: 5vw; /* ✅ Minimal kenglik */
+  max-width: fit-content;
+  text-align: center; /* ✅ Qo'shildi */
+  box-shadow: 0 2px 8px rgba(156, 43, 255, 0.2); /* ✅ Shadow qo'shildi */
+  z-index: 1; /* ✅ Z-index qo'shildi */
+}
+
 /* MESSAGE STYLES - TO'G'RILANGAN */
 .message {
   display: flex;
