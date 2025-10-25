@@ -26,18 +26,12 @@ const EmployeeChatPage = () => {
     updateEmployeeAvatar
   } = UseGlobalContext();
 
-  const handleBack = () => {
-    setSelectedUser(null);
-    setIsMobileChatOpen(false);
-  };
-
   const [selectedUser, setSelectedUser] = useState(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedPageEmployee, setSelectedPageEmployee] = useState('chat');
   const chatBodyRef = useRef(null);
   const [newMessage, setNewMessage] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
 
   // Schedule state
   const [groupedSchedules, setGroupedSchedules] = useState({});
@@ -51,13 +45,10 @@ const EmployeeChatPage = () => {
   const [postsError, setPostsError] = useState(null);
   const [postSlideIndex, setPostSlideIndex] = useState({});
 
-  // Post modal state
+  // ✅ Post modal state
   const [isAddPostModalOpen, setIsAddPostModalOpen] = useState(false);
 
-  // Avatar upload state
-  const [avatarUploading, setAvatarUploading] = useState(false);
-  const [avatarError, setAvatarError] = useState(null);
-  const fileInputRef = useRef(null);
+
 
   useEffect(() => {
     const loadPosts = async () => {
@@ -88,6 +79,9 @@ const EmployeeChatPage = () => {
       return { ...prev, [postId]: next };
     });
   };
+
+  console.log(user);
+
 
   const goToPostSlide = (postId, index) => {
     setPostSlideIndex(prev => ({ ...prev, [postId]: index }));
@@ -190,6 +184,8 @@ const EmployeeChatPage = () => {
   const handleSelectConversation = async (userId, userName, userAvatar) => {
     handleChangeEmployeePage('chat');
     setSelectedUser({ id: userId, name: userName, avatar: userAvatar });
+
+    // ✅ SHU QATORNI QO'SHING
     setIsMobileChatOpen(true);
 
     try {
@@ -209,8 +205,13 @@ const EmployeeChatPage = () => {
     try {
       await sendMessage(selectedUser.id, newMessage.trim());
       setNewMessage('');
+
+      // ✅ Xabarlar ro'yxatini darhol yangilash
       await fetchMessages(selectedUser.id);
+
+      // ✅ Conversations ro'yxatini yangilash (oxirgi xabarni ko'rsatish uchun)
       await fetchConversations();
+
       const count = await getUnreadCount();
       setUnreadCount(count);
     } catch (error) {
@@ -230,11 +231,6 @@ const EmployeeChatPage = () => {
   const handleChangeEmployeePage = (page) => {
     setSelectedPageEmployee(page);
     handleCloseProfileModal();
-  };
-
-  const handleMobileBack = () => {
-    setIsMobileChatOpen(false);
-    setSelectedUser(null);
   };
 
   const formatDisplayDate = (dateString) => {
@@ -297,24 +293,37 @@ const EmployeeChatPage = () => {
     return colorMap[status] || '#757575';
   };
 
+  // ✅ Post qo'shilgandan keyin callback
   const handlePostAdded = async (newPost) => {
     setIsAddPostModalOpen(false);
+    // Postlar ro'yxatini yangilash
     const employeeIdToUse = user?.id || user?.employee_id;
     const data = await fetchEmployeePosts(employeeIdToUse, 1, 10);
     const list = data?.data || data || [];
     setEmployeePosts(list);
   };
+  // Avatar upload state
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState(null);
+  const fileInputRef = useRef(null);
+  // ✅ SHU FUNKSIYANI QO'SHING
+  const handleMobileBack = () => {
+    setIsMobileChatOpen(false);
+    setSelectedUser(null);
+  };
 
+  // Avatar yuklash funksiyasi - TO'G'RILANGAN
   const handleAvatarUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Fayl validatsiyasi
     if (!file.type?.startsWith('image/')) {
       alert('Faqat rasm fayllarini yuklash mumkin');
       return;
     }
 
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       alert('Rasm hajmi 5MB dan oshmasligi kerak');
       return;
@@ -325,8 +334,12 @@ const EmployeeChatPage = () => {
 
     try {
       const employeeId = user?.id || user?.employee_id;
+
+      // ✅ Faqat updateEmployeeAvatar chaqiriladi
       const avatarUrl = await updateEmployeeAvatar(employeeId, file);
+
       console.log('✅ Avatar muvaffaqiyatli yangilandi:', avatarUrl);
+
     } catch (error) {
       console.error('Avatar yuklashda xatolik:', error);
       setAvatarError(error.message);
@@ -339,6 +352,7 @@ const EmployeeChatPage = () => {
     }
   };
 
+  // Avatar click handler
   const handleAvatarClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
@@ -347,25 +361,20 @@ const EmployeeChatPage = () => {
 
   return (
     <div>
+      {/* ✅ SHU JOYNI O'ZGARTIRING */}
       <div className={`chat-container ${isMobileChatOpen ? 'chat-open' : ''}`} style={user.role === 'private_admin' ? { flexDirection: "row-reverse" } : {}}>
-        {isMobileChatOpen && (
-          <button className="back-button" onClick={() => {
-            setSelectedUser(null);
-            setIsMobileChatOpen(false);
-          }}>
-            ←
-          </button>
-        )}
         <aside className="chatSidebar">
           <div className="chatSidebar-top">
             <img className="chatSidebarLogo" src="sidebarLogo.svg" alt="Logo" />
 
+            {/* ✅ Avatar ni user state'dan olish */}
             <div style={{ position: 'relative', display: 'inline-block' }}>
               <img
                 src={user?.avatar || user?.profile_image || user?.avatar_url || user?.photo || "Avatar.svg"}
                 alt="User"
                 className="profile-avatar"
               />
+              {/* Avatarni almashtirish tugmasi */}
               <button
                 onClick={handleAvatarClick}
                 disabled={avatarUploading}
@@ -389,6 +398,7 @@ const EmployeeChatPage = () => {
               >
                 ✎
               </button>
+              {/* Hidden file input */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -509,12 +519,14 @@ const EmployeeChatPage = () => {
                 <h3 className="chat-section-title">
                   {t('conversations') || 'Suhbatlar'} ({conversations.length})
                 </h3>
-                {conversations.map((conversation) => {
+                {conversations.map((conversation, index) => {
+                  // ✅ Yangi API strukturasiga mos ravishda ma'lumotlarni olish
                   const participant = conversation.participant || {};
                   const userId = participant.id || conversation.other_user_id || conversation.userId;
                   const userName = participant.name || conversation.other_user_name || conversation.userName || 'Unknown User';
                   const userAvatar = participant.avatar_url || conversation.other_user_avatar || conversation.user_avatar_url || conversation.avatar || "ChatAvatar.svg";
 
+                  // ✅ userId yo'q bo'lsa, konsolga ogohlantirish va skip qilish
                   if (!userId) {
                     console.warn('⚠️ Conversation without userId:', conversation);
                     return null;
@@ -528,6 +540,7 @@ const EmployeeChatPage = () => {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="chat-avatar-wrapper">
+
                         {conversation.unread_count > 0 && <span className="unread-dot"></span>}
                       </div>
                       <div className="chat-info">
@@ -569,27 +582,6 @@ const EmployeeChatPage = () => {
             {selectedUser ? (
               <>
                 <div className="chat-header">
-                  <button
-                    className="mobile-back-button"
-                    onClick={handleMobileBack}
-                    style={{
-                      display: 'none',
-                      position: 'absolute',
-                      left: '4vw',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '1vh',
-                      zIndex: 10
-                    }}
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                      <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-                    </svg>
-                  </button>
-
                   <div className="chat-partner-info">
                     <div className="avatar-container">
                       <img
@@ -702,6 +694,7 @@ const EmployeeChatPage = () => {
                         return Object.entries(groupedMessages)
                           .sort(([a], [b]) => new Date(a) - new Date(b))
                           .map(([dateKey, dayMessages]) => {
+                            // ✅ Har bir kun ichidagi xabarlarni vaqt bo'yicha tartiblash
                             const sortedMessages = dayMessages.sort((a, b) =>
                               new Date(a.created_at) - new Date(b.created_at)
                             );
@@ -710,6 +703,7 @@ const EmployeeChatPage = () => {
                               <div key={dateKey}>
                                 <div className="chat-date">{formatDate(dateKey)}</div>
                                 {sortedMessages.map((message, index) => {
+                                  // ✅ sender_id yoki sender_type orqali aniqlash
                                   const isMyMessage = message.sender_id === user.id || message.sender_type === 'employee';
 
                                   return (
@@ -804,7 +798,7 @@ const EmployeeChatPage = () => {
                 <div style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems:'center',
+                  alignItems: 'center',
                   gap: '1vw',
                   padding: '2vw'
                 }}>
@@ -870,7 +864,8 @@ const EmployeeChatPage = () => {
 
                   <div className='scheduleEmployee-body' style={{
                     padding: '1vw',
-                    overflowY: 'auto'
+                    overflowY: 'auto',
+                    maxHeight: '60vh'
                   }}>
                     {selectedDate && (
                       <h3 style={{
@@ -1020,101 +1015,98 @@ const EmployeeChatPage = () => {
                 <div style={{
                   textAlign: 'center',
                   padding: '3vw',
-                  color: '#A8A8B3',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%'
+                  color: '#A8A8B3'
                 }}>
                   <p style={{ fontSize: '1vw', marginTop: '1vw' }}>
                     {t('noPosts') || 'Postlar tez orada qo\'shiladi'}
                   </p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2vw', padding: '2vw' }}>
-                  {employeePosts.map((post) => {
-                    const files = post.media_files || [];
-                    const currentIndex = postSlideIndex[post.id] || 0;
-                    const currentFile = files[currentIndex];
-                    const isVideo = typeof currentFile === 'string' && /\.(mp4|webm|ogg)$/i.test(currentFile);
+                employeePosts.map((post) => {
+                  const files = post.media_files || [];
+                  const currentIndex = postSlideIndex[post.id] || 0;
+                  const currentFile = files[currentIndex];
+                  const isVideo = typeof currentFile === 'string' && /\.(mp4|webm|ogg)$/i.test(currentFile);
 
-                    return (
-                      <div key={post.id} style={{
-                        width: "100%",
-                        backgroundColor: '#fff',
-                        borderRadius: '1vw',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                        overflow: 'hidden'
-                      }}>
-                        <div className="relative w-full" style={{ position: 'relative' }}>
-                          <div className="relative overflow-hidden" style={{ width: "100%", height: "50vh" }}>
-                            {files.length > 0 ? (
-                              <div className="w-full h-full">
-                                {isVideo ? (
-                                  <video
-                                    src={currentFile}
-                                    className="w-full h-full object-cover"
-                                    controls
-                                  />
-                                ) : (
-                                  <img
-                                    src={currentFile}
-                                    className="w-full h-full object-cover"
-                                    alt={`Slide ${currentIndex + 1}`}
-                                  />
-                                )}
-
-                                {files.length > 1 && (
-                                  <button
-                                    onClick={() => nextPostSlide(post.id, files.length)}
-                                    className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
-                                  >
-                                    <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
-                                  </button>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="w-full h-full" style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                backgroundColor: '#f7f7f7',
-                                color: '#A8A8B3'
-                              }}>
-                                {t('noMediaFiles') || 'Media fayllar mavjud emas'}
-                              </div>
-                            )}
-                          </div>
-
-                          {files.length > 1 && (
-                            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                              {files.map((_, index) => (
-                                <button
-                                  key={index}
-                                  onClick={() => goToPostSlide(post.id, index)}
-                                  className={`w-3 h-3 rounded-full transition-all ${index === currentIndex
-                                    ? 'bg-white'
-                                    : 'bg-white/50 hover:bg-white/75'
-                                    }`}
+                  return (
+                    <div key={post.id} style={{
+                      width: "32vw",
+                      marginBottom: '2vw',
+                      backgroundColor: '#fff',
+                      borderRadius: '1vw',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                    }}>
+                      <div className="relative w-full" style={{ width: "30vw", padding: '1vw' }}>
+                        <div className="relative overflow-hidden" style={{ width: "30vw", height: "50vh", borderRadius: "1vw" }}>
+                          {files.length > 0 ? (
+                            <div className="w-full h-full">
+                              {isVideo ? (
+                                <video
+                                  src={currentFile}
+                                  className="w-full h-full object-cover"
+                                  style={{ borderRadius: '1vw' }}
+                                  controls
                                 />
-                              ))}
+                              ) : (
+                                <img
+                                  src={currentFile}
+                                  className="w-full h-full object-cover"
+                                  alt={`Slide ${currentIndex + 1}`}
+                                  style={{ borderRadius: '1vw' }}
+                                />
+                              )}
+
+                              {files.length > 1 && (
+                                <button
+                                  onClick={() => nextPostSlide(post.id, files.length)}
+                                  className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
+                                >
+                                  <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="w-full h-full" style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: '#f7f7f7',
+                              borderRadius: '1vw',
+                              color: '#A8A8B3'
+                            }}>
+                              {t('noMediaFiles') || 'Media fayllar mavjud emas'}
                             </div>
                           )}
                         </div>
 
-                        <div style={{ padding: '1vw' }}>
-                          <h2 style={{ fontSize: '1.2vw', margin: 0 }}>{post.title}</h2>
-                          <p style={{ color: '#666', fontSize: '0.9vw', marginTop: '0.5vw' }}>{post.description}</p>
-                          <div style={{ color: '#999', fontSize: '0.8vw', marginTop: '0.5vw' }}>
-                            <span>{post.created_at.split("T").at(0).split("-").reverse().join(".")}</span>
+                        {files.length > 1 && (
+                          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                            {files.map((_, index) => (
+                              <button
+                                key={index}
+                                onClick={() => goToPostSlide(post.id, index)}
+                                className={`w-3 h-3 rounded-full transition-all ${index === currentIndex
+                                  ? 'bg-white'
+                                  : 'bg-white/50 hover:bg-white/75'
+                                  }`}
+                              />
+                            ))}
                           </div>
+                        )}
+                      </div>
+
+                      <div style={{ padding: '1vw' }}>
+                        <h2 style={{ fontSize: '1.2vw', margin: 0 }}>{post.title}</h2>
+                        <p style={{ color: '#666', fontSize: '0.9vw', marginTop: '0.5vw' }}>{post.description}</p>
+                        <div style={{ color: '#999', fontSize: '0.8vw', marginTop: '0.5vw' }}>
+                          <span>{post.created_at.split("T").at(0).split("-").reverse().join(".")}</span>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
@@ -1123,7 +1115,7 @@ const EmployeeChatPage = () => {
             <div className='comments employee-header' style={user.role === "private_admin" ? { left: "10vw", zIndex: "0" } : null}>
               <h1>{t('commentsCount') || 'Izohlar'}</h1>
             </div>
-            <div className='comments-body' style={{ padding: '1vw', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className='comments-body' style={{ padding: '1vw' }}>
               <div style={{
                 textAlign: 'center',
                 padding: '3vw',
@@ -1138,6 +1130,7 @@ const EmployeeChatPage = () => {
         )}
       </div>
 
+      {/* ✅ Profile Modal */}
       <EmployeeProfileModal
         isOpen={isProfileModalOpen}
         onClose={handleCloseProfileModal}
@@ -1145,6 +1138,7 @@ const EmployeeChatPage = () => {
         handleChangeEmployeePage={handleChangeEmployeePage}
       />
 
+      {/* ✅ Post Form Modal */}
       {isAddPostModalOpen && (
         <div style={{
           position: 'fixed',
@@ -1180,3 +1174,5 @@ const EmployeeChatPage = () => {
 };
 
 export default EmployeeChatPage;
+
+

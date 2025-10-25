@@ -717,7 +717,6 @@ body {
   }
 
   .chat-window {
-    height: 60vh;
     padding-left: 0;
   }
 }
@@ -836,13 +835,12 @@ body {
     width: 35vw;
     font-size: 1.8vw;
   }
-
   .chat-window,
   .chat-posts,
   .chat-comments {
     padding-left: 35vw;
   }
-
+  
   .chatSidebar-top {
     padding: 2vh 2vw;
     gap: 1.5vw;
