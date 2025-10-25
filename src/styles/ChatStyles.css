@@ -491,7 +491,7 @@ header{
 }
 
 .message-receive-text {
-  font-size: 0.5vw;
+  font-size: 0.8vw;
   font-weight: 300;
   color: #2c2c2c;
   margin-bottom: 2.2vh;
@@ -500,7 +500,7 @@ header{
 }
 
 .message-send-text {
-  font-size: 0.5vw;
+  font-size: 0.8vw;
   font-weight: 300;
   color: #ffffff;
   margin-bottom: 0.4vh;
@@ -508,7 +508,7 @@ header{
 
 .message-time {
   align-self: flex-end;
-  font-size: 0.4vw;
+  font-size: 0.6vw;
   color: #2c2c2c;
   font-weight: 500;
 }
@@ -517,7 +517,7 @@ header{
   position: absolute;
   right: 0.4vw;
   bottom: 0.1vh;
-  font-size: 0.4vw;
+  font-size: 0.6vw;
   color: #ffffff;
   font-weight: 500;
   opacity: 0.8;
