@@ -529,7 +529,7 @@ const EmployeeChatPage = () => {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="chat-avatar-wrapper">
-                        
+
                         {conversation.unread_count > 0 && <span className="unread-dot"></span>}
                       </div>
                       <div className="chat-info">
@@ -673,11 +673,11 @@ const EmployeeChatPage = () => {
                           } else if (date.toDateString() === yesterday.toDateString()) {
                             return t('yesterday') || 'Kecha';
                           } else {
-                            return date.toLocaleDateString('uz-UZ', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
-                            });
+                            // ✅ To'liq sana formati: 22.10.2025
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const year = date.getFullYear();
+                            return `${day}.${month}.${year}`;
                           }
                         };
 
