@@ -673,7 +673,6 @@ const EmployeeChatPage = () => {
                           } else if (date.toDateString() === yesterday.toDateString()) {
                             return t('yesterday') || 'Kecha';
                           } else {
-                            // ✅ To'liq sana formati: 22.10.2025
                             const day = String(date.getDate()).padStart(2, '0');
                             const month = String(date.getMonth() + 1).padStart(2, '0');
                             const year = date.getFullYear();
@@ -683,29 +682,41 @@ const EmployeeChatPage = () => {
 
                         return Object.entries(groupedMessages)
                           .sort(([a], [b]) => new Date(a) - new Date(b))
-                          .map(([dateKey, dayMessages]) => (
-                            <div key={dateKey}>
-                              <div className="chat-date">{formatDate(dateKey)}</div>
-                              {dayMessages.map((message, index) => (
-                                <div
-                                  key={message.id || index}
-                                  className={`message ${message.sender_id === user.id ? 'send' : 'receive'}`}
-                                >
-                                  <div className={message.sender_id === user.id ? 'message-content-sent' : 'message-content'}>
-                                    <p className={message.sender_id === user.id ? 'message-send-text' : 'message-receive-text'}>
-                                      {message.message_text}
-                                    </p>
-                                    <span className={message.sender_id === user.id ? 'message-time-sent' : 'message-time'}>
-                                      {new Date(message.created_at).toLocaleTimeString('uz-UZ', {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ));
+                          .map(([dateKey, dayMessages]) => {
+                            // ✅ Har bir kun ichidagi xabarlarni vaqt bo'yicha tartiblash
+                            const sortedMessages = dayMessages.sort((a, b) =>
+                              new Date(a.created_at) - new Date(b.created_at)
+                            );
+
+                            return (
+                              <div key={dateKey}>
+                                <div className="chat-date">{formatDate(dateKey)}</div>
+                                {sortedMessages.map((message, index) => {
+                                  // ✅ sender_id yoki sender_type orqali aniqlash
+                                  const isMyMessage = message.sender_id === user.id || message.sender_type === 'employee';
+
+                                  return (
+                                    <div
+                                      key={message.id || index}
+                                      className={`message ${isMyMessage ? 'send' : 'receive'}`}
+                                    >
+                                      <div className={isMyMessage ? 'message-content-sent' : 'message-content'}>
+                                        <p className={isMyMessage ? 'message-send-text' : 'message-receive-text'}>
+                                          {message.message_text}
+                                        </p>
+                                        <span className={isMyMessage ? 'message-time-sent' : 'message-time'}>
+                                          {new Date(message.created_at).toLocaleTimeString('uz-UZ', {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          });
                       })()}
                     </div>
                   )}
