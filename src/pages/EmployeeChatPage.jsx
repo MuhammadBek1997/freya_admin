@@ -312,6 +312,7 @@ const EmployeeChatPage = () => {
     setSelectedUser(null);
   };
 
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   // Avatar yuklash funksiyasi - TO'G'RILANGAN
   const handleAvatarUpload = async (event) => {
     const file = event.target.files?.[0];
@@ -582,6 +583,28 @@ const EmployeeChatPage = () => {
             {selectedUser ? (
               <>
                 <div className="chat-header">
+                  {/* ✅ SHU TUGMANI QO'SHING */}
+                  <button
+                    className="mobile-back-button"
+                    onClick={handleMobileBack}
+                    style={{
+                      display: 'none',
+                      position: 'absolute',
+                      left: '4vw',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '1vh',
+                      zIndex: 10
+                    }}
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                      <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                    </svg>
+                  </button>
+
                   <div className="chat-partner-info">
                     <div className="avatar-container">
                       <img
