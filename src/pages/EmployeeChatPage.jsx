@@ -14,11 +14,12 @@ const EmployeeChatPage = () => {
     messages,
     messagesLoading,
     messagesError,
-    fetchMessages,
+  fetchMessages,
     sendMessage,
     getUnreadCount,
     markConversationAsRead,
-    fetchEmployeePosts,
+  fetchEmployeePosts,
+  fetchEmployeeComments,
     t,
     uploadPhotosToServer,
     updateEmployee,
@@ -89,7 +90,7 @@ const EmployeeChatPage = () => {
   // Fetch comments when viewing comments section for a post
   useEffect(() => {
     const loadComments = async () => {
-      if (!user || !selectedPostId) return;
+      if (!user) return;
       setCommentsLoading(true);
       setCommentsError(null);
       try {
@@ -256,6 +257,16 @@ const EmployeeChatPage = () => {
   const handleChangeEmployeePage = (page) => {
     setSelectedPageEmployee(page);
     handleCloseProfileModal();
+    // On small screens behave like opening chat: show the content as overlay
+    try {
+      if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+        setIsMobileChatOpen(true);
+        // clear selectedUser when opening posts/comments as a separate panel
+        setSelectedUser(null);
+      }
+    } catch (e) {
+      // ignore in non-browser environments
+    }
   };
 
   const handleMobileBack = () => {
@@ -491,31 +502,10 @@ const EmployeeChatPage = () => {
                 </p>
                 <button
                   onClick={() => fetchConversations()}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#9C2BFF',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontSize: '0.8vw'
-                  }}
+                  style={{ padding: '8px 14px', borderRadius: '8px', background: '#9C2BFF', color: '#fff', border: 'none', cursor: 'pointer' }}
                 >
-                  {t('retry') || 'Qayta urinish'}
+                  {t('retry') || "Qayta urinib ko'rish"}
                 </button>
-              </div>
-            ) : !conversations || conversations.length === 0 ? (
-              <div style={{
-                padding: '40px 20px',
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '15px',
-                alignItems: 'center'
-              }}>
-                <p style={{ color: '#A8A8B3', fontSize: '1vw' }}>
-                  {t('noConversations') || 'Yozishmalar mavjud emas'}
-                </p>
               </div>
             ) : (
               <>
@@ -1105,23 +1095,9 @@ const EmployeeChatPage = () => {
                         </div>
 
                         <div style={{ padding: '1vw' }}>
-                          <h2 style={{ 
-                            fontSize: '1.2vw', 
-                            margin: 0,
-                            color: '#333',
-                            fontWeight: '600'
-                          }}>{post.title}</h2>
-                          <p style={{ 
-                            color: '#666', 
-                            fontSize: '0.9vw', 
-                            marginTop: '0.5vw',
-                            lineHeight: '1.5'
-                          }}>{post.description}</p>
-                          <div style={{ 
-                            color: '#999', 
-                            fontSize: '0.8vw', 
-                            marginTop: '0.5vw'
-                          }}>
+                          <h2 className="post-title">{post.title}</h2>
+                          <p className="post-description">{post.description}</p>
+                          <div className="post-date">
                             {post.created_at.split("T").at(0).split("-").reverse().join(".")}
                           </div>
                         </div>
@@ -1196,15 +1172,8 @@ const EmployeeChatPage = () => {
                           alignItems: 'center',
                           marginBottom: '0.4vw'
                         }}>
-                          <span style={{
-                            fontWeight: '600',
-                            color: '#333',
-                            fontSize: '0.9vw'
-                          }}>{comment.user?.name}</span>
-                          <span style={{
-                            color: '#999',
-                            fontSize: '0.8vw'
-                          }}>{comment.created_at?.split("T").at(0).split("-").reverse().join(".")}</span>
+                          <span className="comment-author">{comment.user?.name}</span>
+                          <span className="comment-date">{comment.created_at?.split("T").at(0).split("-").reverse().join(".")}</span>
                         </div>
                         <div style={{
                           display: 'flex',
@@ -1220,12 +1189,7 @@ const EmployeeChatPage = () => {
                             />
                           ))}
                         </div>
-                        <p style={{
-                          margin: 0,
-                          color: '#666',
-                          fontSize: '0.9vw',
-                          lineHeight: '1.4'
-                        }}>{comment.text}</p>
+                        <p className="comment-text">{comment.text}</p>
                       </div>
                     </div>
                   ))}

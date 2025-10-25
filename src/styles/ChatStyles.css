@@ -919,6 +919,31 @@ body {
     font-size: 1.3vw;
   }
 
+  /* Increase post/comment text sizes on mobile landscape to match chat message sizing */
+  .chat-posts h2, .chat-posts .post-title {
+    font-size: 1.8rem !important;
+  }
+  .chat-posts .post-description {
+    font-size: 1.05rem !important;
+    line-height: 1.4;
+  }
+  .chat-posts .post-date {
+    font-size: 0.95rem !important;
+    color: #999;
+  }
+  .chat-comments .comment-author {
+    font-size: 1.05rem !important;
+    font-weight: 600;
+  }
+  .chat-comments .comment-text {
+    font-size: 1rem !important;
+    line-height: 1.45;
+  }
+  .chat-comments .comment-date {
+    font-size: 0.95rem !important;
+    color: #999;
+  }
+
   .chat-time {
     font-size: 1vw;
   }
@@ -1027,6 +1052,33 @@ body {
     transform: translateX(100vw);
     transition: transform 0.3s ease;
     z-index: 90;
+  }
+
+  /* Mobile portrait - make post/comment text comfortably readable like chat messages */
+  .message-receive-text,
+  .message-send-text {
+    font-size: 1.05rem !important;
+  }
+
+  .chat-posts h2, .chat-posts .post-title {
+    font-size: 1.25rem !important;
+  }
+  .chat-posts .post-description {
+    font-size: 1rem !important;
+    line-height: 1.5;
+  }
+  .chat-posts .post-date {
+    font-size: 0.95rem !important;
+  }
+
+  .chat-comments .comment-author {
+    font-size: 1rem !important;
+  }
+  .chat-comments .comment-text {
+    font-size: 1rem !important;
+  }
+  .chat-comments .comment-date {
+    font-size: 0.9rem !important;
   }
 
   .chat-container.chat-open .chat-window,
