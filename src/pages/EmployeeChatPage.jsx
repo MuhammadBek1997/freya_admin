@@ -51,6 +51,11 @@ const EmployeeChatPage = () => {
   const [postsError, setPostsError] = useState(null);
   const [postSlideIndex, setPostSlideIndex] = useState({});
 
+  // Comments state
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsError, setCommentsError] = useState(null);
+
   // Post modal state
   const [isAddPostModalOpen, setIsAddPostModalOpen] = useState(false);
 
@@ -78,6 +83,27 @@ const EmployeeChatPage = () => {
 
     if (selectedPageEmployee === 'posts' && user) {
       loadPosts();
+    }
+  }, [selectedPageEmployee, user]);
+
+  // Fetch comments when viewing comments section for a post
+  useEffect(() => {
+    const loadComments = async () => {
+      if (!user || !selectedPostId) return;
+      setCommentsLoading(true);
+      setCommentsError(null);
+      try {
+        const employeeIdToUse = user?.id || user?.employee_id;
+        const data = await fetchEmployeeComments(employeeIdToUse, 1, 20);
+        setComments(data.comments || []);
+      } catch (e) {
+        setCommentsError(e?.message || t('commentsLoadError') || 'Izohlarni olishda xatolik');
+      } finally {
+        setCommentsLoading(false);
+      }
+    };
+    if (selectedPageEmployee === 'comments' && user) {
+      loadComments();
     }
   }, [selectedPageEmployee, user]);
 
@@ -946,23 +972,8 @@ const EmployeeChatPage = () => {
 
               <button
                 className='add-post-button'
-                onClick={() => setIsAddPostModalOpen(true)}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#9C2BFF',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                <img src="/images/addPostImg.png" alt="" style={{ width: '20px', height: '20px' }} />
+                onClick={() => setIsAddPostModalOpen(true)}>
+                <img src="/images/addPostImg.png" alt="" />
                 {t('addPost') || 'Добавить пост'}
               </button>
             </div>
@@ -1033,69 +1044,85 @@ const EmployeeChatPage = () => {
                         boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                         overflow: 'hidden'
                       }}>
-                        <div className="relative w-full" style={{ position: 'relative' }}>
-                          <div className="relative overflow-hidden" style={{ width: "100%", height: "50vh" }}>
-                            {files.length > 0 ? (
-                              <div className="w-full h-full">
-                                {isVideo ? (
-                                  <video
-                                    src={currentFile}
-                                    className="w-full h-full object-cover"
-                                    controls
-                                  />
-                                ) : (
-                                  <img
-                                    src={currentFile}
-                                    className="w-full h-full object-cover"
-                                    alt={`Slide ${currentIndex + 1}`}
-                                  />
-                                )}
-
-                                {files.length > 1 && (
-                                  <button
-                                    onClick={() => nextPostSlide(post.id, files.length)}
-                                    className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
-                                  >
-                                    <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
-                                  </button>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="w-full h-full" style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                backgroundColor: '#f7f7f7',
-                                color: '#A8A8B3'
-                              }}>
-                                {t('noMediaFiles') || 'Media fayllar mavjud emas'}
-                              </div>
-                            )}
-                          </div>
-
-                          {files.length > 1 && (
-                            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                              {files.map((_, index) => (
-                                <button
-                                  key={index}
-                                  onClick={() => goToPostSlide(post.id, index)}
-                                  className={`w-3 h-3 rounded-full transition-all ${index === currentIndex
-                                    ? 'bg-white'
-                                    : 'bg-white/50 hover:bg-white/75'
-                                    }`}
+                        <div style={{ position: 'relative', width: "100%", height: "50vh" }}>
+                          {files.length > 0 ? (
+                            <div style={{ width: "100%", height: "100%" }}>
+                              {isVideo ? (
+                                <video
+                                  src={currentFile}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                  controls
                                 />
-                              ))}
+                              ) : (
+                                <img
+                                  src={currentFile}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                  alt={`Slide ${currentIndex + 1}`}
+                                />
+                              )}
+
+                              {files.length > 1 && (
+                                <div style={{
+                                  position: "absolute",
+                                  bottom: "20px",
+                                  left: "50%",
+                                  transform: "translateX(-50%)",
+                                  display: "flex",
+                                  gap: "8px",
+                                  zIndex: 2
+                                }}>
+                                  {files.map((_, index) => (
+                                    <button
+                                      key={index}
+                                      onClick={() => goToPostSlide(post.id, index)}
+                                      style={{
+                                        width: "8px",
+                                        height: "8px",
+                                        borderRadius: "50%",
+                                        backgroundColor: index === currentIndex ? "#fff" : "rgba(255,255,255,0.5)",
+                                        border: "none",
+                                        padding: 0,
+                                        cursor: "pointer"
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div style={{
+                              width: "100%",
+                              height: "100%",
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: '#f7f7f7',
+                              color: '#A8A8B3'
+                            }}>
+                              {t('noMediaFiles') || 'Media fayllar mavjud emas'}
                             </div>
                           )}
                         </div>
 
                         <div style={{ padding: '1vw' }}>
-                          <h2 style={{ fontSize: '1.2vw', margin: 0 }}>{post.title}</h2>
-                          <p style={{ color: '#666', fontSize: '0.9vw', marginTop: '0.5vw' }}>{post.description}</p>
-                          <div style={{ color: '#999', fontSize: '0.8vw', marginTop: '0.5vw' }}>
-                            <span>{post.created_at.split("T").at(0).split("-").reverse().join(".")}</span>
+                          <h2 style={{ 
+                            fontSize: '1.2vw', 
+                            margin: 0,
+                            color: '#333',
+                            fontWeight: '600'
+                          }}>{post.title}</h2>
+                          <p style={{ 
+                            color: '#666', 
+                            fontSize: '0.9vw', 
+                            marginTop: '0.5vw',
+                            lineHeight: '1.5'
+                          }}>{post.description}</p>
+                          <div style={{ 
+                            color: '#999', 
+                            fontSize: '0.8vw', 
+                            marginTop: '0.5vw'
+                          }}>
+                            {post.created_at.split("T").at(0).split("-").reverse().join(".")}
                           </div>
                         </div>
                       </div>
@@ -1110,16 +1137,110 @@ const EmployeeChatPage = () => {
             <div className='comments employee-header' style={user.role === "private_admin" ? { left: "10vw", zIndex: "0" } : null}>
               <h1>{t('commentsCount') || 'Izohlar'}</h1>
             </div>
-            <div className='comments-body' style={{ padding: '1vw', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ 
+              padding: '1vw',
+              backgroundColor: '#fff',
+              borderRadius: '1vw',
+              marginTop: '1vw'
+            }}>
               <div style={{
-                textAlign: 'center',
-                padding: '3vw',
-                color: '#A8A8B3'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1vw',
+                paddingBottom: '0.5vw',
+                borderBottom: '1px solid #eee'
               }}>
-                <p style={{ fontSize: '1vw' }}>
-                  {t('noComments') || 'Izohlar tez orada qo\'shiladi'}
-                </p>
+                <h3 style={{
+                  fontSize: '1.1vw',
+                  fontWeight: '600',
+                  color: '#333',
+                  margin: 0
+                }}>
+                  {comments.length || '0'} {t('comments') || 'Комментарии'}
+                </h3>
               </div>
+
+              {commentsLoading ? (
+                <div style={{ textAlign: 'center', padding: '2vw', color: '#A8A8B3' }}>
+                  <p style={{ fontSize: '1vw', margin: 0 }}>{t('commentsLoading') || 'Izohlar yuklanmoqda...'}</p>
+                </div>
+              ) : commentsError ? (
+                <div style={{ textAlign: 'center', padding: '2vw', color: '#FF6B6B' }}>
+                  <p style={{ fontSize: '1vw', margin: 0 }}>{commentsError}</p>
+                </div>
+              ) : comments.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1vw' }}>
+                  {comments.map(comment => (
+                    <div key={comment.id} style={{
+                      display: 'flex',
+                      gap: '1vw',
+                      padding: '0.8vw',
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '0.8vw'
+                    }}>
+                      <img
+                        src={comment.user?.avatar || '/images/Avatar.svg'}
+                        style={{
+                          width: '3vw',
+                          height: '3vw',
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }}
+                        alt={comment.user?.name}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '0.4vw'
+                        }}>
+                          <span style={{
+                            fontWeight: '600',
+                            color: '#333',
+                            fontSize: '0.9vw'
+                          }}>{comment.user?.name}</span>
+                          <span style={{
+                            color: '#999',
+                            fontSize: '0.8vw'
+                          }}>{comment.created_at?.split("T").at(0).split("-").reverse().join(".")}</span>
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          gap: '0.2vw',
+                          marginBottom: '0.4vw'
+                        }}>
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <img
+                              key={i}
+                              src={i < (comment.rating || 4) ? '/images/starFilled.svg' : '/images/starEmpty.svg'}
+                              style={{ width: '1vw', height: '1vw' }}
+                              alt="star"
+                            />
+                          ))}
+                        </div>
+                        <p style={{
+                          margin: 0,
+                          color: '#666',
+                          fontSize: '0.9vw',
+                          lineHeight: '1.4'
+                        }}>{comment.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '2vw',
+                  color: '#A8A8B3'
+                }}>
+                  <p style={{ fontSize: '1vw', margin: 0 }}>
+                    {t('noComments') || 'Izohlar tez orada qo\'shiladi'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

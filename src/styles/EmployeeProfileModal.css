@@ -13,11 +13,11 @@
 
 .employee-profile-modal {
   background: #fff;
-  border-radius: 24px;
+  border-radius: 16px;
   box-shadow: 0 8px 32px rgba(60, 0, 120, 0.18);
-  width: 370px;
+  width: 380px;
   max-width: 95vw;
-  padding: 0 0 32px 0;
+  padding: 0 0 24px 0;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -26,14 +26,14 @@
 
 .employee-profile-modal-close {
   position: absolute;
-  top: 18px;
-  right: 18px;
-  background: #fff;
+  top: 14px;
+  right: 14px;
+  background: transparent;
   border: none;
-  font-size: 2rem;
-  color: #a259ff;
+  font-size: 1.6rem;
+  color: #ffffff;
   cursor: pointer;
-  z-index: 2;
+  z-index: 3;
 }
 
 .employee-profile-modal-header {
@@ -70,7 +70,7 @@
   height: 84px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid #a259ff;
+  border: 4px solid #9C2BFF;
   margin-bottom: 8px;
 }
 
@@ -113,19 +113,130 @@
 }
 
 .employee-profile-modal-photo-btn {
-  background: #a259ff;
+  background: #0786e6; /* blue button */
   color: #fff;
   border: none;
-  border-radius: 24px;
-  padding: 10px 28px;
+  border-radius: 28px;
+  padding: 14px 28px;
   font-size: 1rem;
-  font-weight: 500;
-  margin-bottom: 10px;
+  font-weight: 600;
+  margin: 12px 20px;
+  width: calc(100% - 40px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s ease, transform 0.08s ease;
 }
 .employee-profile-modal-photo-btn:hover {
-  background: #7c2ae8;
+  background: #0273c9;
+}
+
+/* New / adjusted selectors to match component classes */
+.employee-profile-modal-top {
+  width: 100%;
+  height: 10vh;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  box-sizing: border-box;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.employee-profile-modal-content {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 16px 0 16px;
+}
+
+.employee-profile-modal-header-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.employee-profile-modal-edit-button {
+  background: #0786e6; /* blue */
+  color: #fff;
+  border: none;
+  border-radius: 28px;
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 14px 16px;
+  width: calc(100% - 32px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.employee-profile-modal-details {
+  width: 100%;
+  padding: 12px 16px 0 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.employee-profile-modal-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.employee-profile-modal-button img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.employee-profile-modal-button p { margin: 0; color: #8a2bff; font-weight: 600; }
+
+.employee-profile-modal-logout {
+  width: calc(100% - 32px);
+  margin: 12px 16px 0 16px;
+  background: #ff3b30;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(255,59,48,0.08);
+}
+
+.employee-profile-modal-top img { width: 40px; height: 40px; }
+
+/* Responsive: mobile full-screen style */
+@media (max-width: 480px) {
+  .employee-profile-modal {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    border-radius: 0;
+    justify-content: flex-start;
+    padding-bottom: 24px;
+  }
+
+  .employee-profile-modal-top { height: 11vh; border-radius: 0; }
+  .employee-profile-modal-close { color: #ffffff; font-size: 1.6rem; }
+  .employee-profile-modal-avatar { width: 72px; height: 72px; border-width: 3px; }
+  .employee-profile-modal-photo-btn, .employee-profile-modal-edit-button { width: calc(100% - 32px); }
 }
 
 .employee-profile-modal-actions {
@@ -160,21 +271,3 @@
   margin-right: 12px;
 }
 
-.employee-profile-modal-logout {
-  width: 90%;
-  margin: 0 auto;
-  background: #ff3b30;
-  color: #fff;
-  border: none;
-  border-radius: 16px;
-  padding: 14px 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-top: 10px;
-  cursor: pointer;
-  transition: background 0.2s;
-  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.08);
-}
-.employee-profile-modal-logout:hover {
-  background: #d32f2f;
-}

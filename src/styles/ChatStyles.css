@@ -673,8 +673,6 @@ body {
 
 .posts-body {
   padding-top: 12vh;
-  padding-left: 20vw;
-  margin-left: 22vw;
   overflow-y: auto;
   height: calc(100vh - 12vh);
   box-sizing: border-box;
@@ -838,10 +836,6 @@ body {
     font-size: 1.8vw;
   }
 
-  .posts-body {
-    padding-left: 30vw;
-    margin-left: 5vw;
-  }
 
   .comments-body {
     margin-left: 31vw;
@@ -993,10 +987,6 @@ body {
     height: 8vh;
   }
 
-  .posts-body {
-    padding-left: 35vw;
-    margin-left: 3vw;
-  }
 
   .schedule-cont {
     width: 50vw;
@@ -1266,12 +1256,6 @@ body {
     gap: 10vw;
     padding: 0 4vw;
     flex-wrap: wrap;
-  }
-
-  .posts-body {
-    padding-left: 0;
-    margin-left: 0;
-    padding: 12vh 4vw 4vh;
   }
 
   .posts-body > div {
