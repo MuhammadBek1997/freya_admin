@@ -312,6 +312,7 @@ const EmployeeChatPage = () => {
     setSelectedUser(null);
   };
 
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   // Avatar yuklash funksiyasi - TO'G'RILANGAN
   const handleAvatarUpload = async (event) => {
     const file = event.target.files?.[0];
