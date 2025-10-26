@@ -19,6 +19,11 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
     const [mediaFiles, setMediaFiles] = useState([]);
     const [pendingMedia, setPendingMedia] = useState([]);
     const fileInputRef = useRef(null);
+    // Payment form state
+    const [cardNumberState, setCardNumberState] = useState('');
+    const [cardDateState, setCardDateState] = useState('');
+    const [cardNameState, setCardNameState] = useState('');
+    const [phoneState, setPhoneState] = useState('+998');
 
     useEffect(() => {
         fetchPostLimits();
@@ -165,10 +170,11 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
         }
     };
 
-    const handleBuyPosts = async (postCount = 4) => {
+    const handleBuyPosts = async (postCount = 4, price = 60000, paymentData = {}) => {
         try {
+            const payload = { postCount, price, ...paymentData };
             const response = await axios.post('/api/payments/employee/posts', 
-                { postCount }, 
+                payload,
                 { 
                     headers: {
                         'Content-Type': 'application/json',
@@ -178,6 +184,7 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
             );
 
             if (response.data.success) {
+                // Open payment URL returned by backend
                 window.open(response.data.data.paymentUrl, '_blank');
             }
         } catch (error) {
@@ -186,91 +193,71 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
     };
 
     if (showPayment) {
+    // Payment form for buying exactly 4 posts at 60,000
         return (
             <div style={{
-                padding: '2rem',
-                backgroundColor: 'white',
-                borderRadius: '12px'
+                backgroundColor: '#f3f6f8',
+                borderRadius: '10px',
+                width: '100%',
+                padding:"1.5rem"
             }}>
-                <h3 style={{ 
-                    fontSize: '1.5rem', 
-                    marginBottom: '1rem',
-                    color: '#1f2937'
-                }}>
-                    {t('postLimitReached') || 'Post limitingiz tugadi!'}
-                </h3>
-                <p style={{ 
-                    color: '#6b7280',
-                    marginBottom: '2rem'
-                }}>
-                    {t('payForNewPosts') || 'Yangi postlar qo\'shish uchun to\'lov qiling'}
-                </p>
-                
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                    gap: '1rem',
-                    marginBottom: '2rem'
-                }}>
-                    {[
-                        { count: 4, price: 20000 },
-                        { count: 8, price: 40000 },
-                        { count: 12, price: 60000 }
-                    ].map((option) => (
-                        <div key={option.count} style={{
-                            padding: '1.5rem',
-                            border: '2px solid #e5e7eb',
-                            borderRadius: '12px',
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = '#9C2BFF';
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = '#e5e7eb';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                        }}
-                        onClick={() => handleBuyPosts(option.count)}
-                        >
-                            <h4 style={{ 
-                                fontSize: '1.25rem',
-                                color: '#1f2937',
-                                marginBottom: '0.5rem'
-                            }}>
-                                {option.count} {t('posts') || 'ta post'}
-                            </h4>
-                            <p style={{ 
-                                fontSize: '1.5rem',
-                                color: '#9C2BFF',
-                                fontWeight: 'bold'
-                            }}>
-                                {option.price.toLocaleString()} {t('currency') || 'so\'m'}
-                            </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <img src="/images/paymentIcon.png" alt="" />
+                        <div>
+                            <div style={{ fontWeight: 700, color: '#222' }}>Провести оплату</div>
+                            <div style={{ fontSize: 12, color: '#6b7280' }}>Чтобы опубликовать ещё проведите оплату в сумме <strong>60 000 сум</strong> и вам будет открыто доступ ещё к 4 постам.</div>
                         </div>
-                    ))}
+                    </div>
+                    <button onClick={() => setShowPayment(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>×</button>
                 </div>
-                
-                <button 
-                    onClick={() => setShowPayment(false)}
-                    style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        backgroundColor: '#ef4444',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '1rem',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.3s'
+
+                {/* Payment form fields */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+                    <input
+                        type="text"
+                        placeholder="0000 0000 0000 0000"
+                        value={cardNumberState}
+                        onChange={(e) => setCardNumberState(e.target.value)}
+                        style={{ padding: '0.85rem', borderRadius: 8, border: '1px solid #e6e9ec', fontSize: '1rem' }}
+                    />
+                        <input
+                            type="text"
+                            placeholder="MM/YY"
+                            value={cardDateState}
+                            onChange={(e) => setCardDateState(e.target.value)}
+                            style={{ flex: 1, padding: '0.85rem', borderRadius: 8, border: '1px solid #e6e9ec', fontSize: '1rem' }}
+                        />
+                        <input
+                            type="text"
+                            placeholder="Humo, Uzcard"
+                            value={cardNameState}
+                            onChange={(e) => setCardNameState(e.target.value)}
+                            style={{ flex: 2, padding: '0.85rem', borderRadius: 8, border: '1px solid #e6e9ec', fontSize: '1rem' }}
+                        />
+
+                    <input
+                        type="text"
+                        placeholder="+998 00 000 00 00"
+                        value={phoneState}
+                        onChange={(e) => setPhoneState(e.target.value)}
+                        style={{ padding: '0.85rem', borderRadius: 8, border: '1px solid #e6e9ec', fontSize: '1rem' }}
+                    />
+                </div>
+
+                <button
+                    onClick={async () => {
+                        // Build paymentData and call handleBuyPosts for 4 posts at 60000
+                        const paymentData = {
+                            card_number: cardNumberState,
+                            card_exp: cardDateState,
+                            card_name: cardNameState,
+                            phone: phoneState
+                        };
+                        await handleBuyPosts(4, 60000, paymentData);
                     }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#dc2626'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#ef4444'}
-                >
-                    {t('cancel') || 'Bekor qilish'}
-                </button>
+                    style={{ marginTop: '1rem', width: '100%', padding: '0.9rem', background: '#2dd4bf', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 600 }}
+                >Оплатить</button>
             </div>
         );
     }

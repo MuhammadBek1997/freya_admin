@@ -245,6 +245,7 @@
     "postTitle": "Заголовок",
     "enterPostTitle": "Введите заголовок поста",
     "description": "Описание",
+    "readMore": "далее",
     "enterDescription": "Введите описание поста",
     "mediaUrl": "URL медиа",
     "optional": "необязательно",

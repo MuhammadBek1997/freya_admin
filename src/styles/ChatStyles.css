@@ -553,7 +553,12 @@ body {
   opacity: 0.9;
   transform: scale(1.05);
 }
-
+.loading-spinner {
+    width: 18px !important;
+    height: 18px !important;
+    border-width: 2px !important;
+    font-size: 1vw;
+  }
 
 /* ANIMATIONS */
 @keyframes fadeIn {
@@ -570,6 +575,17 @@ body {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+
+
+@media (max-width: 768px) {
+  .loading-spinner {
+    width: 18px !important;
+    height: 18px !important;
+    border-width: 2px !important;
+    font-size: 2vw;
+  }
 }
 
 /* SCROLLBAR STYLING */
@@ -898,6 +914,38 @@ body {
     font-size: 3.5vw;
   }
 
+  /* Post description and read-more button */
+  .post-description {
+    color: #333;
+    margin-top: 0.6rem;
+  }
+
+  .read-more-button {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 0.5rem;
+    padding: 0;
+  }
+
+
+/* General rules for post description and read-more */
+.post-description {
+  color: #333;
+  margin-top: 0.6rem;
+}
+
+.read-more-button {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  padding: 0;
+}
   .chat-stats-label {
     font-size: 1.3vw;
   }
@@ -921,7 +969,7 @@ body {
 
   /* Increase post/comment text sizes on mobile landscape to match chat message sizing */
   .chat-posts h2, .chat-posts .post-title {
-    font-size: 1.8rem !important;
+    font-size: 1.5rem !important;
   }
   .chat-posts .post-description {
     font-size: 1.05rem !important;
@@ -1061,14 +1109,14 @@ body {
   }
 
   .chat-posts h2, .chat-posts .post-title {
-    font-size: 1.25rem !important;
+    font-size: 1rem !important;
   }
   .chat-posts .post-description {
-    font-size: 1rem !important;
+    font-size: 0.7rem !important;
     line-height: 1.5;
   }
   .chat-posts .post-date {
-    font-size: 0.95rem !important;
+    font-size: 0.65rem !important;
   }
 
   .chat-comments .comment-author {
@@ -1188,7 +1236,7 @@ body {
   }
 
   .mobile-back-button {
-    display: flex !important;
+    display: none !important;
     position: absolute;
     left: 4vw;
     top: 50%;
@@ -1315,10 +1363,17 @@ body {
     margin: 0 auto 6vh;
   }
 
-  .posts-body > div > div {
-    width: 92vw !important;
-    height: 60vh !important;
-  }
+  /* Loading spinner reusable class with responsive sizes */
+.loading-spinner {
+  width: 30px !important;
+  height: 30px !important;
+  border: 3px solid #f3f3f3 !important;
+  border-top: 3px solid #9C2BFF !important;
+  border-radius: 50% !important;
+  animation: spin 1s linear infinite !important;
+  box-sizing: border-box !important;
+  font-size: 4vw;
+}
 
   .add-post-button {
     padding: 2vw 4vw;

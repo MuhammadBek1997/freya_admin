@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import '../styles/ChatStyles.css'
+import i18next from 'i18next';
 import { UseGlobalContext, getAuthToken } from '../Context';
 import EmployeeProfileModal from '../components/EmployeeProfileModal';
 import EmployeePostForm from '../components/EmployeePostForm';
@@ -51,6 +52,9 @@ const EmployeeChatPage = () => {
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState(null);
   const [postSlideIndex, setPostSlideIndex] = useState({});
+
+  // Track which posts are expanded (read-more)
+  const [expandedPosts, setExpandedPosts] = useState({});
 
   // Comments state
   const [comments, setComments] = useState([]);
@@ -114,6 +118,17 @@ const EmployeeChatPage = () => {
       const next = (current + 1) % Math.max(total, 1);
       return { ...prev, [postId]: next };
     });
+  };
+
+  const toggleExpand = (postId) => {
+    setExpandedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
+  };
+
+  const getFontSizeByLength = (len) => {
+    if (len < 100) return '1.05rem';
+    if (len < 300) return '1rem';
+    if (len < 600) return '0.95rem';
+    return '0.9rem';
   };
 
   const goToPostSlide = (postId, index) => {
@@ -473,15 +488,11 @@ const EmployeeChatPage = () => {
                 flexDirection: 'column',
                 gap: '1vw'
               }}>
-                <div style={{
-                  width: "2vw",
-                  height: "2vw",
+                <div className="loading-spinner" style={{
                   border: "3px solid #f3f3f3",
                   borderTop: "3px solid #9C2BFF",
-                  borderRadius: "50%",
-                  animation: "spin 1s linear infinite"
                 }}></div>
-                <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
+                <p style={{ color: "#A8A8B3" }}>
                   {t('conversationsLoading') || 'Suhbatlar yuklanmoqda...'}
                 </p>
               </div>
@@ -623,15 +634,11 @@ const EmployeeChatPage = () => {
                       gap: '1vw',
                       minHeight: '50vh'
                     }}>
-                      <div style={{
-                        width: "2vw",
-                        height: "2vw",
+                      <div className="loading-spinner" style={{
                         border: "3px solid #f3f3f3",
                         borderTop: "3px solid #9C2BFF",
-                        borderRadius: "50%",
-                        animation: "spin 1s linear infinite"
                       }}></div>
-                      <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
+                      <p style={{ color: "#A8A8B3" }}>
                         {t('messagesLoading') || 'Xabarlar yuklanmoqda...'}
                       </p>
                     </div>
@@ -791,15 +798,11 @@ const EmployeeChatPage = () => {
                   gap: '1vw',
                   padding: '2vw'
                 }}>
-                  <div style={{
-                    width: "2vw",
-                    height: "2vw",
+                  <div className="loading-spinner" style={{
                     border: "3px solid #f3f3f3",
                     borderTop: "3px solid #9C2BFF",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite"
                   }}></div>
-                  <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
+                  <p style={{ color: "#A8A8B3" }}>
                     {t('loading') || 'Jadval yuklanmoqda...'}
                   </p>
                 </div>
@@ -979,15 +982,11 @@ const EmployeeChatPage = () => {
                   flexDirection: 'column',
                   gap: '1vw'
                 }}>
-                  <div style={{
-                    width: "2vw",
-                    height: "2vw",
+                  <div className="loading-spinner" style={{
                     border: "3px solid #f3f3f3",
                     borderTop: "3px solid #9C2BFF",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite"
                   }}></div>
-                  <p style={{ color: "#A8A8B3", fontSize: "0.9vw" }}>
+                  <p style={{ color: "#A8A8B3" }}>
                     {t('postsLoading') || 'Postlar yuklanmoqda...'}
                   </p>
                 </div>
@@ -1032,7 +1031,8 @@ const EmployeeChatPage = () => {
                         backgroundColor: '#fff',
                         borderRadius: '1vw',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        overflowY:"auto"
                       }}>
                         <div style={{ position: 'relative', width: "100%", height: "50vh" }}>
                           {files.length > 0 ? (
@@ -1096,7 +1096,31 @@ const EmployeeChatPage = () => {
 
                         <div style={{ padding: '1vw' }}>
                           <h2 className="post-title">{post.title}</h2>
-                          <p className="post-description">{post.description}</p>
+                          {
+                            (() => {
+                              const desc = post.description || post.text || '';
+                              const len = (desc || '').length;
+                              const isLong = len > 50;
+                              const isExpanded = !!expandedPosts[post.id];
+                              const displayText = isLong && !isExpanded ? desc.slice(0, 50) + '...' : desc;
+                              const fontSize = getFontSizeByLength(len);
+
+                              return (
+                                <>
+                                  <p className="post-description" style={{ fontSize, lineHeight: 1.5 }}>{displayText}</p>
+                                  {isLong && (
+                                    <button
+                                      type="button"
+                                      className="read-more-button"
+                                      onClick={() => toggleExpand(post.id)}
+                                    >
+                                      {t('readMore') || (i18next.language === 'uz' ? 'davomi' : 'else')}
+                                    </button>
+                                  )}
+                                </>
+                              );
+                            })()
+                          }
                           <div className="post-date">
                             {post.created_at.split("T").at(0).split("-").reverse().join(".")}
                           </div>
@@ -1139,11 +1163,11 @@ const EmployeeChatPage = () => {
 
               {commentsLoading ? (
                 <div style={{ textAlign: 'center', padding: '2vw', color: '#A8A8B3' }}>
-                  <p style={{ fontSize: '1vw', margin: 0 }}>{t('commentsLoading') || 'Izohlar yuklanmoqda...'}</p>
+                  <p style={{ fontSize: '3vw', margin: 0 }}>{t('commentsLoading') || 'Izohlar yuklanmoqda...'}</p>
                 </div>
               ) : commentsError ? (
                 <div style={{ textAlign: 'center', padding: '2vw', color: '#FF6B6B' }}>
-                  <p style={{ fontSize: '1vw', margin: 0 }}>{commentsError}</p>
+                  <p style={{ fontSize: '3vw', margin: 0 }}>{commentsError}</p>
                 </div>
               ) : comments.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1vw' }}>

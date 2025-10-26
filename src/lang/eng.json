@@ -245,6 +245,7 @@
   "postTitle": "Title",
   "enterPostTitle": "Enter post title",
   "description": "Description",
+  "readMore": "else",
   "enterDescription": "Enter post description",
   "mediaUrl": "Media URL",
   "optional": "optional",
