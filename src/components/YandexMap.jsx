@@ -26,7 +26,7 @@ const loadYandexMapScript = () => {
     });
 };
 
-const YandexMap = ({ lat, long }) => {
+const YandexMap = ({ lat, long, lng, editable = false, onSelect }) => {
     const mapRef = useRef(null);
     const mapInstance = useRef(null); // Xarita obyektini saqlash
     const placemarkInstance = useRef(null); // Marker obyektini saqlash
@@ -37,10 +37,11 @@ const YandexMap = ({ lat, long }) => {
     
     // Koordinatalarni tekshirish va default qiymatlar berish
     const validLat = (lat && !isNaN(lat) && lat !== null && lat !== undefined) ? parseFloat(lat) : defaultLat;
-    const validLong = (long && !isNaN(long) && long !== null && long !== undefined) ? parseFloat(long) : defaultLong;
+    const inputLng = (typeof lng !== 'undefined' && lng !== null) ? lng : long;
+    const validLong = (inputLng && !isNaN(inputLng) && inputLng !== null && inputLng !== undefined) ? parseFloat(inputLng) : defaultLong;
 
     console.log('YandexMap coordinates:', { 
-        original: { lat, long }, 
+        original: { lat, long, lng }, 
         valid: { validLat, validLong },
         isLatValid: !isNaN(validLat),
         isLongValid: !isNaN(validLong)
@@ -57,46 +58,52 @@ const YandexMap = ({ lat, long }) => {
                             zoom: 12, // Masshtab
                             controls: [], // Standart boshqaruv elementlarini olib tashlash
                         }, {
-                            // Probka va boshqa qatlamlarni o'chirish
                             suppressMapOpenBlock: true,
-                            yandexMapDisablePoiInteractivity: true, // Interaktiv nuqtalar o'chiriladi
                         });
 
-                        // Probka qatlamini xavfsiz usulda o'chirish
-                        try {
-                            const trafficLayer = mapInstance.current.layers.get('yandex#traffic');
-                            if (trafficLayer) {
-                                mapInstance.current.layers.remove(trafficLayer);
+                        // Marker yaratish va qo'shish
+                        placemarkInstance.current = new ymaps.Placemark(
+                            [validLat, validLong],
+                            {},
+                            {
+                                iconLayout: 'default#image',
+                                iconImageHref: '/images/mapMark.png',
+                                iconImageSize: [30, 30],
+                                iconImageOffset: [-16, -32],
+                                draggable: !!editable,
                             }
-                        } catch (error) {
-                            console.log('Traffic layer removal skipped:', error.message);
+                        );
+                        mapInstance.current.geoObjects.add(placemarkInstance.current);
+
+                        // Editable bo'lsa: marker dragend va xarita click
+                        if (editable) {
+                            placemarkInstance.current.events.add('dragend', () => {
+                                const coords = placemarkInstance.current.geometry.getCoordinates();
+                                const [newLat, newLong] = coords;
+                                if (typeof onSelect === 'function') {
+                                    onSelect({ lat: newLat, lng: newLong });
+                                }
+                            });
+
+                            mapInstance.current.events.add('click', (e) => {
+                                const coords = e.get('coords');
+                                if (Array.isArray(coords)) {
+                                    const [newLat, newLong] = coords;
+                                    placemarkInstance.current.geometry.setCoordinates(coords);
+                                    if (typeof onSelect === 'function') {
+                                        onSelect({ lat: newLat, lng: newLong });
+                                    }
+                                }
+                            });
+                        }
+                    } else {
+                        // Xarita markazini yangi koordinatalarga o'zgartirish
+                        mapInstance.current.setCenter([validLat, validLong], 12, { duration: 300 });
+                        // Marker joylashuvini ham yangilash
+                        if (placemarkInstance.current) {
+                            placemarkInstance.current.geometry.setCoordinates([validLat, validLong]);
                         }
                     }
-
-                    // Eski marker bo‘lsa, uni o‘chirish
-                    if (placemarkInstance.current) {
-                        mapInstance.current.geoObjects.remove(placemarkInstance.current);
-                        placemarkInstance.current = null;
-                    }
-
-                    // Yangi marker yaratish (maxsus rasm bilan)
-                    placemarkInstance.current = new ymaps.Placemark(
-                        [validLat, validLong],
-                        {
-                            hintContent: 'Joy',
-                            balloonContent: 'Belgilangan joy',
-                        },
-                        {
-                            iconLayout: 'default#image',
-                            iconImageHref: '/images/mapMark.png', // Maxsus rasm yo‘li
-                            iconImageSize: [30, 30], // Rasm o‘lchami (pikselda)
-                            iconImageOffset: [-16, -32], // Rasmning markazga nisbatan siljishi
-                        }
-                    );
-                    mapInstance.current.geoObjects.add(placemarkInstance.current);
-
-                    // Xarita markazini yangi koordinatalarga o'zgartirish
-                    mapInstance.current.setCenter([validLat, validLong], 12, { duration: 300 });
                 });
             })
             .catch((error) => {
@@ -114,7 +121,7 @@ const YandexMap = ({ lat, long }) => {
                 mapInstance.current = null;
             }
         };
-    }, [validLat, validLong]); // validLat va validLong o'zgarganda useEffect qayta ishlaydi
+    }, [validLat, validLong, editable, onSelect]);
 
     return (
         <div className='yandex-map-cont'>

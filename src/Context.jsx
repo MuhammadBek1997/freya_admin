@@ -26,6 +26,7 @@ import {
 	paymentUrl,
 	smsUrl,
 	translationUrl,
+	translationDetectLanguageUrl,
 	messagesUrl,
 	photoUploadUrl,
 	bookingsUrl
@@ -153,6 +154,28 @@ export const AppProvider = ({ children }) => {
 	const [messages, setMessages] = useState([]);
 	const [messagesLoading, setMessagesLoading] = useState(false);
 	const [messagesError, setMessagesError] = useState(null);
+
+	// Instagram va orientation ko‘rinishi uchun datani bir xillash
+	const normalizeSalonForProfile = (s) => {
+		const source = s || {};
+		const sm = Array.isArray(source.social_media) ? source.social_media : [];
+		const instagramFromSocial = sm.find(item => String(item?.type).toLowerCase() === 'instagram')?.link || '';
+		const instagram = source.salon_instagram || source.instagram_url || source.instagram || instagramFromSocial || '';
+		const nextSocial = sm.length > 0 ? sm : (instagram ? [{ type: 'instagram', link: instagram }] : sm);
+
+		const nested = (source.orientation && typeof source.orientation === 'object' && !Array.isArray(source.orientation)) ? source.orientation : null;
+
+		return {
+			...source,
+			social_media: nextSocial,
+			salon_instagram: instagram,
+			...(nested ? {
+				orientation_ru: source.orientation_ru || nested.ru || nested.RU || nested['ru-RU'] || '',
+				orientation_uz: source.orientation_uz || nested.uz || nested.UZ || nested['uz-UZ'] || '',
+				orientation_en: source.orientation_en || nested.en || nested.EN || nested['en-US'] || '',
+			} : {})
+		};
+	};
 
 
 
@@ -314,6 +337,32 @@ export const AppProvider = ({ children }) => {
 
 	// Update salon function
 	// Context.jsx da updateSalon funksiyasiga debug qo'shish
+
+	// Detect text language via backend translation API
+	const detectLanguageForText = async (text) => {
+		try {
+			const trimmed = (text || "").trim();
+			if (!trimmed) return null;
+			const resp = await fetch(translationDetectLanguageUrl, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ text: trimmed })
+			});
+			if (!resp.ok) return null;
+			const data = await resp.json();
+			let lang = data?.data?.language;
+			if (!lang || typeof lang !== 'string') return null;
+			lang = lang.toLowerCase();
+			if (['uz','ru','en'].includes(lang)) return lang;
+			if (lang.startsWith('ru')) return 'ru';
+			if (lang.startsWith('uz')) return 'uz';
+			if (lang.startsWith('en')) return 'en';
+			return null;
+		} catch (e) {
+			return null;
+		}
+	};
+
 	const updateSalon = async (salonId, updateData) => {
 		try {
 			console.log('=== updateSalon START ===');
@@ -322,11 +371,12 @@ export const AppProvider = ({ children }) => {
 
 			const token = getAuthToken();
 			const role = user?.role;
+			const allowedRoles = ['admin', 'super_admin', 'superadmin', 'private_admin', 'private_salon_admin'];
 
 			console.log('User role:', role);
 			console.log('Token exists:', !!token);
 
-			if (!role || (role !== 'admin' && role !== 'super_admin' && role !== 'superadmin')) {
+			if (!role || !allowedRoles.includes(role)) {
 				throw new Error('Admin huquqi talab qilinadi');
 			}
 
@@ -338,13 +388,117 @@ export const AppProvider = ({ children }) => {
 			console.log('Target ID:', targetId);
 			console.log('URL:', `${salonsUrl}/${targetId}`);
 
+			const rawLang = i18n?.language || 'uz';
+					const languageHeader = ['uz','ru','en'].includes(rawLang)
+						? rawLang
+						: (rawLang?.toLowerCase().startsWith('ru') ? 'ru'
+							: rawLang?.toLowerCase().startsWith('uz') ? 'uz'
+							: rawLang?.toLowerCase().startsWith('en') ? 'en'
+							: 'ru');
+				let payload = { ...updateData };
+
+				// Merge salon_additionals into description text as bullet list
+				let combinedDescription = null;
+				if (payload.salon_additionals !== undefined) {
+					const items = Array.isArray(payload.salon_additionals)
+						? payload.salon_additionals
+						: String(payload.salon_additionals || '').split('\n');
+					const cleaned = items.map(it => String(it || '').trim()).filter(Boolean);
+					const bullets = cleaned.length ? cleaned.map(s => `- ${s}`).join('\n') : '';
+					combinedDescription = payload.salon_description
+						? `${String(payload.salon_description).trim()}${bullets ? `\n\n${bullets}` : ''}`
+						: bullets;
+					// remove additionals from payload (we embed it into description)
+					delete payload.salon_additionals;
+				}
+				// If no additionals provided but description exists, use it as combined
+				if (!combinedDescription && payload.salon_description) {
+					combinedDescription = String(payload.salon_description).trim();
+				}
+
+				// If we have description text, detect language and place into description_<lang>
+				if (combinedDescription) {
+					let detectedLang = await detectLanguageForText(combinedDescription);
+					if (!detectedLang) detectedLang = languageHeader;
+					payload[`description_${detectedLang}`] = combinedDescription;
+					// avoid sending base key to prevent confusion
+					delete payload.salon_description;
+				}
+
+				// Map any existing salon_description_<lang> to description_<lang>
+				['uz','ru','en'].forEach(l => {
+					const key = `salon_description_${l}`;
+					if (payload[key] !== undefined) {
+						payload[`description_${l}`] = payload[key] || '';
+						delete payload[key];
+					}
+				});
+
+				// Drop unsupported keys
+				Object.keys(payload).forEach(k => {
+					if (k.startsWith('salon_name_')) delete payload[k];
+				});
+				['work_schedule','salon_format','salon_add_phone'].forEach(k => {
+					if (payload[k] !== undefined) delete payload[k];
+				});
+
+				// Normalize phone to digits only
+				if (payload.salon_phone !== undefined) {
+					payload.salon_phone = String(payload.salon_phone).replace(/\D/g, '');
+				}
+
+				// Debug: show normalized payload before sending
+				console.log('Normalized Payload:', JSON.stringify(payload, null, 2));
+
+				// Normalize location to backend Location schema
+				if (payload.location && typeof payload.location === 'object') {
+					const loc = payload.location;
+					const latitude = loc.latitude ?? loc.lat ?? undefined;
+					const longitude = loc.longitude ?? loc.lng ?? undefined;
+					payload.location = { latitude, longitude };
+				}
+
+				// Ensure salon_types are objects with { type, selected }
+					if (Array.isArray(payload.salon_types)) {
+						let nextTypes = payload.salon_types.map(item => {
+							if (item && typeof item === 'object') {
+								if ('type' in item) return { type: String(item.type), selected: !!item.selected };
+								if ('value' in item) return { type: String(item.value), selected: !!item.selected };
+							}
+							if (typeof item === 'string') return { type: item, selected: false };
+							return item;
+						});
+						// Guarantee at least one selected
+						if (nextTypes.length > 0 && !nextTypes.some(t => t && t.selected)) {
+							const currentSelected = (salonProfile?.salon_types || []).find(t => t?.selected)?.type;
+							const idx = nextTypes.findIndex(t => t?.type === currentSelected);
+							const selectIndex = idx >= 0 ? idx : 0;
+							nextTypes = nextTypes.map((t, i) => ({ ...t, selected: i === selectIndex }));
+						}
+						payload.salon_types = nextTypes;
+					}
+
+					// Ensure salon_comfort are objects with { name, isActive }
+						if (Array.isArray(payload.salon_comfort)) {
+							payload.salon_comfort = payload.salon_comfort.map(item => {
+								if (item && typeof item === 'object') {
+									if ('name' in item) return { name: String(item.name), isActive: !!item.isActive };
+									if ('value' in item) return { name: String(item.value), isActive: !!item.isActive };
+								}
+								if (typeof item === 'string') return { name: item, isActive: true };
+								return item;
+							});
+						}
+
+					const normalizedPayload = payload;
+
 			const response = await fetch(`${salonsUrl}/${targetId}`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
 					...(token ? { Authorization: `Bearer ${token}` } : {})
 				},
-				body: JSON.stringify(updateData),
+				body: JSON.stringify(normalizedPayload),
 			});
 
 			console.log('Response status:', response.status);
@@ -2549,10 +2703,24 @@ const fetchConversations = async () => {
 					const mySalonData = await mySalonResp.json();
 					const salonObj = mySalonData?.data || mySalonData;
 					if (salonObj && salonObj.id) {
-						setSalonProfile(salonObj);
-						currentSalonIdRef.current = salonObj.id;
-						console.log('✅ Admin my-salon fetched:', salonObj.id);
-						return salonObj;
+						// ✅ Avval admin/my-salon dan olingan ma'lumot, keyin to'liq detailni olib birlashtiramiz
+						try {
+							const detail = await getSalonById(salonObj.id);
+							const detailObj = detail?.data || detail;
+							const mergedRaw = { ...salonObj, ...detailObj };
+							const merged = normalizeSalonForProfile(mergedRaw);
+							setSalonProfile(merged);
+							currentSalonIdRef.current = merged.id;
+							console.log('✅ Admin my-salon + detail merged:', merged.id);
+							return merged;
+						} catch (e) {
+							// Agar detail olishda xato bo'lsa, my-salon obyektidan foydalanamiz
+							const normalized = normalizeSalonForProfile(salonObj);
+							setSalonProfile(normalized);
+							currentSalonIdRef.current = normalized.id;
+							console.warn('[fetchAdminSalon] Detail fetch failed, using my-salon object:', e?.message || e);
+							return normalized;
+						}
 					}
 				} else {
 					let mySalonMsg = `HTTP ${mySalonResp.status}`;
@@ -2596,10 +2764,11 @@ const fetchConversations = async () => {
 				if (!salonObj || !salonObj.id) {
 					throw new Error('Salon maʼlumotlari topilmadi');
 				}
-				setSalonProfile(salonObj);
-				currentSalonIdRef.current = salonObj.id;
-				console.log('✅ Salon fetched by ID:', salonObj.id);
-				return salonObj;
+				const normalizedById = normalizeSalonForProfile(salonObj);
+				setSalonProfile(normalizedById);
+				currentSalonIdRef.current = normalizedById.id;
+				console.log('✅ Salon fetched by ID:', normalizedById.id);
+				return normalizedById;
 			} else {
 				let message = `Failed to fetch salon by ID (HTTP ${detailResponse.status})`;
 				try {
