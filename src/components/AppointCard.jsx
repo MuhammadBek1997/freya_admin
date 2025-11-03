@@ -113,6 +113,22 @@ const AppointCard = (props) => {
         employeeColor = "#CA000099";
     }
 
+    // Topiladigan xodim obyektini oldindan aniqlab qo'yamiz
+    const masterEmp = employee_id ? employees?.find(e => String(e.id) === String(employee_id)) : null;
+
+    // Dinamik reyting va sharhlar soni
+    const masterAvgRating = (() => {
+        if (!masterEmp) return 0;
+        const val = masterEmp.avg_rating ?? masterEmp.rating_avg ?? masterEmp.rating;
+        return typeof val === 'number' ? val : Number(val) || 0;
+    })();
+
+    const masterCommentCount = (() => {
+        if (!masterEmp) return 0;
+        const val = masterEmp.comment_count ?? masterEmp.reviews_count ?? masterEmp.comments_count;
+        return typeof val === 'number' ? val : Number(val) || 0;
+    })();
+
     return (
         <div onClick={() => handleCardClick()} className='appoint-card'>
             <div className='appoint-card-customer' style={{
@@ -145,8 +161,7 @@ const AppointCard = (props) => {
             </div>
             <div className='appoint-card-master'>
                 {(() => {
-                    const emp = employee_id ? employees?.find(e => String(e.id) === String(employee_id)) : null;
-                    const masterAvatar = emp?.avatar_url || emp?.photo || emp?.profile_image || "/images/masterImage.png";
+                    const masterAvatar = masterEmp?.avatar_url || masterEmp?.photo || masterEmp?.profile_image || "/images/masterImage.png";
                     return <img src={masterAvatar} alt="" />
                 })()}
                 <div className='appoint-card-master-text'>
@@ -163,7 +178,7 @@ const AppointCard = (props) => {
                     <div className='appoint-card-masterRating'>
                         <img src="/images/Star1.png" alt="" />
                         <p>
-                            4.8 (13 {t('profileReviews')})
+                            {masterAvgRating} ({masterCommentCount} {t('profileReviews')})
                         </p>
                     </div>
                 </div>

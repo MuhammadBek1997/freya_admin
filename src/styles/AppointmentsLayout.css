@@ -1,7 +1,8 @@
-.home{
+.home {
   background: white;
 }
-.home-nav{
+
+.home-nav {
   width: 100vw;
   height: 30vh;
   position: fixed;
@@ -15,32 +16,38 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
-.home-nav-top{
+
+.home-nav-top {
   display: flex;
   align-items: center;
   gap: 1vw;
 }
-.home-nav-top img{
+
+.home-nav-top img {
   width: 2.57vw;
   height: 2.57vw;
 }
-.home-nav-top h2{
+
+.home-nav-top h2 {
   font-size: 2vw;
   font-weight: 500;
 }
-.home-nav-search{
+
+.home-nav-search {
   height: 10vh;
   display: flex;
   align-items: center;
   padding-left: 1vw;
 }
-.home-nav-search img{
+
+.home-nav-search img {
   width: 2vw;
   z-index: 3;
   margin-right: -3vw;
 
 }
-.home-nav-search input{
+
+.home-nav-search input {
   width: 75%;
   height: 60%;
   border: none;
@@ -51,13 +58,15 @@
   font-size: 1vw;
   box-shadow: 0 0 1vw #00000010;
 }
-.home-nav-filter{
+
+.home-nav-filter {
   height: 7vh;
   display: flex;
   align-items: center;
   gap: 3vw;
 }
-.home-nav-filter button{
+
+.home-nav-filter button {
   cursor: pointer;
   font-size: 16px;
   font-size: 1vw;
@@ -72,90 +81,104 @@
   gap: 1vw;
   box-shadow: 0 0 1vw #00000010;
 }
-.home-nav-filter button img{
+
+.home-nav-filter button img {
   width: 1vw;
 }
-.home-nav-columns{
+
+.home-nav-columns {
   display: flex;
   justify-content: start;
   align-items: center;
   gap: 1vw;
 }
-.home-nav-columns a{
+
+.home-nav-columns a {
   color: black;
   font-size: 1vw;
   width: 9vw;
 }
-.home-nav-columns a:nth-child(1){
+
+.home-nav-columns a:nth-child(1) {
   width: 10vw;
 }
-.home-nav-columns a:nth-child(2){
-  margin-left: 18vw;
+
+.home-nav-columns a:nth-child(2) {
+  margin-left: 12vw;
 }
-.home-nav-columns a:nth-child(3){
-  margin-left: 0vw;
+
+.home-nav-columns a:nth-child(3) {
+  margin-left: 4vw;
 }
-.home-nav-columns a:nth-child(4){
-  margin-left: 2vw;
+
+.home-nav-columns a:nth-child(4) {
+  margin-left: 3vw;
 }
-.home-nav-columns a:nth-child(5){
-  margin-left: -1.5vw;
+
+.home-nav-columns a:nth-child(5) {
+  margin-left: -2vw;
 }
-.home-nav-columns a:nth-child(6){
+
+.home-nav-columns a:nth-child(6) {
   margin-left: -1vw;
 }
 
-.home-body{
+.home-body {
   padding-top: 32vh;
   z-index: 0;
   display: flex;
   gap: 1vw;
   flex-direction: column;
 }
-.appoint-card{
+
+.appoint-card {
   width: 82vw;
   display: flex;
   gap: 1vw;
 }
-.appoint-card-customer{
+
+.appoint-card-customer {
   width: 80%;
   display: flex;
   align-items: center;
   padding: 0.7vw;
   border-radius: 0.7vw;
   box-shadow: 0 0 2vw #00000015;
-  
 }
 
-.appoint-card-customer img{
+.appoint-card-customer img {
   width: 4vw;
   height: 3vw;
   border-radius: 35vw;
 }
-.customerName{
+.customerName {
   width: 15vw;
   font-size: 1.2vw;
   margin: 0 1vw;
 }
-.appointNumber{
+.appointNumber {
   font-size: 1.2vw;
-  padding-left: 17vw;
+  padding-left: 8vw;
 }
-.customerNumber{
+
+.customerNumber {
   font-size: 1.2vw;
   color: #0060CE;
-  padding-left: 3vw;
+  padding-left: 1.5vw;
   text-decoration: underline;
 }
-.appointDate{
+
+.appointDate {
   font-size: 0.8vw;
-  padding-left: 2.7vw;
+  padding-left: 3vw;
 }
-.appointTime{
+
+.appointTime {
   font-size: 0.8vw;
   padding-left: 5vw;
 }
-.appoint-card-master{
+
+.appoint-card-master {
   width: 20%;
   display: flex;
   align-items: center;
@@ -164,20 +187,24 @@
   border-radius: 0.7vw;
   box-shadow: 0 0 2vw #00000015;
 }
-.appoint-card-master img{
+
+.appoint-card-master img {
   width: 4vw;
   border-radius: 30vw;
 }
-.appoint-card-masterName{
+
+.appoint-card-masterName {
   display: flex;
   align-items: center;
   gap: 1vw;
   padding-bottom: 0.5vw;
 }
-.appoint-card-masterName p{
+
+.appoint-card-masterName p {
   font-size: 1.2vw;
 }
-.appoint-card-masterJob{
+
+.appoint-card-masterJob {
   width: 4vw;
   height: 3vh;
   background: #CA940099;
@@ -186,17 +213,20 @@
   justify-content: center;
   align-items: center;
 }
-.appoint-card-masterJob p{
+
+.appoint-card-masterJob p {
   font-size: 0.7vw;
   font-weight: 600;
   color: white;
 }
-.appoint-card-masterRating{
+
+.appoint-card-masterRating {
   display: flex;
   align-items: center;
   gap: 0.5vw;
   font-size: 0.7vw;
 }
-.appoint-card-masterRating img{
+
+.appoint-card-masterRating img {
   width: 1vw;
 }
