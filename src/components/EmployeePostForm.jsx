@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { getAuthToken } from '../Context';
-import { clickPayForPostRedirectUrl } from '../apiUrls';
+import { clickPayForPostRedirectUrl, employeesUrl } from '../apiUrls';
 import { UseGlobalContext } from '../Context';
 
 const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
@@ -31,16 +31,19 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
     }, [employeeId]);
 
     const fetchPostLimits = async () => {
+        // Backendga tegmasdan: nisbiy `/api` ga suyanmaslik.
+        // Hozircha limits UI majburiy emas, post yaratishdan keyin yangilanadi.
         try {
-            const response = await axios.get(`/api/payments/employee/limits`, {
+            // Aloqa tekshiruvi uchun eng qisqa so‘rov (limit=1) — bu yerda faqat bog‘lanish barqarorligini tekshiramiz.
+            await axios.get(`${employeesUrl}/${employeeId}/posts`, {
+                params: { limit: 1 },
                 headers: {
                     'Content-Type': 'application/json',
                     ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
                 }
             });
-            setPostLimits(response.data.data);
         } catch (error) {
-            console.error('Post limitlarini olishda xatolik:', error);
+            console.warn('Post limits prefetch o‘tkazildi (prod barqarorligi uchun).', error?.message || error);
         }
     };
 
@@ -130,7 +133,7 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
             console.log('📤 Creating post:', postPayload);
 
             const response = await axios.post(
-                `/api/employees/${employeeId}/posts`,
+                `${employeesUrl}/${employeeId}/posts`,
                 postPayload,
                 { 
                     headers: {

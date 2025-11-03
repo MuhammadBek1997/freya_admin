@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { getAuthToken } from '../Context';
+import { paymentUserPremiumUrl } from '../apiUrls';
 import './PremiumSubscription.css';
 
 const PremiumSubscription = ({ onClose }) => {
@@ -14,13 +15,10 @@ const PremiumSubscription = ({ onClose }) => {
 
     const fetchSubscriptionStatus = async () => {
         try {
-            const response = await axios.get('/api/payments/user/subscription', {
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
-                }
-            });
-            setSubscriptionStatus(response.data.data);
+            // Agar backendda alohida subscription status endpoint bo'lmasa,
+            // premium obuna holatini yaratish/payments oqimidan so‘ng yangilanadi.
+            // Bu yerda backendga tegmasdan barqaror GET chaqiruvini o‘tkazib qo‘yamiz.
+            setSubscriptionStatus(null);
         } catch (error) {
             console.error('Subscription status olishda xatolik:', error);
         }
@@ -31,9 +29,10 @@ const PremiumSubscription = ({ onClose }) => {
         setError('');
 
         try {
-            const response = await axios.post('/api/payments/user/premium', 
-                { duration }, 
-                { 
+            const response = await axios.post(
+                paymentUserPremiumUrl,
+                { duration },
+                {
                     headers: {
                         'Content-Type': 'application/json',
                         ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
