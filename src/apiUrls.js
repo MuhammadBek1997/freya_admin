@@ -87,6 +87,15 @@ export const paymentStatusUrl = `${BASE_URL}/payment/status`;
 export const paymentCallbackUrl = `${BASE_URL}/payment/callback`;
 export const paymentHistoryUrl = `${BASE_URL}/payment/history`;
 
+// Click payment endpoints (new backend routes)
+export const clickUrl = `${BASE_URL}/click`;
+export const clickCardCreateUrl = `${clickUrl}/card/create`;
+export const clickCardVerifyUrl = `${clickUrl}/card/verify`;
+export const clickCardsUrl = `${clickUrl}/cards`;
+export const clickPayPremiumUrl = `${clickUrl}/pay/premium`;
+export const clickPayForPostRedirectUrl = `${clickUrl}/pay/for_post/redirect`;
+export const clickPayForPostInvoiceUrl = `${clickUrl}/pay/for_post/invoice`;
+
 // Alias to match Context.jsx usage for single service resource
 export const serviceUrl      = `${BASE_URL}/services`;
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { getAuthToken } from '../Context';
+import { clickPayForPostRedirectUrl } from '../apiUrls';
 import { UseGlobalContext } from '../Context';
 
 const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
@@ -170,30 +171,36 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
         }
     };
 
-    const handleBuyPosts = async (postCount = 4, price = 60000, paymentData = {}) => {
+    const handleBuyPosts = async (postCount = 4) => {
         try {
-            const payload = { postCount, price, ...paymentData };
-            const response = await axios.post('/api/payments/employee/posts', 
-                payload,
-                { 
+            const response = await axios.post(
+                clickPayForPostRedirectUrl,
+                null,
+                {
+                    params: {
+                        post_quantity: postCount,
+                        card_type: 'humo',
+                        return_url: window.location.origin
+                    },
                     headers: {
-                        'Content-Type': 'application/json',
                         ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
                     }
                 }
             );
 
-            if (response.data.success) {
-                // Open payment URL returned by backend
-                window.open(response.data.data.paymentUrl, '_blank');
+            if (response?.data?.success && response?.data?.redirect_url) {
+                window.open(response.data.redirect_url, '_blank');
+            } else {
+                const msg = response?.data?.error || t('paymentError') || "To'lov yaratishda xatolik";
+                setError(msg);
             }
         } catch (error) {
-            setError(error.response?.data?.message || t('paymentError') || 'To\'lov yaratishda xatolik');
+            setError(error.response?.data?.error || error.response?.data?.message || t('paymentError') || "To'lov yaratishda xatolik");
         }
     };
 
     if (showPayment) {
-    // Payment form for buying exactly 4 posts at 60,000
+    // Payment overlay for buying 4 posts (redirect to Click)
         return (
             <div style={{
                 backgroundColor: '#f3f6f8',
@@ -206,58 +213,17 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
                         <img src="/images/paymentIcon.png" alt="" />
                         <div>
                             <div style={{ fontWeight: 700, color: '#222' }}>Провести оплату</div>
-                            <div style={{ fontSize: 12, color: '#6b7280' }}>Чтобы опубликовать ещё проведите оплату в сумме <strong>60 000 сум</strong> и вам будет открыто доступ ещё к 4 постам.</div>
+                            <div style={{ fontSize: 12, color: '#6b7280' }}>Чтобы опубликовать ещё, проведите оплату и вам будет открыто доступ ещё к 4 постам.</div>
                         </div>
                     </div>
                     <button onClick={() => setShowPayment(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>×</button>
                 </div>
-
-                {/* Payment form fields */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
-                    <input
-                        type="text"
-                        placeholder="0000 0000 0000 0000"
-                        value={cardNumberState}
-                        onChange={(e) => setCardNumberState(e.target.value)}
-                        style={{ padding: '0.85rem', borderRadius: 8, border: '1px solid #e6e9ec', fontSize: '1rem' }}
-                    />
-                        <input
-                            type="text"
-                            placeholder="MM/YY"
-                            value={cardDateState}
-                            onChange={(e) => setCardDateState(e.target.value)}
-                            style={{ flex: 1, padding: '0.85rem', borderRadius: 8, border: '1px solid #e6e9ec', fontSize: '1rem' }}
-                        />
-                        <input
-                            type="text"
-                            placeholder="Humo, Uzcard"
-                            value={cardNameState}
-                            onChange={(e) => setCardNameState(e.target.value)}
-                            style={{ flex: 2, padding: '0.85rem', borderRadius: 8, border: '1px solid #e6e9ec', fontSize: '1rem' }}
-                        />
-
-                    <input
-                        type="text"
-                        placeholder="+998 00 000 00 00"
-                        value={phoneState}
-                        onChange={(e) => setPhoneState(e.target.value)}
-                        style={{ padding: '0.85rem', borderRadius: 8, border: '1px solid #e6e9ec', fontSize: '1rem' }}
-                    />
-                </div>
-
                 <button
                     onClick={async () => {
-                        // Build paymentData and call handleBuyPosts for 4 posts at 60000
-                        const paymentData = {
-                            card_number: cardNumberState,
-                            card_exp: cardDateState,
-                            card_name: cardNameState,
-                            phone: phoneState
-                        };
-                        await handleBuyPosts(4, 60000, paymentData);
+                        await handleBuyPosts(4);
                     }}
                     style={{ marginTop: '1rem', width: '100%', padding: '0.9rem', background: '#2dd4bf', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 600 }}
-                >Оплатить</button>
+                >Оплатить через Click</button>
             </div>
         );
     }
