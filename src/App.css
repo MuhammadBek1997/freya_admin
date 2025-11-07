@@ -243,11 +243,15 @@
   border-top-right-radius: 2vw;
   left: 0;
   z-index: 5;
+  overflow: visible; /* active pill tashqariga chiqishi uchun */
   /* Default CSS custom properties for responsive design */
   --home-top: 19vh;
   --schedule-top: 25.6vh;
   --group-top: 32.6vh;
   --profile-top: 39.4vh;
+}
+.sidebar-cont{
+  width: 100%;
 }
 .sidebar-logo{
   padding: 3vw;
@@ -273,6 +277,9 @@
   padding: 1vw;
   padding-left: 2.5vw;
   margin: 1vw 0;
+  border-radius: 0; /* radius olib tashlandi */
+  transition: background 200ms ease, box-shadow 200ms ease;
+  position: relative; /* pseudo-element uchun */
 }
 .sidebar-nav-item img{
   width: 1.1vw;
@@ -280,6 +287,7 @@
 }
 .sidebar-nav-item p{
   font-size: 1.1vw;
+  color: white;
 }
 .sidebar-illustration{
   position: fixed;
@@ -289,41 +297,61 @@
 .sidebar-illustration img{
   width: 10vw;
 }
-.sidebar-whitebox{
-  width: 100%;
-  height: 11vh !important;
-  background: linear-gradient(90deg,rgba(255, 255, 255, 1) 0%, rgba(240, 240, 255, 1) 100%);
-  position: absolute;
-  z-index: -1;
-  transition: 300ms;
+.sidebar-nav-item.is-active p {
+  color: #9C2BFF;
 }
-.sidebar-whiteboxtop-cont{
-  width: 100%;
-  height: 20%;
-  background-color: #9C2BFF;
-  border-bottom-right-radius: 2vw;
+.sidebar-nav-item.is-active {
+  position: relative;
+  background: white;
+  box-shadow: 0 0 1.1vw rgba(0,0,0,0.08);
+  border-radius: 0;
+  margin-left: 1vw;
+  border-bottom-left-radius: 5vw;
+  border-top-left-radius: 5vw;
 }
-.sidebar-whiteboxmid-cont{
-  width: 100%;
-  height: 60%;
-  background-color: #9C2BFF;
+.sidebar-nav-item.is-active img,
+.sidebar-nav-item.is-active p {
+  position: relative;
+  z-index: 1;
 }
-.sidebar-whitebox-cont{
-  width: 90%;
-  height: 100%;
-  border-bottom-left-radius: 2vw;
-  border-top-left-radius: 2vw;
-  background: linear-gradient(90deg,rgba(255, 255, 255, 1) 0%, rgba(240, 240, 255, 1) 100%);
-  margin-left: 10%;
+.sidebar-nav-item.is-active img {
+  margin-left: -0.6vw; /* doira ichida ikonani markazlash */
 }
-.sidebar-whiteboxbtm-cont{
-  width: 100%;
-  height: 20%;
-  background-color: #9C2BFF;
-  border-top-right-radius: 2vw;
+.sidebar-nav-item.is-active p {
+  color: #9C2BFF;
 }
 
 
+/* Responsive da sidebar elementlari */
+@media screen and (max-width: 1440px) {
+  .sidebar-nav-item {
+    padding: 0.8vw;
+    padding-left: 2vw;
+  }
+  
+  .sidebar-nav-item img {
+    width: 1.2vw;
+  }
+  
+  .sidebar-nav-item p {
+    font-size: 1vw;
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  .sidebar-nav-item {
+    padding: 1vw;
+    padding-left: 2.5vw;
+  }
+  
+  .sidebar-nav-item img {
+    width: 1.5vw;
+  }
+  
+  .sidebar-nav-item p {
+    font-size: 1.2vw;
+  }
+}
 
 
 
@@ -820,35 +848,4 @@ section{
 .sidebar-whitebox {
   transition: top 300ms ease, left 300ms ease, 
               height 300ms ease, width 300ms ease !important;
-}
-
-/* Responsive da sidebar elementlari */
-@media screen and (max-width: 1440px) {
-  .sidebar-nav-item {
-    padding: 0.8vw;
-    padding-left: 2vw;
-  }
-  
-  .sidebar-nav-item img {
-    width: 1.2vw;
-  }
-  
-  .sidebar-nav-item p {
-    font-size: 1vw;
-  }
-}
-
-@media screen and (max-width: 1024px) {
-  .sidebar-nav-item {
-    padding: 1vw;
-    padding-left: 2.5vw;
-  }
-  
-  .sidebar-nav-item img {
-    width: 1.5vw;
-  }
-  
-  .sidebar-nav-item p {
-    font-size: 1.2vw;
-  }
 }

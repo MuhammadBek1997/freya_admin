@@ -1,8 +1,11 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { UseGlobalContext } from '../Context'
 
 const Sidebar = () => {
-  let { t, selectIcon, whiteBoxRef, handleClick, user } = UseGlobalContext();
+  let { t, user } = UseGlobalContext();
+  const location = useLocation();
+
+  const isPath = (path) => location.pathname === path;
 
   return (
     <div className='sidebar'>
@@ -13,53 +16,27 @@ const Sidebar = () => {
         </h1>
       </div>
 
-      {/* WhiteBox — ref qo'yib olish */}
-      <div ref={whiteBoxRef} className="sidebar-whitebox">
-        <div className="sidebar-whiteboxtop-cont">
-        </div>
-        <div className='sidebar-whiteboxmid-cont'>
-          <div className="sidebar-whitebox-cont">
-          </div>
-        </div>
-        <div className="sidebar-whiteboxbtm-cont">
-        </div>
-      </div>
-
       <div className="sidebar-cont">
         <Link
           to={'/'}
-          style={{ textDecoration: selectIcon[0]?.style || 'none' }}
-          className='sidebar-nav-item'
-          onClick={handleClick}
+          className={`sidebar-nav-item ${isPath('/') ? 'is-active' : ''}`}
           id='0'
           key={0}
         >
-          <img src={selectIcon[0]?.img || '/images/home-light.png'} alt="" />
-          <p
-            style={{
-              textDecoration: selectIcon[0]?.style || 'none',
-              color: selectIcon[0]?.color || '#9C2BFF'
-            }}
-          >
+          <img src={!isPath('/') ? '/images/home-dark.png' : '/images/home-light.png'} alt="" />
+          <p>
             {t("sidebarHome")}
           </p>
         </Link>
 
         <Link
           to={'/schedule'}
-          style={{ textDecoration: selectIcon[1]?.style || 'underline' }}
-          className='sidebar-nav-item'
-          onClick={handleClick}
+          className={`sidebar-nav-item ${isPath('/schedule') ? 'is-active' : ''}`}
           id='1'
           key={1}
         >
-          <img src={selectIcon[1]?.img || '/images/schedule-dark.png'} alt="" />
-          <p
-            style={{
-              textDecoration: selectIcon[1]?.style || 'underline',
-              color: selectIcon[1]?.color || 'white'
-            }}
-          >
+          <img src={!isPath('/schedule') ? '/images/schedule-dark.png' : '/images/schedule-light.png'} alt="" />
+          <p>
             {t("sidebarSch")}
           </p>
         </Link>
@@ -68,39 +45,24 @@ const Sidebar = () => {
           // Admin/Employee uchun - Employees link
           <Link
             to={'/employees'}
-            style={{ textDecoration: selectIcon[2]?.style || 'underline' }}
-            className='sidebar-nav-item'
-            onClick={handleClick}
+            className={`sidebar-nav-item ${isPath('/employees') ? 'is-active' : ''}`}
             id='2'
             key={2}
           >
-            <img src={selectIcon[2]?.img || '/images/group-dark.png'} alt="" />
-            <p
-              style={{
-                textDecoration: selectIcon[2]?.style || 'underline',
-                color: selectIcon[2]?.color || 'white'
-              }}
-            >
+            <img src={!isPath('/employees') ? '/images/group-dark.png' : '/images/group-light.png'} alt="" />
+            <p>
               {t("sidebarEmp")}
             </p>
           </Link>
         ) : (
           // Private admin uchun - Employees disabled
           <h2
-            style={{ 
-              textDecoration: selectIcon[2]?.style || 'underline'
-            }}
-            className='sidebar-nav-item'
+            className={`sidebar-nav-item ${isPath('/employees') ? 'is-active' : ''}`}
             id='2'
             key={2}
           >
-            <img src={selectIcon[2]?.img || '/images/group-dark.png'} alt="" />
-            <p
-              style={{
-                textDecoration: selectIcon[2]?.style || 'underline',
-                color: selectIcon[2]?.color || 'white'
-              }}
-            >
+            <img src={!isPath('/employees') ? '/images/group-dark.png' : '/images/group-light.png'} alt="" />
+            <p>
               {t("sidebarEmp")}
             </p>
           </h2>
@@ -110,19 +72,12 @@ const Sidebar = () => {
         {user?.role === 'private_admin' && (
           <Link
             to={'/chat'}
-            style={{ textDecoration: selectIcon[3]?.style || 'underline' }}
-            className='sidebar-nav-item'
-            onClick={handleClick}
+            className={`sidebar-nav-item ${isPath('/chat') ? 'is-active' : ''}`}
             id='3'
             key={3}
           >
-            <img src={selectIcon[3]?.img || '/images/chat-dark.png'} alt="" />
-            <p
-              style={{
-                textDecoration: selectIcon[3]?.style || 'underline',
-                color: selectIcon[3]?.color || 'white'
-              }}
-            >
+            <img src={!isPath('/chat') ? '/images/chat-dark.png' : '/images/chat-light.png'} alt="" />
+            <p>
               {t('chat')}
             </p>
           </Link>
@@ -131,34 +86,15 @@ const Sidebar = () => {
         {/* Profile link - barcha userlar uchun */}
         <Link
           to={'/profile'}
-          style={{ 
-            textDecoration: user?.role === 'private_admin' 
-              ? (selectIcon[4]?.style || 'underline')
-              : (selectIcon[3]?.style || 'underline')
-          }}
-          className='sidebar-nav-item'
-          onClick={handleClick}
+          className={`sidebar-nav-item ${isPath('/profile') ? 'is-active' : ''}`}
           id={user?.role === 'private_admin' ? '4' : '3'}
           key={user?.role === 'private_admin' ? 4 : 3}
         >
           <img 
-            src={
-              user?.role === 'private_admin' 
-                ? (selectIcon[4]?.img || '/images/settings-dark.png')
-                : (selectIcon[4]?.img || '/images/settings-dark.png')
-            } 
+            src={!isPath('/profile') ? '/images/settings-dark.png' : '/images/settings-light.png'} 
             alt="" 
           />
-          <p
-            style={{
-              textDecoration: user?.role === 'private_admin' 
-                ? (selectIcon[4]?.style || 'underline')
-                : (selectIcon[3]?.style || 'underline'),
-              color: user?.role === 'private_admin' 
-                ? (selectIcon[4]?.color || 'white')
-                : (selectIcon[3]?.color || 'white')
-            }}
-          >
+          <p>
             {t("sidebarPro")}
           </p>
         </Link>
