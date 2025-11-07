@@ -359,10 +359,6 @@
 
 
 
-
-
-
-
 section{
   width: 100vw;
   height: 100vh;
@@ -370,10 +366,6 @@ section{
   overflow-x: hidden;
   background: #F0F0FF;
 }
-@media screen and (min-width: 1440px) {
-    
-}
-
 
 
 
@@ -844,8 +836,4 @@ section{
 }
 .confirm-btns button:first-child{
   background-color: #FF0000;
-}
-.sidebar-whitebox {
-  transition: top 300ms ease, left 300ms ease, 
-              height 300ms ease, width 300ms ease !important;
 }
