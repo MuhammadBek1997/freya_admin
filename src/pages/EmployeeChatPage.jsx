@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import '../styles/ChatStyles.css'
+import '../styles/AdminChatOverrides.css'
 import i18next from 'i18next';
 import { UseGlobalContext, getAuthToken } from '../Context';
 import EmployeeProfileModal from '../components/EmployeeProfileModal';
@@ -136,7 +137,7 @@ const EmployeeChatPage = () => {
   };
 
   useEffect(() => {
-    if (user && (user.role === 'employee' || user.role === 'private_admin' || user.role === 'private_salon_admin')) {
+    if (user && user.role === 'employee') {
       fetchConversations();
     }
   }, [user]);
@@ -151,7 +152,7 @@ const EmployeeChatPage = () => {
       }
     };
 
-    if (user && (user.role === 'employee' || user.role === 'private_admin' || user.role === 'private_salon_admin')) {
+    if (user && user.role === 'employee') {
       loadUnreadCount();
     }
   }, [user, conversations]);
@@ -397,9 +398,11 @@ const EmployeeChatPage = () => {
     }
   };
 
+  // Admin UI enabled: private_admin/private_salon_admin can use chat now
+
   return (
     <div>
-      <div className={`chat-container ${isMobileChatOpen ? 'chat-open' : ''}`} style={user.role === 'private_admin' ? { flexDirection: "row-reverse" } : {}}>
+      <div className={`chat-container ${isMobileChatOpen ? 'chat-open' : ''} ${(user?.role === 'private_admin' || user?.role === 'private_salon_admin') ? 'admin-layout' : ''}`}>
         {isMobileChatOpen && (
           <button className="back-button" onClick={() => {
             setSelectedUser(null);

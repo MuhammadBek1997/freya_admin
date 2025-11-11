@@ -6,6 +6,7 @@ import YandexMap from '../components/YandexMap'
 import ReadMoreReact from 'read-more-react';
 import { smsUrl } from '../apiUrls';
 import { getAuthToken } from '../Context';
+import { LocateFixed } from 'lucide-react'
 
 
 const Profile = () => {
@@ -27,6 +28,10 @@ const Profile = () => {
   const [editLocation, setEditLocation] = useState({ lat: '', lng: '' })
   const [editAddress, setEditAddress] = useState({ uz: '', en: '', ru: '' })
   const [editOrientation, setEditOrientation] = useState({ uz: '', en: '', ru: '' })
+  const [addressExtra, setAddressExtra] = useState('')
+  const [geoLoading, setGeoLoading] = useState(false)
+  const [geoPermission, setGeoPermission] = useState(null)
+  const [geoMessage, setGeoMessage] = useState('')
 
   // Helper: descriptiondan bulletlarni ajratib olish
   const extractBulletsFromText = (text) => {
@@ -122,6 +127,70 @@ const Profile = () => {
     } catch (e) {
       console.error('Map select handling error:', e)
     }
+  }
+
+  const checkGeoPermission = async () => {
+    try {
+      if (navigator.permissions && navigator.permissions.query) {
+        const status = await navigator.permissions.query({ name: 'geolocation' })
+        setGeoPermission(status.state)
+        if (typeof status.onchange === 'function') {
+          status.onchange = () => setGeoPermission(status.state)
+        }
+        return status.state
+      }
+    } catch (e) {
+      console.warn('Permissions API not available or failed:', e)
+    }
+    return null
+  }
+
+  const handleUseCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      alert(t('geolocationNotSupported') || 'Geolokatsiya qo‘llab-quvvatlanmaydi')
+      return
+    }
+    setGeoMessage('')
+    const perm = await checkGeoPermission()
+    if (perm === 'denied') {
+      setGeoMessage('Geolokatsiya ruxsat etilmagan. Brauzerda saytga “Location” ruxsatini bering va qurilmada geolokatsiyani yoqing, so‘ng yana urinib ko‘ring.')
+      return
+    }
+    setGeoLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords
+        try {
+          await handleMapSelect({ lat: latitude, lng: longitude })
+        } finally {
+          setGeoLoading(false)
+        }
+      },
+      (err) => {
+        console.error('Geolocation error:', err)
+        let msg = t('geolocationError') || 'Hozirgi lokatsiya olinmadi'
+        if (err && typeof err.code === 'number') {
+          if (err.code === 1) {
+            msg = 'Ruxsat berilmadi. Brauzer oynasida lokatsiyaga ruxsat bering yoki sayt sozlamalaridan Location’ni yoqing.'
+          } else if (err.code === 2) {
+            msg = 'Lokatsiya topilmadi. Internet/GPS ni yoqib, ochiq joyda urinib ko‘ring.'
+          } else if (err.code === 3) {
+            msg = 'So‘rov vaqti tugadi. Qayta urinib ko‘ring.'
+          }
+        }
+        setGeoMessage(msg)
+        setGeoLoading(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    )
+  }
+
+  const appendExtra = (base, extra) => {
+    const b = (base || '').trim()
+    const e = (extra || '').trim()
+    if (!e) return b
+    if (!b) return e
+    return `${b}, ${e}`
   }
 
   // Salon profilidagi mavjud rasmlarni UI ga sync qilish
@@ -340,10 +409,13 @@ const Profile = () => {
       updateData['location'] = { lat: editLocation.lat, lng: editLocation.lng };
       console.log('✅ Location selected on map');
     }
-    if (editAddress?.uz || editAddress?.en || editAddress?.ru) {
-      if (editAddress.uz) { updateData['address_uz'] = editAddress.uz; updateData['salon_address_uz'] = editAddress.uz; }
-      if (editAddress.en) { updateData['address_en'] = editAddress.en; updateData['salon_address_en'] = editAddress.en; }
-      if (editAddress.ru) { updateData['address_ru'] = editAddress.ru; updateData['salon_address_ru'] = editAddress.ru; }
+    if (editAddress?.uz || editAddress?.en || editAddress?.ru || addressExtra) {
+      const uzCombined = appendExtra(editAddress.uz, addressExtra)
+      const enCombined = appendExtra(editAddress.en, addressExtra)
+      const ruCombined = appendExtra(editAddress.ru, addressExtra)
+      if (uzCombined) { updateData['address_uz'] = uzCombined; updateData['salon_address_uz'] = uzCombined; }
+      if (enCombined) { updateData['address_en'] = enCombined; updateData['salon_address_en'] = enCombined; }
+      if (ruCombined) { updateData['address_ru'] = ruCombined; updateData['salon_address_ru'] = ruCombined; }
       console.log('✅ Address (UZ/EN/RU) prepared');
     }
     if (editOrientation?.uz || editOrientation?.en || editOrientation?.ru) {
@@ -1780,7 +1852,33 @@ const Profile = () => {
           <div className="profile-body-right">
             {changeMode && (
               <div className='company-location-edit' style={{ marginBottom: '16px' }}>
-                <h3 style={{ marginBottom: '8px' }}>{t('profileMapSelect') || 'Manzilni xaritadan belgilang'}</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h3 style={{ margin: 0 }}>{t('profileMapSelect') || 'Manzilni xaritadan belgilang'}</h3>
+                  <button
+                    type='button'
+                    onClick={handleUseCurrentLocation}
+                    disabled={geoLoading}
+                    style={{
+                      width: '42px',
+                      height: '42px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: geoLoading ? '#9aa6b2' : '#9C2BFF',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '10px',
+                      cursor: geoLoading ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <LocateFixed color="#ffffff" size={20} strokeWidth={2.25} />
+                  </button>
+                </div>
+                {geoMessage && (
+                  <div style={{ marginBottom: '8px' }}>
+                    <p style={{ fontSize: '0.9vw', color: '#d32f2f' }}>{geoMessage}</p>
+                  </div>
+                )}
                 <div className='company-location-map'>
                   <YandexMap
                     lat={editLocation?.lat || salonProfile?.location?.lat}
@@ -1792,13 +1890,33 @@ const Profile = () => {
                 <div className='company-location-bottom'>
                   <div className='company-location-address'>
                     <img src="/images/markerMap.png" alt="" />
-                    <p>{editAddress?.[String(language).toLowerCase()] || ''}</p>
+                    <p>{appendExtra(editAddress?.[String(language).toLowerCase()] || '', addressExtra)}</p>
                   </div>
                   <div className='company-location-navigate'>
                     <img src="/images/navigateMap.png" alt="" />
                     <p>{editOrientation?.[String(language).toLowerCase()] ? `${t('metro') || 'Metro'}: ${editOrientation?.[String(language).toLowerCase()]}` : ''}</p>
                   </div>
                 </div>
+                {(editLocation?.lat && editLocation?.lng) || (editAddress?.uz || editAddress?.en || editAddress?.ru) ? (
+                  <div style={{ marginTop: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.95vw' }}>
+                      {t('addressExtra') || 'Uy manzili (qo‘shimcha) — UZ/EN/RU uchun bir xil'}
+                    </label>
+                    <input
+                      type='text'
+                      value={addressExtra}
+                      onChange={(e) => setAddressExtra(e.target.value)}
+                      placeholder={t('addressExtraPlaceholder') || 'Kvartira, подъезд, этаж ...'}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '1px solid #ddd',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                ) : null}
                 <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '8px' }}>
                   Lat: {editLocation?.lat || '-'} · Lng: {editLocation?.lng || '-'}
                 </div>

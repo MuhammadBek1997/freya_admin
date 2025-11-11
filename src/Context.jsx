@@ -2075,13 +2075,148 @@ export const AppProvider = ({ children }) => {
 		}
 	};
 	// ===== CHAT API FUNCTIONS =====
+    // ===== WebSocket Chat Client =====
+    // Frontend WS client for real-time chat between employee ↔ user.
+    const wsRef = useRef(null);
+    const [wsStatus, setWsStatus] = useState('idle'); // idle | connecting | connected | closed | error | unsupported
+    const [wsError, setWsError] = useState(null);
+    const wsReceiverRef = useRef({ id: null, type: null });
+    const wsRoomIdRef = useRef(null);
+
+    const buildWsUrl = (receiverId, receiverType) => {
+        // API_BASE_URL points to `.../api`; ws endpoint is `/ws/chat`
+        const scheme = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
+        const base = API_BASE_URL; // e.g. https://host/api
+        const url = `${scheme}://${base.replace(/^https?:\/\//, '')}/ws/chat?token=${encodeURIComponent(getAuthToken() || '')}&receiver_id=${encodeURIComponent(receiverId)}&receiver_type=${encodeURIComponent(receiverType)}`;
+        return url;
+    };
+
+    const disconnectChatWs = () => {
+        try {
+            if (wsRef.current) {
+                wsRef.current.close();
+            }
+        } catch {}
+        wsRef.current = null;
+        wsRoomIdRef.current = null;
+        wsReceiverRef.current = { id: null, type: null };
+        setWsStatus('closed');
+        setWsError(null);
+    };
+
+    const connectChatWs = (receiverId, receiverType = 'user') => {
+        // Only employees and users are supported by backend WS right now
+        const role = user?.role;
+        if (!role || (role !== 'employee' && role !== 'user')) {
+            setWsStatus('unsupported');
+            setWsError('WebSocket chat is supported for employees and users only.');
+            return false;
+        }
+        if (!receiverId) {
+            setWsStatus('error');
+            setWsError('Receiver ID is required for WS chat');
+            return false;
+        }
+
+        // Reset previous connection
+        disconnectChatWs();
+        setWsStatus('connecting');
+        setWsError(null);
+        wsReceiverRef.current = { id: receiverId, type: receiverType };
+
+        const url = buildWsUrl(receiverId, receiverType);
+        try {
+            const ws = new WebSocket(url);
+            wsRef.current = ws;
+
+            ws.onopen = () => {
+                setWsStatus('connected');
+                setCurrentConversation(receiverId);
+            };
+
+            ws.onmessage = (evt) => {
+                try {
+                    const payload = JSON.parse(evt.data);
+                    const ev = payload?.event || 'message';
+                    if (ev === 'history') {
+                        const items = Array.isArray(payload?.items) ? payload.items : [];
+                        setMessages(items);
+                        wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
+                    } else if (ev === 'message') {
+                        const msg = payload?.message;
+                        if (msg) {
+                            setMessages(prev => [...prev, msg]);
+                        }
+                        wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
+                    } else if (ev === 'read') {
+                        // Mark local messages addressed to current user as read
+                        const byUserId = payload?.by_user_id;
+                        setMessages(prev => prev.map(m => {
+                            if (String(m.receiver_id) === String(byUserId)) return { ...m, is_read: true };
+                            return m;
+                        }));
+                    } else if (ev === 'join') {
+                        wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
+                    }
+                } catch (e) {
+                    // ignore parse errors
+                }
+            };
+
+            ws.onerror = () => {
+                setWsStatus('error');
+                setWsError('WebSocket error occurred');
+            };
+
+            ws.onclose = () => {
+                setWsStatus('closed');
+            };
+            return true;
+        } catch (e) {
+            setWsStatus('error');
+            setWsError(e?.message || 'Failed to open WebSocket');
+            return false;
+        }
+    };
+
+    const sendWsMessage = (messageText, messageType = 'text', fileUrl = null) => {
+        const ws = wsRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            return false;
+        }
+        const payload = {
+            event: 'message',
+            message_text: messageText,
+            message_type: messageType,
+            file_url: fileUrl,
+        };
+        try {
+            ws.send(JSON.stringify(payload));
+            return true;
+        } catch {
+            return false;
+        }
+    };
+
+    const sendWsMarkRead = () => {
+        const ws = wsRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+        try {
+            ws.send(JSON.stringify({ event: 'mark_read' }));
+            return true;
+        } catch {
+            return false;
+        }
+    };
+
+
 	// ===== CHAT API FUNCTIONS =====
-// Fetch conversations for employee - URL ni o'zgartirish
+// Fetch conversations for employee/admin (salon)
 const fetchConversations = async () => {
-	if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin')) {
-		console.error('Only employees and admins can fetch conversations');
-		return;
-	}
+    if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
+        console.error('Only employees and admins can fetch conversations');
+        return;
+    }
 
 	setConversationsLoading(true);
 	setConversationsError(null);
@@ -2090,14 +2225,15 @@ const fetchConversations = async () => {
 		const token = getAuthToken();
 		console.log('📤 Fetching conversations for user:', user.id, 'Role:', user.role);
 		
-		// ✅ Employee va Admin uchun alohida endpoint
-		const response = await fetch(`${messagesUrl}/employee/conversations`, {
-			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${token}`,
-				'Content-Type': 'application/json',
-			},
-		});
+        // ✅ Employee uchun /employee, Admin uchun /admin endpoint
+        const isEmployee = user.role === 'employee';
+        const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/conversations`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
 
 		console.log('📥 Conversations response status:', response.status);
 
@@ -2159,8 +2295,8 @@ const fetchConversations = async () => {
 	}
 };
 
-	// Fetch messages for employee - URL ni o'zgartirish
-	const fetchMessages = async (userId) => {
+// Fetch messages for employee/admin - URL tanlash
+const fetchMessages = async (userId) => {
   // ✅ userId tekshirish
   if (!userId) {
     console.error('❌ fetchMessages: userId is required');
@@ -2168,7 +2304,7 @@ const fetchConversations = async () => {
     return;
   }
 
-  if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin')) {
+  if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
     console.error('Only employees and admins can fetch messages');
     return;
   }
@@ -2181,7 +2317,8 @@ const fetchConversations = async () => {
     
     console.log('📤 Fetching messages for user:', userId);
     
-    const response = await fetch(`${messagesUrl}/employee/conversation/${userId}`, {
+    const isEmployee = user.role === 'employee';
+    const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/conversation/${userId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -2232,46 +2369,48 @@ const fetchConversations = async () => {
   }
 };
 
-	// Send message from employee - URL ni o'zgartirish
-	const sendMessage = async (receiverId, messageText, messageType = 'text') => {
-		if (!user || user.role !== 'employee') {
-			console.error('Only employees can send messages');
-			return;
-		}
+// Send message from employee/admin - URL ni o'zgartirish
+const sendMessage = async (receiverId, messageText, messageType = 'text') => {
+    if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
+        console.error('Only employees or admins can send messages');
+        return;
+    }
 
 		try {
 			const token = getAuthToken();
-			// ✅ Employee uchun alohida endpoint
-			const response = await fetch(`${messagesUrl}/employee/send`, {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					receiver_id: receiverId,
-					message_text: messageText,
-					message_type: messageType
-				}),
-			});
+        // ✅ Employee uchun /employee/send, Admin uchun /admin/send
+        const isEmployee = user.role === 'employee';
+        const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/send`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                receiver_id: receiverId,
+                message_text: messageText,
+                message_type: messageType
+            }),
+        });
 
 			if (response.ok) {
 				const data = await response.json();
 				console.log('Message sent:', data);
 
-				if (currentConversation === receiverId) {
-					setMessages(prevMessages => [...prevMessages, {
-						id: data.data?.id,
-						sender_id: user.id,
-						sender_type: 'employee',
-						receiver_id: receiverId,
-						receiver_type: 'user',
-						message_text: messageText,
-						message_type: messageType,
-						is_read: false,
-						created_at: data.data?.created_at || new Date().toISOString()
-					}]);
-				}
+                if (currentConversation === receiverId) {
+                    const isEmployeeSender = user.role === 'employee';
+                    setMessages(prevMessages => [...prevMessages, {
+                        id: data.data?.id,
+                        sender_id: isEmployeeSender ? user.id : (user.salon_id || user.id),
+                        sender_type: isEmployeeSender ? 'employee' : 'salon',
+                        receiver_id: receiverId,
+                        receiver_type: 'user',
+                        message_text: messageText,
+                        message_type: messageType,
+                        is_read: false,
+                        created_at: data.data?.created_at || new Date().toISOString()
+                    }]);
+                }
 
 				await fetchConversations();
 				return data;
@@ -2285,15 +2424,15 @@ const fetchConversations = async () => {
 		}
 	};
 
-	// Mark conversation as read for employee - URL ni o'zgartirish
-	const markConversationAsRead = async (userId) => {
+// Mark conversation as read for employee/admin - URL tanlash
+const markConversationAsRead = async (userId) => {
   // ✅ userId tekshirish
   if (!userId) {
     console.error('❌ markConversationAsRead: userId is required');
     return;
   }
 
-  if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin')) {
+  if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
     console.error('Only employees and admins can mark conversation as read');
     return;
   }
@@ -2303,7 +2442,8 @@ const fetchConversations = async () => {
     
     console.log('📤 Marking conversation as read for user:', userId);
     
-    const response = await fetch(`${messagesUrl}/employee/conversation/${userId}/mark-read`, {
+    const isEmployee = user.role === 'employee';
+    const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/conversation/${userId}/mark-read`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -2358,11 +2498,11 @@ const fetchConversations = async () => {
 
 
 	// Get unread messages count
-	const getUnreadCount = async () => {
-		if (!user || (user.role !== 'employee' && user.role !== 'private_admin')) {
-			console.error('Only employees and admin2 can get unread count');
-			return 0;
-		}
+const getUnreadCount = async () => {
+    if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
+        console.error('Only employees and admin2 can get unread count');
+        return 0;
+    }
 
 		try {
 			// Get unread count from conversations data
@@ -3932,6 +4072,8 @@ const fetchConversations = async () => {
 			conversations, conversationsLoading, conversationsError, fetchConversations,
 			currentConversation, setCurrentConversation,
 			messages, messagesLoading, messagesError, fetchMessages, sendMessage, getUnreadCount, markMessagesAsRead, markConversationAsRead,
+			// WebSocket chat
+			wsStatus, wsError, connectChatWs, disconnectChatWs, sendWsMessage, sendWsMarkRead,
 			// Salons state va funksiyalari
 			salons, salonsLoading, salonsError, fetchSalons, updateSalon,
 			// Salon rasmlarini yuklash va o'chirish funksiyalari

@@ -1,0 +1,71 @@
+/* Admin layout overrides: position internal chat sidebar to the right for private_admin/private_salon_admin */
+.admin-layout .chatSidebar {
+  left: auto;
+  right: 0;
+}
+
+.admin-layout .chat-window,
+.admin-layout .chat-posts,
+.admin-layout .chat-comments {
+  padding-left: 0;
+  padding-right: 20vw;
+}
+
+.admin-layout .employee-header {
+  left: 0;
+  right: 20vw;
+  width: auto;
+}
+
+.admin-layout .comments-body {
+  margin-left: 0;
+  margin-right: 21vw;
+  width: 78vw;
+}
+
+/* Admin layout responsive overrides */
+@media (max-width: 1024px) {
+  .admin-layout .chat-window,
+  .admin-layout .chat-posts,
+  .admin-layout .chat-comments {
+    padding-right: 27.3vw;
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 1366px) and (min-width: 1025px) {
+  .admin-layout .chat-window,
+  .admin-layout .chat-posts,
+  .admin-layout .chat-comments {
+    padding-right: 25vw;
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .admin-layout .chat-window,
+  .admin-layout .chat-posts,
+  .admin-layout .chat-comments {
+    padding-right: 30vw;
+    padding-left: 0;
+  }
+  .admin-layout .employee-header {
+    left: 0;
+    right: 30vw;
+    width: 70vw;
+  }
+  .admin-layout .comments-body {
+    margin-left: 0;
+    margin-right: 31vw;
+    width: 69vw;
+  }
+}
+
+@media (max-width: 768px) and (min-width: 481px) {
+  .admin-layout .chat-window,
+  .admin-layout .chat-posts,
+  .admin-layout .chat-comments {
+    padding-right: 35vw;
+    padding-left: 0;
+  }
+}
