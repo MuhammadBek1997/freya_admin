@@ -7,7 +7,7 @@ import EmployWaitingCard from '../components/EmployWaitingCard';
 import AddEmployeeModal from '../components/AddEmployeeModal';
 
 const Employees = () => {
-  const { t, waitingEmp, setWaitingEmp, employees, handleAddWaitingEmp, handleRemoveWaitingEmp, isCheckedItem, setIsCheckedItem, fetchEmployees, employeesLoading } = UseGlobalContext();
+  const { t, waitingEmp, setWaitingEmp, employees, employeesBySalon, handleAddWaitingEmp, handleRemoveWaitingEmp, isCheckedItem, setIsCheckedItem, fetchEmployees, employeesLoading, user } = UseGlobalContext();
   const [openCardId, setOpenCardId] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState({ menu: null, cardId: null });
   const [showWait, setShowWait] = useState(false);
@@ -16,10 +16,14 @@ const Employees = () => {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Sahifa ochilganda xodimlarni yuklash
+  // Sahifa ochilganda va salon o'zgarganda xodimlarni yuklash
   useEffect(() => {
-    fetchEmployees();
-  }, []);
+    if (user?.salon_id) {
+      fetchEmployees(user.salon_id);
+    } else {
+      fetchEmployees();
+    }
+  }, [user?.salon_id]);
 
   // Function to toggle the menu for a specific card
   const handleToggleMenu = (id) => {
@@ -49,14 +53,21 @@ const Employees = () => {
     });
   };
 
+  // Faqat joriy salon xodimlarini ko'rsatamiz
+  const salonIdStr = String(user?.salon_id || '');
+  const waitingBySalon = (waitingEmp || []).filter(emp => {
+    const sid = emp?.salon_id ?? emp?.salonId ?? (emp?.salon && emp.salon.id);
+    return sid && String(sid) === salonIdStr;
+  });
+
   // Filter working employees (not in waiting list)
-  let workingEmployees = employees.filter(
-    (employee) => !waitingEmp.some((emp) => emp.id === employee.id)
+  let workingEmployees = employeesBySalon.filter(
+    (employee) => !waitingBySalon.some((emp) => emp.id === employee.id)
   );
 
   // Apply search filter
   const filteredWorkingEmployees = filterEmployees(workingEmployees);
-  const filteredWaitingEmployees = filterEmployees(waitingEmp);
+  const filteredWaitingEmployees = filterEmployees(waitingBySalon);
 
   // Close card menu when clicking outside
   useEffect(() => {
@@ -85,7 +96,7 @@ const Employees = () => {
   }, [openCardId]);
 
   // Find the selected employee based on isMenuOpen.cardId
-  const selectedEmployee = employees.find((item) => item.id === isMenuOpen.cardId);
+  const selectedEmployee = (employeesBySalon || employees || []).find((item) => item.id === isMenuOpen.cardId);
 
   return (
     <section>
@@ -96,7 +107,7 @@ const Employees = () => {
             <h2>{t('employHT')}</h2>
           </div>
           <div className="employ-nav-summ">
-            <h2>{employees.length}</h2>
+            <h2>{employeesBySalon.length}</h2>
             <h5>{t('employSmry')}</h5>
           </div>
         </div>
@@ -129,7 +140,7 @@ const Employees = () => {
             <>
               <button className="employ-filter-waiting" onClick={() => setShowWait(true)}>
                 <img src="/images/waitingIcon.png" alt="" />
-                {t('employWait')} ({waitingEmp.length})
+                {t('employWait')} ({waitingBySalon.length})
               </button>
               <button
                 className="employ-filter-send"

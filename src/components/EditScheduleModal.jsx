@@ -21,7 +21,7 @@ const EditScheduleModal = (props) => {
         setEditModal
     } = props;
 
-    const { updateSchedule, user, employees, t } = UseGlobalContext();
+    const { updateSchedule, user, employees, employeesBySalon, t, ts, fetchEmployeeBusySlots, calculateAvailableSlots, combinedAppointments, schedules } = UseGlobalContext();
 
     const [selectEmploy, setSelectEmploy] = useState(false);
     const [formData, setFormData] = useState({
@@ -88,6 +88,38 @@ const EditScheduleModal = (props) => {
                 deposit: Number(formData.deposit) || 0,
                 is_active: Boolean(formData.is_active)
             };
+
+            // Validate each selected employee is free at given time
+            if (Array.isArray(formData.employee_list) && formData.employee_list.length > 0) {
+                for (const empId of formData.employee_list) {
+                    const empObj = (employeesBySalon || employees || []).find(e => String(e.id) === String(empId)) || {}
+                    const workStart = empObj.work_start_time || '09:00'
+                    const workEnd = empObj.work_end_time || '20:00'
+                    const busySlots = await fetchEmployeeBusySlots(String(empId), String(formData.date))
+                    const employeeAppointments = (combinedAppointments || []).filter(
+                        apt => String(apt.employee_id) === String(empId) && String(apt.date) === String(formData.date)
+                    )
+                    const employeeSchedules = (schedules || []).filter(s =>
+                        String(s.date) === String(formData.date) &&
+                        Array.isArray(s.employee_list) &&
+                        s.employee_list.map(id => String(id)).includes(String(empId)) &&
+                        String(s.id) !== String(id)
+                    )
+                    const scheduleBusySlots = employeeSchedules.map(s => ({ start_time: String(s.start_time), end_time: String(s.end_time) }))
+                    const allBusySlots = [...(busySlots || []), ...scheduleBusySlots]
+                    const slots = calculateAvailableSlots(
+                        workStart,
+                        workEnd,
+                        allBusySlots,
+                        employeeAppointments,
+                        Number(formData.service_duration) || (Number(props.service_duration) || 60)
+                    )
+                    const ok = slots.some(s => s.start_time === String(formData.start_time) && s.end_time === String(formData.end_time))
+                    if (!ok) {
+                        throw new Error(t('employeeBusy') || 'Tanlangan xodim bu vaqtda band')
+                    }
+                }
+            }
 
             await updateSchedule(id, scheduleData);
 
@@ -203,6 +235,9 @@ const EditScheduleModal = (props) => {
                         <SelectEmployeeModal
                             setSelectEmploy={setSelectEmploy}
                             onEmployeeSelect={handleEmployeeSelect}
+                            date={formData.date}
+                            start_time={formData.start_time}
+                            end_time={formData.end_time}
                         />
                     )}
 
@@ -213,8 +248,8 @@ const EditScheduleModal = (props) => {
                             </p>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                                 {formData.employee_list.map((employeeId) => {
-                                    const emp = employees?.find(e => String(e.id) === String(employeeId));
-                                    const displayName = emp?.name || emp?.employee_name || t('employee') || 'Сотрудник';
+                                    const emp = (employeesBySalon || employees || []).find(e => String(e.id) === String(employeeId));
+                                    const displayName = emp?.name || emp?.employee_name || ts('schedule.employee','Сотрудник');
                                     const avatarSrc = emp?.avatar_url || emp?.photo || '/images/masterImage.png';
                                     return (
                                         <div style={{ display: "flex", flexDirection: "column" }} key={employeeId}>

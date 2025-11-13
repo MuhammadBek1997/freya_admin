@@ -10,6 +10,7 @@ const RightSidebar = () => {
         updateAppointmentStatus,
         cancelAppointment,
         employees,
+        employeesBySalon,
         getAuthToken,
         setConfirmModal
     } = UseGlobalContext();
@@ -68,7 +69,7 @@ const RightSidebar = () => {
         }
     };
 
-    const employee = employees?.find(emp => emp.id === selectedElement.employee_id);
+    const employee = (employeesBySalon || employees || []).find(emp => emp.id === selectedElement.employee_id);
 
     const showButtons = selectedElement.status === 'accepted' &&
         !selectedElement.is_confirmed &&

@@ -15,7 +15,7 @@ i18next
 .use(I18nextBrowserLanguageDetector)
 .use(initReactI18next)
 .init({
-    fallBackLng:'ru',
+    fallbackLng:'ru',
     lng:language,
     debug:true,
     resources:{

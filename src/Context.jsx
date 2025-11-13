@@ -29,7 +29,8 @@ import {
 	translationDetectLanguageUrl,
 	messagesUrl,
 	photoUploadUrl,
-	bookingsUrl
+	bookingsUrl,
+	mobileSchedulesUrl
 } from "./apiUrls"
 
 
@@ -105,6 +106,7 @@ const seedLocalData = () => {
 	}
 };
 
+
 // Top-level helpers for headers and auth
 export const getAuthToken = () => {
 	return localStorage.getItem('authToken');
@@ -175,6 +177,55 @@ export const AppProvider = ({ children }) => {
 				orientation_en: source.orientation_en || nested.en || nested.EN || nested['en-US'] || '',
 			} : {})
 		};
+	};
+
+	const getAvailableSlots = async (employeeId, dateStr) => {
+		if (!employeeId || !dateStr) return { success: true, employee_id: String(employeeId || ''), date: String(dateStr || ''), data: [] };
+		try {
+			const token = getAuthToken();
+			const headers = {
+				'Content-Type': 'application/json',
+				...(token ? { 'Authorization': `Bearer ${token}` } : {})
+			};
+			const qs = new URLSearchParams({ date_str: String(dateStr) }).toString();
+			const url = `${mobileSchedulesUrl}/${employeeId}/available-slots?${qs}`;
+			const resp = await fetch(url, { method: 'GET', headers });
+			if (!resp.ok) {
+				let msg = `HTTP ${resp.status}`;
+				try { const j = await resp.json(); msg = j?.message || j?.detail || msg } catch { try { msg = await resp.text() } catch { } }
+				throw new Error(msg);
+			}
+			const data = await resp.json();
+			return data;
+		} catch (e) {
+			return { success: false, employee_id: String(employeeId || ''), date: String(dateStr || ''), data: [], message: e?.message };
+		}
+	};
+
+	const createMobileAppointment = async (payload) => {
+		try {
+			const token = getAuthToken();
+			if (!token) throw new Error('Token topilmadi');
+			const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+			const body = {
+				salon_id: String(payload.salon_id),
+				schedule_id: String(payload.schedule_id),
+				employee_id: String(payload.employee_id),
+				service_id: payload.service_id ? String(payload.service_id) : undefined,
+				date: String(payload.date),
+				time: String(payload.time)
+			};
+			const resp = await fetch(`${mobileSchedulesUrl}/appointments`, { method: 'POST', headers, body: JSON.stringify(body) });
+			if (!resp.ok) {
+				let msg = `HTTP ${resp.status}`;
+				try { const j = await resp.json(); msg = j?.message || j?.detail || msg } catch { try { msg = await resp.text() } catch { } }
+				throw new Error(msg);
+			}
+			const data = await resp.json();
+			return data;
+		} catch (e) {
+			throw e;
+		}
 	};
 
 
@@ -353,7 +404,7 @@ export const AppProvider = ({ children }) => {
 			let lang = data?.data?.language;
 			if (!lang || typeof lang !== 'string') return null;
 			lang = lang.toLowerCase();
-			if (['uz','ru','en'].includes(lang)) return lang;
+			if (['uz', 'ru', 'en'].includes(lang)) return lang;
 			if (lang.startsWith('ru')) return 'ru';
 			if (lang.startsWith('uz')) return 'uz';
 			if (lang.startsWith('en')) return 'en';
@@ -389,108 +440,108 @@ export const AppProvider = ({ children }) => {
 			console.log('URL:', `${salonsUrl}/${targetId}`);
 
 			const rawLang = i18n?.language || 'uz';
-					const languageHeader = ['uz','ru','en'].includes(rawLang)
-						? rawLang
-						: (rawLang?.toLowerCase().startsWith('ru') ? 'ru'
-							: rawLang?.toLowerCase().startsWith('uz') ? 'uz'
-							: rawLang?.toLowerCase().startsWith('en') ? 'en'
+			const languageHeader = ['uz', 'ru', 'en'].includes(rawLang)
+				? rawLang
+				: (rawLang?.toLowerCase().startsWith('ru') ? 'ru'
+					: rawLang?.toLowerCase().startsWith('uz') ? 'uz'
+						: rawLang?.toLowerCase().startsWith('en') ? 'en'
 							: 'ru');
-				let payload = { ...updateData };
+			let payload = { ...updateData };
 
-				// Merge salon_additionals into description text as bullet list
-				let combinedDescription = null;
-				if (payload.salon_additionals !== undefined) {
-					const items = Array.isArray(payload.salon_additionals)
-						? payload.salon_additionals
-						: String(payload.salon_additionals || '').split('\n');
-					const cleaned = items.map(it => String(it || '').trim()).filter(Boolean);
-					const bullets = cleaned.length ? cleaned.map(s => `- ${s}`).join('\n') : '';
-					combinedDescription = payload.salon_description
-						? `${String(payload.salon_description).trim()}${bullets ? `\n\n${bullets}` : ''}`
-						: bullets;
-					// remove additionals from payload (we embed it into description)
-					delete payload.salon_additionals;
-				}
-				// If no additionals provided but description exists, use it as combined
-				if (!combinedDescription && payload.salon_description) {
-					combinedDescription = String(payload.salon_description).trim();
-				}
+			// Merge salon_additionals into description text as bullet list
+			let combinedDescription = null;
+			if (payload.salon_additionals !== undefined) {
+				const items = Array.isArray(payload.salon_additionals)
+					? payload.salon_additionals
+					: String(payload.salon_additionals || '').split('\n');
+				const cleaned = items.map(it => String(it || '').trim()).filter(Boolean);
+				const bullets = cleaned.length ? cleaned.map(s => `- ${s}`).join('\n') : '';
+				combinedDescription = payload.salon_description
+					? `${String(payload.salon_description).trim()}${bullets ? `\n\n${bullets}` : ''}`
+					: bullets;
+				// remove additionals from payload (we embed it into description)
+				delete payload.salon_additionals;
+			}
+			// If no additionals provided but description exists, use it as combined
+			if (!combinedDescription && payload.salon_description) {
+				combinedDescription = String(payload.salon_description).trim();
+			}
 
-				// If we have description text, detect language and place into description_<lang>
-				if (combinedDescription) {
-					let detectedLang = await detectLanguageForText(combinedDescription);
-					if (!detectedLang) detectedLang = languageHeader;
-					payload[`description_${detectedLang}`] = combinedDescription;
-					// avoid sending base key to prevent confusion
-					delete payload.salon_description;
-				}
+			// If we have description text, detect language and place into description_<lang>
+			if (combinedDescription) {
+				let detectedLang = await detectLanguageForText(combinedDescription);
+				if (!detectedLang) detectedLang = languageHeader;
+				payload[`description_${detectedLang}`] = combinedDescription;
+				// avoid sending base key to prevent confusion
+				delete payload.salon_description;
+			}
 
-				// Map any existing salon_description_<lang> to description_<lang>
-				['uz','ru','en'].forEach(l => {
-					const key = `salon_description_${l}`;
-					if (payload[key] !== undefined) {
-						payload[`description_${l}`] = payload[key] || '';
-						delete payload[key];
+			// Map any existing salon_description_<lang> to description_<lang>
+			['uz', 'ru', 'en'].forEach(l => {
+				const key = `salon_description_${l}`;
+				if (payload[key] !== undefined) {
+					payload[`description_${l}`] = payload[key] || '';
+					delete payload[key];
+				}
+			});
+
+			// Drop unsupported keys
+			Object.keys(payload).forEach(k => {
+				if (k.startsWith('salon_name_')) delete payload[k];
+			});
+			['work_schedule', 'salon_format', 'salon_add_phone'].forEach(k => {
+				if (payload[k] !== undefined) delete payload[k];
+			});
+
+			// Normalize phone to digits only
+			if (payload.salon_phone !== undefined) {
+				payload.salon_phone = String(payload.salon_phone).replace(/\D/g, '');
+			}
+
+			// Debug: show normalized payload before sending
+			console.log('Normalized Payload:', JSON.stringify(payload, null, 2));
+
+			// Normalize location to backend Location schema
+			if (payload.location && typeof payload.location === 'object') {
+				const loc = payload.location;
+				const latitude = loc.latitude ?? loc.lat ?? undefined;
+				const longitude = loc.longitude ?? loc.lng ?? undefined;
+				payload.location = { latitude, longitude };
+			}
+
+			// Ensure salon_types are objects with { type, selected }
+			if (Array.isArray(payload.salon_types)) {
+				let nextTypes = payload.salon_types.map(item => {
+					if (item && typeof item === 'object') {
+						if ('type' in item) return { type: String(item.type), selected: !!item.selected };
+						if ('value' in item) return { type: String(item.value), selected: !!item.selected };
 					}
+					if (typeof item === 'string') return { type: item, selected: false };
+					return item;
 				});
-
-				// Drop unsupported keys
-				Object.keys(payload).forEach(k => {
-					if (k.startsWith('salon_name_')) delete payload[k];
-				});
-				['work_schedule','salon_format','salon_add_phone'].forEach(k => {
-					if (payload[k] !== undefined) delete payload[k];
-				});
-
-				// Normalize phone to digits only
-				if (payload.salon_phone !== undefined) {
-					payload.salon_phone = String(payload.salon_phone).replace(/\D/g, '');
+				// Guarantee at least one selected
+				if (nextTypes.length > 0 && !nextTypes.some(t => t && t.selected)) {
+					const currentSelected = (salonProfile?.salon_types || []).find(t => t?.selected)?.type;
+					const idx = nextTypes.findIndex(t => t?.type === currentSelected);
+					const selectIndex = idx >= 0 ? idx : 0;
+					nextTypes = nextTypes.map((t, i) => ({ ...t, selected: i === selectIndex }));
 				}
+				payload.salon_types = nextTypes;
+			}
 
-				// Debug: show normalized payload before sending
-				console.log('Normalized Payload:', JSON.stringify(payload, null, 2));
-
-				// Normalize location to backend Location schema
-				if (payload.location && typeof payload.location === 'object') {
-					const loc = payload.location;
-					const latitude = loc.latitude ?? loc.lat ?? undefined;
-					const longitude = loc.longitude ?? loc.lng ?? undefined;
-					payload.location = { latitude, longitude };
-				}
-
-				// Ensure salon_types are objects with { type, selected }
-					if (Array.isArray(payload.salon_types)) {
-						let nextTypes = payload.salon_types.map(item => {
-							if (item && typeof item === 'object') {
-								if ('type' in item) return { type: String(item.type), selected: !!item.selected };
-								if ('value' in item) return { type: String(item.value), selected: !!item.selected };
-							}
-							if (typeof item === 'string') return { type: item, selected: false };
-							return item;
-						});
-						// Guarantee at least one selected
-						if (nextTypes.length > 0 && !nextTypes.some(t => t && t.selected)) {
-							const currentSelected = (salonProfile?.salon_types || []).find(t => t?.selected)?.type;
-							const idx = nextTypes.findIndex(t => t?.type === currentSelected);
-							const selectIndex = idx >= 0 ? idx : 0;
-							nextTypes = nextTypes.map((t, i) => ({ ...t, selected: i === selectIndex }));
-						}
-						payload.salon_types = nextTypes;
+			// Ensure salon_comfort are objects with { name, isActive }
+			if (Array.isArray(payload.salon_comfort)) {
+				payload.salon_comfort = payload.salon_comfort.map(item => {
+					if (item && typeof item === 'object') {
+						if ('name' in item) return { name: String(item.name), isActive: !!item.isActive };
+						if ('value' in item) return { name: String(item.value), isActive: !!item.isActive };
 					}
+					if (typeof item === 'string') return { name: item, isActive: true };
+					return item;
+				});
+			}
 
-					// Ensure salon_comfort are objects with { name, isActive }
-						if (Array.isArray(payload.salon_comfort)) {
-							payload.salon_comfort = payload.salon_comfort.map(item => {
-								if (item && typeof item === 'object') {
-									if ('name' in item) return { name: String(item.name), isActive: !!item.isActive };
-									if ('value' in item) return { name: String(item.value), isActive: !!item.isActive };
-								}
-								if (typeof item === 'string') return { name: item, isActive: true };
-								return item;
-							});
-						}
-
-					const normalizedPayload = payload;
+			const normalizedPayload = payload;
 
 			const response = await fetch(`${salonsUrl}/${targetId}`, {
 				method: 'PUT',
@@ -2075,342 +2126,342 @@ export const AppProvider = ({ children }) => {
 		}
 	};
 	// ===== CHAT API FUNCTIONS =====
-    // ===== WebSocket Chat Client =====
-    // Frontend WS client for real-time chat between employee ↔ user.
-    const wsRef = useRef(null);
-    const [wsStatus, setWsStatus] = useState('idle'); // idle | connecting | connected | closed | error | unsupported
-    const [wsError, setWsError] = useState(null);
-    const wsReceiverRef = useRef({ id: null, type: null });
-    const wsRoomIdRef = useRef(null);
+	// ===== WebSocket Chat Client =====
+	// Frontend WS client for real-time chat between employee ↔ user.
+	const wsRef = useRef(null);
+	const [wsStatus, setWsStatus] = useState('idle'); // idle | connecting | connected | closed | error | unsupported
+	const [wsError, setWsError] = useState(null);
+	const wsReceiverRef = useRef({ id: null, type: null });
+	const wsRoomIdRef = useRef(null);
 
-    const buildWsUrl = (receiverId, receiverType) => {
-        // API_BASE_URL points to `.../api`; ws endpoint is `/ws/chat`
-        const scheme = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
-        const base = API_BASE_URL; // e.g. https://host/api
-        const url = `${scheme}://${base.replace(/^https?:\/\//, '')}/ws/chat?token=${encodeURIComponent(getAuthToken() || '')}&receiver_id=${encodeURIComponent(receiverId)}&receiver_type=${encodeURIComponent(receiverType)}`;
-        return url;
-    };
+	const buildWsUrl = (receiverId, receiverType) => {
+		// API_BASE_URL points to `.../api`; ws endpoint is `/ws/chat`
+		const scheme = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
+		const base = API_BASE_URL; // e.g. https://host/api
+		const url = `${scheme}://${base.replace(/^https?:\/\//, '')}/ws/chat?token=${encodeURIComponent(getAuthToken() || '')}&receiver_id=${encodeURIComponent(receiverId)}&receiver_type=${encodeURIComponent(receiverType)}`;
+		return url;
+	};
 
-    const disconnectChatWs = () => {
-        try {
-            if (wsRef.current) {
-                wsRef.current.close();
-            }
-        } catch {}
-        wsRef.current = null;
-        wsRoomIdRef.current = null;
-        wsReceiverRef.current = { id: null, type: null };
-        setWsStatus('closed');
-        setWsError(null);
-    };
+	const disconnectChatWs = () => {
+		try {
+			if (wsRef.current) {
+				wsRef.current.close();
+			}
+		} catch { }
+		wsRef.current = null;
+		wsRoomIdRef.current = null;
+		wsReceiverRef.current = { id: null, type: null };
+		setWsStatus('closed');
+		setWsError(null);
+	};
 
-    const connectChatWs = (receiverId, receiverType = 'user') => {
-        // Only employees and users are supported by backend WS right now
-        const role = user?.role;
-        if (!role || (role !== 'employee' && role !== 'user')) {
-            setWsStatus('unsupported');
-            setWsError('WebSocket chat is supported for employees and users only.');
-            return false;
-        }
-        if (!receiverId) {
-            setWsStatus('error');
-            setWsError('Receiver ID is required for WS chat');
-            return false;
-        }
+	const connectChatWs = (receiverId, receiverType = 'user') => {
+		// Only employees and users are supported by backend WS right now
+		const role = user?.role;
+		if (!role || (role !== 'employee' && role !== 'user')) {
+			setWsStatus('unsupported');
+			setWsError('WebSocket chat is supported for employees and users only.');
+			return false;
+		}
+		if (!receiverId) {
+			setWsStatus('error');
+			setWsError('Receiver ID is required for WS chat');
+			return false;
+		}
 
-        // Reset previous connection
-        disconnectChatWs();
-        setWsStatus('connecting');
-        setWsError(null);
-        wsReceiverRef.current = { id: receiverId, type: receiverType };
+		// Reset previous connection
+		disconnectChatWs();
+		setWsStatus('connecting');
+		setWsError(null);
+		wsReceiverRef.current = { id: receiverId, type: receiverType };
 
-        const url = buildWsUrl(receiverId, receiverType);
-        try {
-            const ws = new WebSocket(url);
-            wsRef.current = ws;
+		const url = buildWsUrl(receiverId, receiverType);
+		try {
+			const ws = new WebSocket(url);
+			wsRef.current = ws;
 
-            ws.onopen = () => {
-                setWsStatus('connected');
-                setCurrentConversation(receiverId);
-            };
+			ws.onopen = () => {
+				setWsStatus('connected');
+				setCurrentConversation(receiverId);
+			};
 
-            ws.onmessage = (evt) => {
-                try {
-                    const payload = JSON.parse(evt.data);
-                    const ev = payload?.event || 'message';
-                    if (ev === 'history') {
-                        const items = Array.isArray(payload?.items) ? payload.items : [];
-                        setMessages(items);
-                        wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
-                    } else if (ev === 'message') {
-                        const msg = payload?.message;
-                        if (msg) {
-                            setMessages(prev => [...prev, msg]);
-                        }
-                        wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
-                    } else if (ev === 'read') {
-                        // Mark local messages addressed to current user as read
-                        const byUserId = payload?.by_user_id;
-                        setMessages(prev => prev.map(m => {
-                            if (String(m.receiver_id) === String(byUserId)) return { ...m, is_read: true };
-                            return m;
-                        }));
-                    } else if (ev === 'join') {
-                        wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
-                    }
-                } catch (e) {
-                    // ignore parse errors
-                }
-            };
+			ws.onmessage = (evt) => {
+				try {
+					const payload = JSON.parse(evt.data);
+					const ev = payload?.event || 'message';
+					if (ev === 'history') {
+						const items = Array.isArray(payload?.items) ? payload.items : [];
+						setMessages(items);
+						wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
+					} else if (ev === 'message') {
+						const msg = payload?.message;
+						if (msg) {
+							setMessages(prev => [...prev, msg]);
+						}
+						wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
+					} else if (ev === 'read') {
+						// Mark local messages addressed to current user as read
+						const byUserId = payload?.by_user_id;
+						setMessages(prev => prev.map(m => {
+							if (String(m.receiver_id) === String(byUserId)) return { ...m, is_read: true };
+							return m;
+						}));
+					} else if (ev === 'join') {
+						wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
+					}
+				} catch (e) {
+					// ignore parse errors
+				}
+			};
 
-            ws.onerror = () => {
-                setWsStatus('error');
-                setWsError('WebSocket error occurred');
-            };
+			ws.onerror = () => {
+				setWsStatus('error');
+				setWsError('WebSocket error occurred');
+			};
 
-            ws.onclose = () => {
-                setWsStatus('closed');
-            };
-            return true;
-        } catch (e) {
-            setWsStatus('error');
-            setWsError(e?.message || 'Failed to open WebSocket');
-            return false;
-        }
-    };
+			ws.onclose = () => {
+				setWsStatus('closed');
+			};
+			return true;
+		} catch (e) {
+			setWsStatus('error');
+			setWsError(e?.message || 'Failed to open WebSocket');
+			return false;
+		}
+	};
 
-    const sendWsMessage = (messageText, messageType = 'text', fileUrl = null) => {
-        const ws = wsRef.current;
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            return false;
-        }
-        const payload = {
-            event: 'message',
-            message_text: messageText,
-            message_type: messageType,
-            file_url: fileUrl,
-        };
-        try {
-            ws.send(JSON.stringify(payload));
-            return true;
-        } catch {
-            return false;
-        }
-    };
+	const sendWsMessage = (messageText, messageType = 'text', fileUrl = null) => {
+		const ws = wsRef.current;
+		if (!ws || ws.readyState !== WebSocket.OPEN) {
+			return false;
+		}
+		const payload = {
+			event: 'message',
+			message_text: messageText,
+			message_type: messageType,
+			file_url: fileUrl,
+		};
+		try {
+			ws.send(JSON.stringify(payload));
+			return true;
+		} catch {
+			return false;
+		}
+	};
 
-    const sendWsMarkRead = () => {
-        const ws = wsRef.current;
-        if (!ws || ws.readyState !== WebSocket.OPEN) return false;
-        try {
-            ws.send(JSON.stringify({ event: 'mark_read' }));
-            return true;
-        } catch {
-            return false;
-        }
-    };
+	const sendWsMarkRead = () => {
+		const ws = wsRef.current;
+		if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+		try {
+			ws.send(JSON.stringify({ event: 'mark_read' }));
+			return true;
+		} catch {
+			return false;
+		}
+	};
 
 
 	// ===== CHAT API FUNCTIONS =====
-// Fetch conversations for employee/admin (salon)
-const fetchConversations = async () => {
-    if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
-        console.error('Only employees and admins can fetch conversations');
-        return;
-    }
-
-	setConversationsLoading(true);
-	setConversationsError(null);
-
-	try {
-		const token = getAuthToken();
-		console.log('📤 Fetching conversations for user:', user.id, 'Role:', user.role);
-		
-        // ✅ Employee uchun /employee, Admin uchun /admin endpoint
-        const isEmployee = user.role === 'employee';
-        const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/conversations`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
-
-		console.log('📥 Conversations response status:', response.status);
-
-		if (response.ok) {
-			const data = await response.json();
-			console.log('✅ Conversations fetched:', data);
-			
-			// Backend dan kelgan ma'lumotlarni normalize qilish
-			const conversationsList = data.data || data || [];
-			
-			// ✅ participant obyektidan ma'lumotlarni olish
-			const normalizedConversations = conversationsList.map(conv => {
-				const participant = conv.participant || {};
-				
-				return {
-					...conv,
-					// participant dan ma'lumotlarni olish
-					other_user_id: participant.id || conv.other_user_id || conv.user_id || conv.id,
-					other_user_name: participant.name || conv.other_user_name || conv.user_name || conv.name || 'Unknown User',
-					other_user_avatar: participant.avatar_url || conv.user_avatar_url || conv.other_user_avatar || conv.user_avatar || conv.avatar || null,
-					// Qo'shimcha ma'lumotlar
-					chat_id: conv.chat_id,
-					chat_type: conv.chat_type,
-					last_message: conv.last_message || '',
-					last_message_time: conv.last_message_time || null,
-					unread_count: conv.unread_count || 0
-				};
-			});
-			
-			console.log('📊 Normalized conversations:', normalizedConversations);
-			setConversations(normalizedConversations);
-		} else {
-			const contentType = response.headers.get('content-type');
-			let errorMessage = `HTTP ${response.status}`;
-
-			if (contentType?.includes('application/json')) {
-				const errorData = await response.json();
-				console.error('❌ Error response:', errorData);
-				
-				if (typeof errorData?.detail === 'string') {
-					errorMessage = errorData.detail;
-				} else {
-					errorMessage = errorData?.message || errorData?.error || errorMessage;
-				}
-			} else {
-				const errorText = await response.text();
-				console.error('❌ Error text:', errorText);
-				errorMessage = errorText || errorMessage;
-			}
-
-			throw new Error(errorMessage);
+	// Fetch conversations for employee/admin (salon)
+	const fetchConversations = async () => {
+		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
+			console.error('Only employees and admins can fetch conversations');
+			return;
 		}
-	} catch (error) {
-		console.error('❌ Error fetching conversations:', error);
-		setConversationsError(error.message);
-		setConversations([]);
-	} finally {
-		setConversationsLoading(false);
-	}
-};
 
-// Fetch messages for employee/admin - URL tanlash
-const fetchMessages = async (userId) => {
-  // ✅ userId tekshirish
-  if (!userId) {
-    console.error('❌ fetchMessages: userId is required');
-    setMessagesError('User ID topilmadi');
-    return;
-  }
-
-  if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
-    console.error('Only employees and admins can fetch messages');
-    return;
-  }
-
-  setMessagesLoading(true);
-  setMessagesError(null);
-
-  try {
-    const token = getAuthToken();
-    
-    console.log('📤 Fetching messages for user:', userId);
-    
-    const isEmployee = user.role === 'employee';
-    const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/conversation/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('📥 Messages response status:', response.status);
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log('✅ Messages fetched:', data);
-      
-      const messagesList = data.data?.messages || data.messages || data.data || data || [];
-      console.log('📊 Messages list length:', messagesList.length);
-      
-      setMessages(messagesList);
-      setCurrentConversation(userId);
-    } else {
-      const contentType = response.headers.get('content-type');
-      let errorMessage = `HTTP ${response.status}`;
-
-      if (contentType?.includes('application/json')) {
-        const errorData = await response.json();
-        console.error('❌ Error response:', errorData);
-        
-        if (Array.isArray(errorData?.detail)) {
-          errorMessage = errorData.detail.map(err => err.msg || JSON.stringify(err)).join(', ');
-        } else if (typeof errorData?.detail === 'string') {
-          errorMessage = errorData.detail;
-        } else {
-          errorMessage = errorData?.message || errorData?.error || errorMessage;
-        }
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Error text:', errorText);
-        errorMessage = errorText || errorMessage;
-      }
-
-      throw new Error(errorMessage);
-    }
-  } catch (error) {
-    console.error('❌ Error fetching messages:', error);
-    setMessagesError(error.message);
-    setMessages([]);
-  } finally {
-    setMessagesLoading(false);
-  }
-};
-
-// Send message from employee/admin - URL ni o'zgartirish
-const sendMessage = async (receiverId, messageText, messageType = 'text') => {
-    if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
-        console.error('Only employees or admins can send messages');
-        return;
-    }
+		setConversationsLoading(true);
+		setConversationsError(null);
 
 		try {
 			const token = getAuthToken();
-        // ✅ Employee uchun /employee/send, Admin uchun /admin/send
-        const isEmployee = user.role === 'employee';
-        const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/send`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                receiver_id: receiverId,
-                message_text: messageText,
-                message_type: messageType
-            }),
-        });
+			console.log('📤 Fetching conversations for user:', user.id, 'Role:', user.role);
+
+			// ✅ Employee uchun /employee, Admin uchun /admin endpoint
+			const isEmployee = user.role === 'employee';
+			const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/conversations`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			console.log('📥 Conversations response status:', response.status);
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('✅ Conversations fetched:', data);
+
+				// Backend dan kelgan ma'lumotlarni normalize qilish
+				const conversationsList = data.data || data || [];
+
+				// ✅ participant obyektidan ma'lumotlarni olish
+				const normalizedConversations = conversationsList.map(conv => {
+					const participant = conv.participant || {};
+
+					return {
+						...conv,
+						// participant dan ma'lumotlarni olish
+						other_user_id: participant.id || conv.other_user_id || conv.user_id || conv.id,
+						other_user_name: participant.name || conv.other_user_name || conv.user_name || conv.name || 'Unknown User',
+						other_user_avatar: participant.avatar_url || conv.user_avatar_url || conv.other_user_avatar || conv.user_avatar || conv.avatar || null,
+						// Qo'shimcha ma'lumotlar
+						chat_id: conv.chat_id,
+						chat_type: conv.chat_type,
+						last_message: conv.last_message || '',
+						last_message_time: conv.last_message_time || null,
+						unread_count: conv.unread_count || 0
+					};
+				});
+
+				console.log('📊 Normalized conversations:', normalizedConversations);
+				setConversations(normalizedConversations);
+			} else {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = `HTTP ${response.status}`;
+
+				if (contentType?.includes('application/json')) {
+					const errorData = await response.json();
+					console.error('❌ Error response:', errorData);
+
+					if (typeof errorData?.detail === 'string') {
+						errorMessage = errorData.detail;
+					} else {
+						errorMessage = errorData?.message || errorData?.error || errorMessage;
+					}
+				} else {
+					const errorText = await response.text();
+					console.error('❌ Error text:', errorText);
+					errorMessage = errorText || errorMessage;
+				}
+
+				throw new Error(errorMessage);
+			}
+		} catch (error) {
+			console.error('❌ Error fetching conversations:', error);
+			setConversationsError(error.message);
+			setConversations([]);
+		} finally {
+			setConversationsLoading(false);
+		}
+	};
+
+	// Fetch messages for employee/admin - URL tanlash
+	const fetchMessages = async (userId) => {
+		// ✅ userId tekshirish
+		if (!userId) {
+			console.error('❌ fetchMessages: userId is required');
+			setMessagesError('User ID topilmadi');
+			return;
+		}
+
+		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
+			console.error('Only employees and admins can fetch messages');
+			return;
+		}
+
+		setMessagesLoading(true);
+		setMessagesError(null);
+
+		try {
+			const token = getAuthToken();
+
+			console.log('📤 Fetching messages for user:', userId);
+
+			const isEmployee = user.role === 'employee';
+			const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/conversation/${userId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			console.log('📥 Messages response status:', response.status);
+
+			if (response.ok) {
+				const data = await response.json();
+				console.log('✅ Messages fetched:', data);
+
+				const messagesList = data.data?.messages || data.messages || data.data || data || [];
+				console.log('📊 Messages list length:', messagesList.length);
+
+				setMessages(messagesList);
+				setCurrentConversation(userId);
+			} else {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = `HTTP ${response.status}`;
+
+				if (contentType?.includes('application/json')) {
+					const errorData = await response.json();
+					console.error('❌ Error response:', errorData);
+
+					if (Array.isArray(errorData?.detail)) {
+						errorMessage = errorData.detail.map(err => err.msg || JSON.stringify(err)).join(', ');
+					} else if (typeof errorData?.detail === 'string') {
+						errorMessage = errorData.detail;
+					} else {
+						errorMessage = errorData?.message || errorData?.error || errorMessage;
+					}
+				} else {
+					const errorText = await response.text();
+					console.error('❌ Error text:', errorText);
+					errorMessage = errorText || errorMessage;
+				}
+
+				throw new Error(errorMessage);
+			}
+		} catch (error) {
+			console.error('❌ Error fetching messages:', error);
+			setMessagesError(error.message);
+			setMessages([]);
+		} finally {
+			setMessagesLoading(false);
+		}
+	};
+
+	// Send message from employee/admin - URL ni o'zgartirish
+	const sendMessage = async (receiverId, messageText, messageType = 'text') => {
+		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
+			console.error('Only employees or admins can send messages');
+			return;
+		}
+
+		try {
+			const token = getAuthToken();
+			// ✅ Employee uchun /employee/send, Admin uchun /admin/send
+			const isEmployee = user.role === 'employee';
+			const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/send`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					receiver_id: receiverId,
+					message_text: messageText,
+					message_type: messageType
+				}),
+			});
 
 			if (response.ok) {
 				const data = await response.json();
 				console.log('Message sent:', data);
 
-                if (currentConversation === receiverId) {
-                    const isEmployeeSender = user.role === 'employee';
-                    setMessages(prevMessages => [...prevMessages, {
-                        id: data.data?.id,
-                        sender_id: isEmployeeSender ? user.id : (user.salon_id || user.id),
-                        sender_type: isEmployeeSender ? 'employee' : 'salon',
-                        receiver_id: receiverId,
-                        receiver_type: 'user',
-                        message_text: messageText,
-                        message_type: messageType,
-                        is_read: false,
-                        created_at: data.data?.created_at || new Date().toISOString()
-                    }]);
-                }
+				if (currentConversation === receiverId) {
+					const isEmployeeSender = user.role === 'employee';
+					setMessages(prevMessages => [...prevMessages, {
+						id: data.data?.id,
+						sender_id: isEmployeeSender ? user.id : (user.salon_id || user.id),
+						sender_type: isEmployeeSender ? 'employee' : 'salon',
+						receiver_id: receiverId,
+						receiver_type: 'user',
+						message_text: messageText,
+						message_type: messageType,
+						is_read: false,
+						created_at: data.data?.created_at || new Date().toISOString()
+					}]);
+				}
 
 				await fetchConversations();
 				return data;
@@ -2424,85 +2475,85 @@ const sendMessage = async (receiverId, messageText, messageType = 'text') => {
 		}
 	};
 
-// Mark conversation as read for employee/admin - URL tanlash
-const markConversationAsRead = async (userId) => {
-  // ✅ userId tekshirish
-  if (!userId) {
-    console.error('❌ markConversationAsRead: userId is required');
-    return;
-  }
+	// Mark conversation as read for employee/admin - URL tanlash
+	const markConversationAsRead = async (userId) => {
+		// ✅ userId tekshirish
+		if (!userId) {
+			console.error('❌ markConversationAsRead: userId is required');
+			return;
+		}
 
-  if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
-    console.error('Only employees and admins can mark conversation as read');
-    return;
-  }
+		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
+			console.error('Only employees and admins can mark conversation as read');
+			return;
+		}
 
-  try {
-    const token = getAuthToken();
-    
-    console.log('📤 Marking conversation as read for user:', userId);
-    
-    const isEmployee = user.role === 'employee';
-    const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/conversation/${userId}/mark-read`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+		try {
+			const token = getAuthToken();
 
-    console.log('📥 Mark read response status:', response.status);
+			console.log('📤 Marking conversation as read for user:', userId);
 
-    if (response.ok) {
-      const data = await response.json();
-      console.log('✅ Conversation marked as read:', data);
+			const isEmployee = user.role === 'employee';
+			const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/conversation/${userId}/mark-read`, {
+				method: 'PUT',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
 
-      // ✅ Conversations ro'yxatini yangilash
-      setConversations(prevConversations =>
-        prevConversations.map(conv => {
-          const convUserId = conv.other_user_id || conv.user_id || conv.id;
-          return convUserId === userId
-            ? { ...conv, unread_count: 0 }
-            : conv;
-        })
-      );
+			console.log('📥 Mark read response status:', response.status);
 
-      return data;
-    } else {
-      const contentType = response.headers.get('content-type');
-      let errorMessage = `HTTP ${response.status}`;
+			if (response.ok) {
+				const data = await response.json();
+				console.log('✅ Conversation marked as read:', data);
 
-      if (contentType?.includes('application/json')) {
-        const errorData = await response.json();
-        console.error('❌ Error response:', errorData);
-        
-        if (typeof errorData?.detail === 'string') {
-          errorMessage = errorData.detail;
-        } else {
-          errorMessage = errorData?.message || errorData?.error || errorMessage;
-        }
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Error text:', errorText);
-        errorMessage = errorText || errorMessage;
-      }
+				// ✅ Conversations ro'yxatini yangilash
+				setConversations(prevConversations =>
+					prevConversations.map(conv => {
+						const convUserId = conv.other_user_id || conv.user_id || conv.id;
+						return convUserId === userId
+							? { ...conv, unread_count: 0 }
+							: conv;
+					})
+				);
 
-      throw new Error(errorMessage);
-    }
-  } catch (error) {
-    console.error('❌ Error marking conversation as read:', error);
-    // ✅ Xatolikni throw qilmaslik - faqat log
-    // throw error;
-  }
-};
+				return data;
+			} else {
+				const contentType = response.headers.get('content-type');
+				let errorMessage = `HTTP ${response.status}`;
+
+				if (contentType?.includes('application/json')) {
+					const errorData = await response.json();
+					console.error('❌ Error response:', errorData);
+
+					if (typeof errorData?.detail === 'string') {
+						errorMessage = errorData.detail;
+					} else {
+						errorMessage = errorData?.message || errorData?.error || errorMessage;
+					}
+				} else {
+					const errorText = await response.text();
+					console.error('❌ Error text:', errorText);
+					errorMessage = errorText || errorMessage;
+				}
+
+				throw new Error(errorMessage);
+			}
+		} catch (error) {
+			console.error('❌ Error marking conversation as read:', error);
+			// ✅ Xatolikni throw qilmaslik - faqat log
+			// throw error;
+		}
+	};
 
 
 	// Get unread messages count
-const getUnreadCount = async () => {
-    if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
-        console.error('Only employees and admin2 can get unread count');
-        return 0;
-    }
+	const getUnreadCount = async () => {
+		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
+			console.error('Only employees and admin2 can get unread count');
+			return 0;
+		}
 
 		try {
 			// Get unread count from conversations data
@@ -2590,8 +2641,15 @@ const getUnreadCount = async () => {
 					const responseData = await response.json();
 					console.log('Employees response:', responseData);
 
-					const items = responseData?.data ?? responseData ?? [];
-					setEmployees(items);
+                    let items = responseData?.data ?? responseData ?? [];
+                    if (idToUse) {
+                        const target = String(idToUse);
+                        items = (Array.isArray(items) ? items : []).filter(emp => {
+                            const sid = emp?.salon_id ?? emp?.salonId ?? (emp?.salon && emp.salon.id);
+                            return sid && String(sid) === target;
+                        });
+                    }
+                    setEmployees(items);
 
 					console.log('Employees loaded:', items.length);
 					success = true;
@@ -2661,7 +2719,9 @@ const getUnreadCount = async () => {
 				employee_password: employeeData.employee_password,
 				username: employeeData.username,
 				profession: employeeData.profession,
-				role: employeeData.role || 'employee'
+				role: employeeData.role || 'employee',
+				work_start_time: employeeData.work_start_time,
+				work_end_time: employeeData.work_end_time
 			};
 
 			console.log('📤 Yuborilayotgan ma\'lumot:', dataToSend);
@@ -2819,6 +2879,14 @@ const getUnreadCount = async () => {
 	// Eski aliaslar olib tashlandi: endi faqat salonProfile ishlatiladi
 	const [adminSalonLoading, setAdminSalonLoading] = useState(false)
 	const [adminSalonError, setAdminSalonError] = useState(null)
+
+	const employeesBySalon = useMemo(() => {
+		const sid = String((salonProfile && salonProfile.id) || (user && user.salon_id) || '');
+		return (employees || []).filter(emp => {
+			const eSid = emp?.salon_id ?? emp?.salonId ?? (emp?.salon && emp.salon.id);
+			return eSid && String(eSid) === sid;
+		});
+	}, [employees, salonProfile, user]);
 
 	// Admin salon ma'lumotlarini olish: avval GET `/admin/my-salon`, keyin kerak bo'lsa `/salons/:id`
 	const fetchAdminSalon = async (salonIdOverride = null) => {
@@ -3032,7 +3100,19 @@ const getUnreadCount = async () => {
 
 	const [isCheckedItem, setIsCheckedItem] = useState([])
 
-	const { t, i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const ts = (key, fallback = '') => {
+        try {
+            const v = t(key);
+            if (typeof v !== 'string' || !v) return fallback;
+            const s = String(v);
+            if (/returned an object instead of string/i.test(s)) return fallback;
+            if (/key .* not found/i.test(s)) return fallback;
+            return s;
+        } catch {
+            return fallback;
+        }
+    };
 	const language = localStorage.getItem("i18nextLng")
 	const handleChange = (event) => {
 		const selectedLang = event.target.value;
@@ -3248,7 +3328,7 @@ const getUnreadCount = async () => {
 					date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
 					time: book.time ? new Date(book.time).toTimeString().split(' ')[0] : null,
 					employee_name: (() => {
-						const emp = (employees || []).find(e => String(e.id) === String(book.employee_id));
+						const emp = (employeesBySalon || []).find(e => String(e.id) === String(book.employee_id));
 						if (!emp) return null;
 						return [emp.name, emp.surname].filter(Boolean).join(' ').trim();
 					})()
@@ -3288,7 +3368,7 @@ const getUnreadCount = async () => {
 					date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
 					time: book.time ? new Date(book.time).toTimeString().split(' ')[0].substring(0, 5) : null,
 					employee_name: (() => {
-						const emp = (employees || []).find(e => String(e.id) === String(book.employee_id));
+						const emp = (employeesBySalon || []).find(e => String(e.id) === String(book.employee_id));
 						if (!emp) return null;
 						return [emp.name, emp.surname].filter(Boolean).join(' ').trim();
 					})()
@@ -3546,7 +3626,7 @@ const getUnreadCount = async () => {
 						const updatedIcons = [...darkImg];
 						if (savedIndex !== 0) {
 							updatedIcons[0] = lightImg[0];
-							
+
 							// Admin/Employee uchun profile
 							if (user?.role !== 'private_admin' && savedIndex === 3) {
 								// Profile - index 3 va settings - index 4 lighten
@@ -4000,11 +4080,11 @@ const getUnreadCount = async () => {
 			setEmployees(prev =>
 				prev.map(emp =>
 					(emp.id === employeeId || emp.employee_id === employeeId)
-						? { 
-							...emp, 
-							avatar: avatarUrl, 
+						? {
+							...emp,
+							avatar: avatarUrl,
 							avatar_url: avatarUrl,
-							profile_image: avatarUrl 
+							profile_image: avatarUrl
 						}
 						: emp
 				)
@@ -4022,9 +4102,122 @@ const getUnreadCount = async () => {
 
 
 
+	// ===== EMPLOYEE BUSY SLOTS API FUNCTIONS =====
+
+	// Ustaning band vaqtlarini olish
+	const fetchEmployeeBusySlots = async (employeeId, date) => {
+		try {
+			const token = getAuthToken();
+
+			if (!token) {
+				throw new Error('Tizimga kirish tokeni topilmadi');
+			}
+
+			const response = await fetch(
+				`${mobileEmployeesBusyUrl}?employee_id=${employeeId}&date=${date}`,
+				{
+					method: 'GET',
+					headers: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json',
+					},
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error('Band vaqtlarni olishda xatolik');
+			}
+
+			const data = await response.json();
+			return data.data || [];
+		} catch (error) {
+			console.error('❌ Error fetching busy slots:', error);
+			return [];
+		}
+	};
+
+	// Ustaning mavjud vaqtlarini hisoblash
+	const calculateAvailableSlots = (workStartTime, workEndTime, busySlots, appointments, serviceDuration) => {
+		const parseTime = (timeStr) => {
+			const [hours, minutes] = timeStr.split(':').map(Number);
+			return hours * 60 + minutes;
+		};
+
+		const formatTime = (minutes) => {
+			const hours = Math.floor(minutes / 60);
+			const mins = minutes % 60;
+			return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+		};
+
+		const workStart = parseTime(workStartTime);
+		const workEnd = parseTime(workEndTime);
+
+		// Barcha band vaqtlarni yig'ish
+		const occupiedSlots = [];
+
+		// Busy slots dan
+		(busySlots || []).forEach(slot => {
+			occupiedSlots.push({
+				start: parseTime(slot.start_time),
+				end: parseTime(slot.end_time)
+			});
+		});
+
+		// Appointments dan
+		(appointments || []).forEach(apt => {
+			const aptStart = parseTime(apt.application_time || apt.start_time);
+			const duration = apt.service_duration || 60;
+			occupiedSlots.push({
+				start: aptStart,
+				end: aptStart + duration
+			});
+		});
+
+		// Tartiblash
+		occupiedSlots.sort((a, b) => a.start - b.start);
+
+		// Bo'sh vaqtlarni topish
+		const availableSlots = [];
+		let currentTime = workStart;
+
+		occupiedSlots.forEach(slot => {
+			if (currentTime < slot.start) {
+				const freeStart = currentTime;
+				const freeEnd = slot.start;
+
+				let slotStart = freeStart;
+				while (slotStart + serviceDuration <= freeEnd) {
+					availableSlots.push({
+						start_time: formatTime(slotStart),
+						end_time: formatTime(slotStart + serviceDuration),
+						duration: serviceDuration
+					});
+					slotStart += 30;
+				}
+			}
+			currentTime = Math.max(currentTime, slot.end);
+		});
+
+		// Oxirgi bo'sh vaqt
+		if (currentTime < workEnd) {
+			let slotStart = currentTime;
+			while (slotStart + serviceDuration <= workEnd) {
+				availableSlots.push({
+					start_time: formatTime(slotStart),
+					end_time: formatTime(slotStart + serviceDuration),
+					duration: serviceDuration
+				});
+				slotStart += 30;
+			}
+		}
+
+		return availableSlots;
+	};
+
+
 	return (
-		<AppContext.Provider value={{
-			t, handleChange, language,
+        <AppContext.Provider value={{
+            t, ts, handleChange, language,
 			lightImg, darkImg, selectedIcon,
 			selectedElement, setSelectedElement, isRightSidebarOpen,
 			openRightSidebar, closeRightSidebar, selectIcon, handleClick,
@@ -4065,7 +4258,7 @@ const getUnreadCount = async () => {
 			// Grouped schedules state va funksiyalari
 			groupedSchedules, groupedSchedulesLoading, groupedSchedulesError, fetchGroupedSchedules,
 			// Employees state va funksiyalari
-			employees, employeesLoading, employeesError, fetchEmployees, createEmployee,
+			employees, employeesBySalon, employeesLoading, employeesError, fetchEmployees, createEmployee,
 			// Services state va funksiyalari
 			services, servicesLoading, servicesError, fetchServices, createService,
 			// Chat state va funksiyalari
@@ -4115,6 +4308,10 @@ const getUnreadCount = async () => {
 			fetchBookings,
 			createBooking,
 
+			// Mobile schedules
+			getAvailableSlots,
+			createMobileAppointment,
+
 
 			// Combined appointments
 			combinedAppointments,
@@ -4128,6 +4325,13 @@ const getUnreadCount = async () => {
 			deleteEmployeePost,
 			fetchEmployeeComments,
 			updateEmployeeAvatar,
+
+			// Employee Posts functions (bu qatordan KEYIN qo'shing)
+			updateEmployeeAvatar,
+
+			// ✅ YANGI: Busy slots functions
+			fetchEmployeeBusySlots,
+			calculateAvailableSlots,
 
 		}}>
 			{children}

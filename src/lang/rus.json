@@ -218,6 +218,8 @@
     "phoneRequired": "Пожалуйста, введите номер телефона",
     "selectEmployeeLabel": "Выберите сотрудника",
     "selectEmployeeRequired": "Пожалуйста, выберите сотрудника",
+    "selectService": "Выберите услугу",
+    "availableSlots": "Доступные слоты",
     "tokenNotFound": "Токен не найден",
     "bookingFailed": "Бронирование не удалось",
     "bookingSuccess": "Бронирование успешно создано!",

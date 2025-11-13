@@ -25,7 +25,15 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
     employee_email: Yup.string().email(t('validation.emailInvalid', { defaultValue: 'Email noto‘g‘ri' })).required(t('validation.required', { defaultValue: 'Majburiy' })),
     username: Yup.string().min(3, t('validation.min3', { defaultValue: 'Kamida 3 belgi' })).required(t('validation.required', { defaultValue: 'Majburiy' })),
     employee_password: Yup.string().min(8, t('validation.min8', { defaultValue: 'Kamida 8 belgi' })).required(t('validation.required', { defaultValue: 'Majburiy' })),
-    profession: Yup.string().oneOf(professionOptions.map(p => p.value), t('validation.invalidProfession', { defaultValue: 'Noto‘g‘ri kasb' })).required(t('validation.required', { defaultValue: 'Majburiy' }))
+    profession: Yup.string().oneOf(professionOptions.map(p => p.value), t('validation.invalidProfession', { defaultValue: 'Noto‘g‘ri kasb' })).required(t('validation.required', { defaultValue: 'Majburiy' })),
+    work_start_time: Yup.string()
+      .matches(/^([01]\d|2[0-3]):([0-5]\d)$/,
+        t('validation.timeFormat', { defaultValue: "Format HH:MM bo'lishi kerak" }))
+      .nullable(),
+    work_end_time: Yup.string()
+      .matches(/^([01]\d|2[0-3]):([0-5]\d)$/,
+        t('validation.timeFormat', { defaultValue: "Format HH:MM bo'lishi kerak" }))
+      .nullable()
   });
 
   const initialValues = {
@@ -34,7 +42,9 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
     employee_email: '',
     profession: '',
     username: '',
-    employee_password: ''
+    employee_password: '',
+    work_start_time: '',
+    work_end_time: ''
   };
   
   const [loading, setLoading] = useState(false);
@@ -69,7 +79,9 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
         employee_password: values.employee_password,
         username: values.username.trim(),
         profession: values.profession,
-        role: 'employee'
+        role: 'employee',
+        work_start_time: values.work_start_time || undefined,
+        work_end_time: values.work_end_time || undefined
       };
 
       await createEmployee(employeeData);
@@ -157,6 +169,32 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
                     className="form-input"
                   />
                   <div className="error-message" style={{backgroundColor:"white",border:"none"}}><ErrorMessage name="employee_email" /></div>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="work_start_time">{t('employee.workStartLabel', { defaultValue: 'Ish boshlash vaqti' })}</label>
+                  <Field
+                    type="time"
+                    id="work_start_time"
+                    name="work_start_time"
+                    placeholder="08:00"
+                    className="form-input"
+                  />
+                  <div className="error-message" style={{backgroundColor:"white",border:"none"}}><ErrorMessage name="work_start_time" /></div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="work_end_time">{t('employee.workEndLabel', { defaultValue: 'Ish tugash vaqti' })}</label>
+                  <Field
+                    type="time"
+                    id="work_end_time"
+                    name="work_end_time"
+                    placeholder="18:00"
+                    className="form-input"
+                  />
+                  <div className="error-message" style={{backgroundColor:"white",border:"none"}}><ErrorMessage name="work_end_time" /></div>
                 </div>
               </div>
 

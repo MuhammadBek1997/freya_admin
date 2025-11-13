@@ -22,7 +22,7 @@ const AppointCard = (props) => {
         openRightSidebar
     } = props
   
-    const { t, selectedElement, employees } = UseGlobalContext()
+    const { t, selectedElement, employees, employeesBySalon } = UseGlobalContext()
 
     const parseDate = (dateString) => {
         if (!dateString) return { day: '', month: '', year: '' };
@@ -77,7 +77,7 @@ const AppointCard = (props) => {
     const masterName = (() => {
         if (employee_name) return employee_name;
         if (employee_id) {
-            const emp = employees?.find(e => String(e.id) === String(employee_id));
+            const emp = (employeesBySalon || employees || []).find(e => String(e.id) === String(employee_id));
             if (emp) {
                 const parts = [emp.name, emp.surname].filter(Boolean);
                 return parts.join(' ').trim();
@@ -89,7 +89,7 @@ const AppointCard = (props) => {
     // Derive employee profession (kasbi)
     const masterProfession = (() => {
         if (employee_id) {
-            const emp = employees?.find(e => String(e.id) === String(employee_id));
+            const emp = (employeesBySalon || employees || []).find(e => String(e.id) === String(employee_id));
             if (emp) {
                 return emp.profession || emp.spec || null;
             }
@@ -114,7 +114,7 @@ const AppointCard = (props) => {
     }
 
     // Topiladigan xodim obyektini oldindan aniqlab qo'yamiz
-    const masterEmp = employee_id ? employees?.find(e => String(e.id) === String(employee_id)) : null;
+    const masterEmp = employee_id ? (employeesBySalon || employees || []).find(e => String(e.id) === String(employee_id)) : null;
 
     // Dinamik reyting va sharhlar soni
     const masterAvgRating = (() => {

@@ -3,14 +3,19 @@ import { UseGlobalContext } from "../Context"
 import SelectEmployeeModal from "./SelectEmployeeModal"
 
 const AddScheduleModal = () => {
-    
+
     const {
         t,
         setAddSched,
         createSchedule,
         user,
         employees,
-        fetchEmployees
+        employeesBySalon,
+        fetchEmployees,
+        fetchEmployeeBusySlots,
+        calculateAvailableSlots,
+        combinedAppointments,
+        schedules
     } = UseGlobalContext()
 
     const [selectEmploy, setSelectEmploy] = useState(false)
@@ -20,6 +25,7 @@ const AddScheduleModal = () => {
         date: '',
         start_time: '',
         end_time: '',
+        service_duration: 60, // ✅ Shu qatorni QO'SHISH
         repeat: false,
         repeat_value: '',
         employee_list: [],
@@ -37,6 +43,23 @@ const AddScheduleModal = () => {
             fetchEmployees(user.salon_id)
         }
     }, [user?.salon_id])
+
+
+    // end_time ni avtomatik hisoblash
+    useEffect(() => {
+        if (formData.start_time && formData.service_duration) {
+            const [hours, minutes] = formData.start_time.split(':').map(Number);
+            const totalMinutes = hours * 60 + minutes + formData.service_duration;
+            const endHours = Math.floor(totalMinutes / 60);
+            const endMinutes = totalMinutes % 60;
+            const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+
+            setFormData(prev => ({
+                ...prev,
+                end_time: endTime
+            }));
+        }
+    }, [formData.start_time, formData.service_duration]);
 
     const handleInputChange = (field, value) => {
         setFormData(prev => ({
@@ -90,6 +113,7 @@ const AddScheduleModal = () => {
                 date: String(formData.date),
                 start_time: String(formData.start_time),
                 end_time: String(formData.end_time),
+                service_duration: Number(formData.service_duration), // ✅ Shu qatorni QO'SHISH
                 repeat: Boolean(formData.repeat),
                 repeat_value: String(formData.repeat_value || ''),
                 employee_list: Array.isArray(formData.employee_list) ? formData.employee_list.map(id => String(id)) : [],
@@ -99,12 +123,43 @@ const AddScheduleModal = () => {
                 is_active: true
             }
 
+            // Validate each selected employee is free at given time (busy slots + appointments + existing schedules)
+            if (Array.isArray(formData.employee_list) && formData.employee_list.length > 0) {
+                for (const empId of formData.employee_list) {
+                    const empObj = (employeesBySalon || employees || []).find(e => String(e.id) === String(empId)) || {}
+                    const workStart = empObj.work_start_time || '09:00'
+                    const workEnd = empObj.work_end_time || '20:00'
+                    const busySlots = await fetchEmployeeBusySlots(String(empId), String(formData.date))
+                    const employeeAppointments = (combinedAppointments || []).filter(
+                        apt => String(apt.employee_id) === String(empId) && String(apt.date) === String(formData.date)
+                    )
+                    const employeeSchedules = (schedules || []).filter(s =>
+                        String(s.date) === String(formData.date) &&
+                        Array.isArray(s.employee_list) &&
+                        s.employee_list.map(id => String(id)).includes(String(empId))
+                    )
+                    const scheduleBusySlots = employeeSchedules.map(s => ({ start_time: String(s.start_time), end_time: String(s.end_time) }))
+                    const allBusySlots = [...(busySlots || []), ...scheduleBusySlots]
+                    const slots = calculateAvailableSlots(
+                        workStart,
+                        workEnd,
+                        allBusySlots,
+                        employeeAppointments,
+                        Number(formData.service_duration) || 60
+                    )
+                    const ok = slots.some(s => s.start_time === String(formData.start_time) && s.end_time === String(formData.end_time))
+                    if (!ok) {
+                        throw new Error(t('employeeBusy') || 'Tanlangan xodim bu vaqtda band')
+                    }
+                }
+            }
+
             const result = await createSchedule(scheduleData)
-            
+
             alert(t('alerts.scheduleCreated'))
-            
+
             setAddSched(false)
-            
+
             setFormData({
                 name: '',
                 title: '',
@@ -131,7 +186,7 @@ const AddScheduleModal = () => {
         <div className='schedule-modal'>
             <div className='schedule-modal-cont'>
                 <h4>{t('schedule.add')}</h4>
-                
+
                 {error && (
                     <div style={{
                         backgroundColor: '#ff000020',
@@ -146,28 +201,28 @@ const AddScheduleModal = () => {
 
                 <div className='schedule-modal-form'>
                     <label htmlFor="">{t('schedule.lesson')}</label>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         placeholder={t('schedule.lessonPlaceholder')}
                         className="form-inputs"
                         value={formData.name}
                         onChange={(e) => handleInputChange('name', e.target.value)}
                         required
                     />
-                    
+
                     <label htmlFor="">{t('schedule.title')}</label>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         placeholder={t('schedule.titlePlaceholder')}
                         className="form-inputs"
                         value={formData.title}
                         onChange={(e) => handleInputChange('title', e.target.value)}
                         required
                     />
-                    
+
                     <label htmlFor="">{t('schedule.date')}</label>
-                    <input 
-                        type="date"  
+                    <input
+                        type="date"
                         className="form-inputs"
                         value={formData.date}
                         onChange={(e) => handleInputChange('date', e.target.value)}
@@ -175,8 +230,20 @@ const AddScheduleModal = () => {
                     />
 
                     <label htmlFor="">{t('schedule.startTime')}</label>
-                    <input 
-                        type="time"  
+                    <label htmlFor="">{t('schedule.serviceDuration') || 'Xizmat davomiyligi'}</label>
+                    <select
+                        className="form-inputs"
+                        value={formData.service_duration}
+                        onChange={(e) => handleInputChange('service_duration', Number(e.target.value))}
+                        required
+                    >
+                        <option value={30}>30 {t('minutes') || 'daqiqa'}</option>
+                        <option value={60}>60 {t('minutes') || 'daqiqa'}</option>
+                        <option value={90}>90 {t('minutes') || 'daqiqa'}</option>
+                        <option value={120}>120 {t('minutes') || 'daqiqa'}</option>
+                    </select>
+                    <input
+                        type="time"
                         className="form-inputs"
                         value={formData.start_time}
                         onChange={(e) => handleInputChange('start_time', e.target.value)}
@@ -184,16 +251,18 @@ const AddScheduleModal = () => {
                     />
 
                     <label htmlFor="">{t('schedule.endTime')}</label>
-                    <input 
-                        type="time"  
+                    <input
+                        type="time"
                         className="form-inputs"
                         value={formData.end_time}
                         onChange={(e) => handleInputChange('end_time', e.target.value)}
+                        disabled // ✅ Shu attributeni QO'SHISH (avtomatik hisoblangani uchun)
+                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }} // ✅ Shu style ni QO'SHISH
                         required
                     />
-                    
+
                     <label htmlFor="">
-                        <input 
+                        <input
                             type="checkbox"
                             checked={formData.repeat}
                             onChange={(e) => handleInputChange('repeat', e.target.checked)}
@@ -201,11 +270,11 @@ const AddScheduleModal = () => {
                         />
                         {t('schedule.repeat')}
                     </label>
-                    
+
                     {formData.repeat && (
                         <>
                             <label htmlFor="">{t('schedule.repeatEvery')}</label>
-                            <input 
+                            <input
                                 type="text"
                                 placeholder={t('schedule.repeatPlaceholder')}
                                 className="form-inputs"
@@ -223,9 +292,12 @@ const AddScheduleModal = () => {
                         {t('schedule.addStaff')}
                     </button>
                     {selectEmploy && (
-                        <SelectEmployeeModal 
+                        <SelectEmployeeModal
                             setSelectEmploy={setSelectEmploy}
                             onEmployeeSelect={handleEmployeeSelect}
+                            date={formData.date}
+                            start_time={formData.start_time}
+                            end_time={formData.end_time}
                         />
                     )}
                     {formData.employee_list.length > 0 && (
@@ -235,11 +307,11 @@ const AddScheduleModal = () => {
                             </p>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                                 {formData.employee_list.map((employeeId) => {
-                                    const emp = employees?.find(e => String(e.id) === String(employeeId));
+                                    const emp = (employeesBySalon || employees || []).find(e => String(e.id) === String(employeeId));
                                     const displayName = emp?.name || emp?.employee_name || t('schedule.employee');
                                     const avatarSrc = emp?.avatar_url || emp?.photo || '/images/masterImage.png';
                                     return (
-                                        <div style={{display:"flex",flexDirection:"column"}} key={employeeId}>
+                                        <div style={{ display: "flex", flexDirection: "column" }} key={employeeId}>
                                             <div
                                                 style={{
                                                     backgroundColor: '#FFF',
@@ -252,12 +324,12 @@ const AddScheduleModal = () => {
                                                     gap: '8px'
                                                 }}
                                             >
-                                            <img
-                                                src={avatarSrc}
-                                                alt={displayName}
-                                                style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-                                            />
-                                            <span>{displayName}</span>
+                                                <img
+                                                    src={avatarSrc}
+                                                    alt={displayName}
+                                                    style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                                                />
+                                                <span>{displayName}</span>
                                             </div>
                                             <div className='masters-time' style={{ color: '#555' }}>
                                                 <p style={{ margin: 0 }}>
@@ -271,8 +343,8 @@ const AddScheduleModal = () => {
                         </div>
                     )}
                     <label htmlFor="">{t('schedule.servicePrice')}</label>
-                    <input 
-                        type="number" 
+                    <input
+                        type="number"
                         placeholder={t('schedule.pricePlaceholder')}
                         value={formData.price}
                         onChange={(e) => handleInputChange('price', e.target.value)}
@@ -282,12 +354,12 @@ const AddScheduleModal = () => {
                 <div className='schedule-modal-paymentType'>
                     <label htmlFor="">{t('schedule.paymentOptional')}</label>
                     <div className='schedule-modal-paymentType-cont'>
-                        <button 
+                        <button
                             onClick={() => {
                                 handleInputChange('full_pay', formData.price)
                                 handleInputChange('deposit', 0)
                             }}
-                            style={{ 
+                            style={{
                                 backgroundColor: formData.full_pay > 0 ? '#9C2BFF' : 'transparent',
                                 color: formData.full_pay > 0 ? 'white' : 'black'
                             }}
@@ -300,15 +372,15 @@ const AddScheduleModal = () => {
                                 handleInputChange('deposit', depositAmount)
                                 handleInputChange('full_pay', 0)
                             }}
-                            style={{ 
+                            style={{
                                 backgroundColor: formData.deposit > 0 ? '#9C2BFF' : 'transparent',
                                 color: formData.deposit > 0 ? 'white' : 'black'
                             }}
                         >
                             {t('schedule.deposit')}
                         </button>
-                        <input 
-                            type="number" 
+                        <input
+                            type="number"
                             placeholder={t('schedule.pricePlaceholder')}
                             value={formData.deposit || ''}
                             onChange={(e) => handleInputChange('deposit', e.target.value)}
@@ -317,13 +389,13 @@ const AddScheduleModal = () => {
                 </div>
 
                 <div className='schedule-modal-btns'>
-                    <button 
+                    <button
                         onClick={() => setAddSched(false)}
                         disabled={loading}
                     >
                         {t('schedule.cancel')}
                     </button>
-                    <button 
+                    <button
                         onClick={handleSaveSchedule}
                         disabled={loading}
                     >

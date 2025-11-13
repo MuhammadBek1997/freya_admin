@@ -22,6 +22,7 @@ const Schedule = () => {
     fetchGroupedSchedules,
     groupedSchedulesLoading,
     employees,
+    employeesBySalon,
     fetchEmployees,
     services,
     fetchServices
@@ -73,7 +74,7 @@ const Schedule = () => {
       // Employee names search
       const employeeNames = (schedule.employee_list || [])
         .map(empId => {
-          const emp = (employees || []).find(e => e.id === empId);
+          const emp = (employeesBySalon || employees || []).find(e => e.id === empId);
           return (emp?.name || '').toLowerCase();
         })
         .join(' ');
@@ -220,7 +221,7 @@ const Schedule = () => {
                 </div>
                 <div className="schedule-item-masters">
                   {(Array.isArray(item.employee_list) ? item.employee_list : []).map((employeeId) => {
-                    let master = (employees || []).find((i) => i.id == employeeId) || { id: employeeId, name: 'Unknown Master' }
+                    let master = (employeesBySalon || employees || []).find((i) => i.id == employeeId) || { id: employeeId, name: 'Unknown Master' }
                     return (
                       <div className='schedule-master-card' key={master.id}>
                         <img src="/images/masterImage.png" alt="" />

@@ -26,7 +26,8 @@ const EmployeeChatPage = () => {
     uploadPhotosToServer,
     updateEmployee,
     setUser,
-    updateEmployeeAvatar
+    updateEmployeeAvatar,
+    ts,
   } = UseGlobalContext();
 
   const handleBack = () => {
@@ -949,7 +950,7 @@ const EmployeeChatPage = () => {
                             </div>
                             {item.employee_name && (
                               <div>
-                                <strong>{t('employee') || 'Xodim'}:</strong> {item.employee_name}
+                                <strong>{ts('schedule.employee','Сотрудник')}:</strong> {item.employee_name}
                               </div>
                             )}
                           </div>

@@ -1,10 +1,27 @@
-import { useEffect } from "react";
 import { UseGlobalContext } from "../Context";
 
 
-const EmployeeCard = ({ id, name,surname,profession,email,avg_rating,comment_count,phone,isMenuOpen,setIsMenuOpen, bio, is_verified, salon, isOpen, handleToggleMenu , isCheckedItem , setIsCheckedItem , handleAddWaitingEmp }) => {
-  const { t } = UseGlobalContext();
+const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, comment_count, phone, _isMenuOpen, setIsMenuOpen, _bio, _is_verified, _salon, isOpen, handleToggleMenu, isCheckedItem, setIsCheckedItem, handleAddWaitingEmp, work_start_time, work_end_time }) => {
+  const { ts } = UseGlobalContext();
 
+  const computeWorkedHours = (start, end) => {
+    if (!start || !end) return 24;
+    try {
+      const [sh, sm] = String(start).split(":").map(Number);
+      const [eh, em] = String(end).split(":").map(Number);
+      if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) return 24;
+      const startMin = sh * 60 + sm;
+      const endMin = eh * 60 + em;
+      let diff = endMin - startMin;
+      if (diff <= 0) diff += 24 * 60; // wrap over midnight
+      const hours = diff / 60;
+      return Math.round(hours);
+    } catch {
+      return 24;
+    }
+  };
+
+  const workedHoursDisplay = computeWorkedHours(work_start_time, work_end_time);
 
   const handleToggleEmployMenu = (ID , type) => {
     setIsMenuOpen({
@@ -60,7 +77,7 @@ const EmployeeCard = ({ id, name,surname,profession,email,avg_rating,comment_cou
       <h2>{name} {surname}</h2>
       <div className="employCard-rating">
         <img src="/images/Star1.png" alt="" />
-        <p>{avg_rating} ({comment_count} {t("profileReviews")})</p>
+        <p>{avg_rating} ({comment_count} {ts("profileReviews","отзывов")})</p>
       </div>
       <div className="employCard-bottom">
         <div className="employCard-email">
@@ -72,10 +89,10 @@ const EmployeeCard = ({ id, name,surname,profession,email,avg_rating,comment_cou
           {phone}
         </div>
         <div className="employCard-workedTimes">
-          <h1>24</h1>
-          <p>{t("workHour")}</p>
+          <h1>{workedHoursDisplay}</h1>
+          <p>{ts("workHour","Рабочие часы")}</p>
           <button className="employCard-workedTimesBtn" onClick={()=>handleToggleEmployMenu(id , 'see')}>
-            {t("look")}
+            {ts("look","Посмотреть")}
           </button>
         </div>
       </div>
@@ -83,11 +100,11 @@ const EmployeeCard = ({ id, name,surname,profession,email,avg_rating,comment_cou
         <div className="employCard-menu">
           <div onClick={()=>handleToggleEmployMenu(id , 'edit')}>
             <img src="/images/editEmploy.png" alt="" />
-            <p>{t("changePsw")}</p>
+            <p>{ts("changePsw","Изменить профиль")}</p>
           </div>
           <div onClick={()=>handleAddWaitingEmp([id])}>
             <img src="/images/sendWaitEmploy.png" alt="" />
-            <p>{t("setWaiting")}</p>
+            <p>{ts("setWaiting","Отправить в ожидание")}</p>
           </div>
         </div>
       )}

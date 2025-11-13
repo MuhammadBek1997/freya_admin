@@ -78,6 +78,17 @@ export const schedulesUrl    = `${BASE_URL}/schedules`;
 export const scheduleGroupedUrl = `${BASE_URL}/schedules/grouped/by-date`;
 export const scheduleSalonUrl = `${BASE_URL}/schedules/salon`;
 
+// Mobile schedule endpoints (Python backend)
+export const mobileSchedulesUrl = `${BASE_URL}/mobile/schedules`;
+export const mobileEmployeeMeWeeklyUrl = `${mobileSchedulesUrl}/employee/me`;
+export const mobileEmployeeMeAvailableSlotsUrl = `${mobileSchedulesUrl}/employee/me/available-slots`;
+
+// Mobile employee endpoints (Python backend)
+export const mobileEmployeesUrl = `${BASE_URL}/mobile/employees`;
+export const mobileEmployeesMeSchedulesUrl = `${mobileEmployeesUrl}/me/schedules`; // GET {date}, POST create
+export const mobileEmployeesAvailableUrl = `${mobileEmployeesUrl}/available`;
+export const mobileEmployeesBusyUrl = `${mobileEmployeesUrl}/busy`;
+
 // Payment endpoints
 export const paymentUrl      = `${BASE_URL}/payment`;
 export const paymentEmployeePostUrl = `${BASE_URL}/payment/employee-post`;

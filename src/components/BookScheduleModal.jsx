@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../hooks/useI18n'
-import { UseGlobalContext } from '../Context'
+import { UseGlobalContext, getAuthToken } from '../Context'
+import { mobileEmployeesAvailableUrl } from '../apiUrls'
 
 const BookScheduleModal = (props) => {
   const {
@@ -9,11 +10,13 @@ const BookScheduleModal = (props) => {
     date,
     start_time,
     end_time,
+    name,
+    service_duration,
     setEditModal
   } = props
 
   const { t } = useI18n()
-  const { user, employees, fetchEmployees, createBooking } = UseGlobalContext()
+  const { user, employeesBySalon, fetchEmployees, services, fetchServices, getAvailableSlots, createBooking, ts } = UseGlobalContext()
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -24,12 +27,88 @@ const BookScheduleModal = (props) => {
   const [error, setError] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
+  const [availableEmployees, setAvailableEmployees] = useState(null)
+  const [availLoading, setAvailLoading] = useState(false)
+  const [selectedServiceId, setSelectedServiceId] = useState('')
+  const [availableSlots, setAvailableSlots] = useState([])
 
   useEffect(() => {
-    if (employees.length === 0) {
-      fetchEmployees()
+    if (!employeesBySalon || employeesBySalon.length === 0) {
+      if (user?.salon_id) {
+        fetchEmployees(user.salon_id)
+      } else {
+        fetchEmployees()
+      }
+    }
+    if (!services || services.length === 0) {
+      fetchServices()
     }
   }, [])
+
+  useEffect(() => {
+    if (!services || services.length === 0) return
+    const salonFilter = String(salon_id || user?.salon_id)
+    const list = services.filter(s => String(s.salon_id) === salonFilter)
+    let auto = null
+    if (name) {
+      const nm = String(name).trim().toLowerCase()
+      auto = list.find(s => String(s.name || '').trim().toLowerCase() === nm)
+    }
+    if (!auto && service_duration) {
+      auto = list.find(s => Number(s.duration) === Number(service_duration))
+    }
+    if (auto) setSelectedServiceId(String(auto.id))
+  }, [services, name, service_duration, salon_id, user?.salon_id])
+
+  useEffect(() => {
+    setAvailableEmployees(null)
+    setAvailLoading(false)
+    if (!user?.salon_id) return
+    if (!date || !start_time || !end_time) return
+    const token = getAuthToken()
+    const qs = new URLSearchParams({
+      salon_id: String(user.salon_id),
+      date_str: String(date),
+      start_time: String(start_time),
+      end_time: String(end_time),
+      page: '1',
+      limit: '200'
+    }).toString()
+    const url = `${mobileEmployeesAvailableUrl}?${qs}`
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    }
+    const run = async () => {
+      setAvailLoading(true)
+      try {
+        const resp = await fetch(url, { method: 'GET', headers })
+        if (!resp.ok) {
+          throw new Error(await resp.text())
+        }
+        const data = await resp.json()
+        const items = data?.data || []
+        const normalized = items.map(it => ({ id: it.id, name: it.name, avatar: it.avatar, profession: it.workType }))
+        setAvailableEmployees(normalized)
+      } catch {
+        setAvailableEmployees([])
+      } finally {
+        setAvailLoading(false)
+      }
+    }
+    run()
+  }, [user?.salon_id, date, start_time, end_time])
+
+  useEffect(() => {
+    setAvailableSlots([])
+    if (!formData.employee_id || !date) return
+    ;(async () => {
+      const res = await getAvailableSlots(formData.employee_id, date)
+      const data = Array.isArray(res?.data) ? res.data : []
+      const svc = selectedServiceId ? data.find(d => String(d.service_id) === String(selectedServiceId)) : null
+      setAvailableSlots(svc ? (svc.slots || []) : [])
+    })()
+  }, [formData.employee_id, date, selectedServiceId])
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -58,6 +137,10 @@ const BookScheduleModal = (props) => {
     setIsDropdownOpen(false)
   }
 
+  const handleServiceSelect = (e) => {
+    setSelectedServiceId(e.target.value)
+  }
+
   const handleSave = async () => {
     if (!formData.full_name.trim()) {
       setError(t('validation.required') || 'Iltimos, ismni kiriting')
@@ -80,7 +163,8 @@ const BookScheduleModal = (props) => {
       if (!resolvedSalonId) throw new Error(t('errors.salonIdMissing') || 'Salon ID topilmadi')
 
       const scheduleDate = new Date(date)
-      const [hours, minutes] = start_time.split(':')
+      const picked = formData.selected_slot_start || start_time
+      const [hours, minutes] = String(picked).split(':')
       scheduleDate.setHours(parseInt(hours), parseInt(minutes), 0, 0)
 
       const bookingData = {
@@ -102,7 +186,10 @@ const BookScheduleModal = (props) => {
     }
   }
 
-  const filteredEmployees = employees.filter(emp => emp.salon_id === (salon_id || user?.salon_id))
+  const filteredEmployeesBase = employeesBySalon || []
+  const filteredEmployees = Array.isArray(availableEmployees) && availableEmployees.length > 0
+    ? filteredEmployeesBase.filter(e => availableEmployees.some(a => String(a.id) === String(e.id)))
+    : filteredEmployeesBase
   const selectedEmployee = formData.employee_id 
     ? filteredEmployees.find(e => String(e.id) === String(formData.employee_id))
     : null
@@ -125,6 +212,34 @@ const BookScheduleModal = (props) => {
         )}
 
         <div className='schedule-modal-form'>
+          {name ? (
+            <>
+              <label htmlFor='schedule_lesson'>{t('schedule.lesson') || 'Занятие'}</label>
+              <input
+                type='text'
+                id='schedule_lesson'
+                className='form-inputs'
+                value={name}
+                disabled
+              />
+            </>
+          ) : (
+            <>
+              <label htmlFor='service_id'>{t('service') || 'Услуга'}</label>
+              <select
+                id='service_id'
+                className='form-inputs'
+                value={selectedServiceId}
+                onChange={handleServiceSelect}
+                disabled={loading}
+              >
+                <option value=''>{t('selectService') || 'Выберите услугу'}</option>
+                {services.filter(s => String(s.salon_id) === String(salon_id || user?.salon_id)).map(s => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.duration} min)</option>
+                ))}
+              </select>
+            </>
+          )}
           <label htmlFor='full_name'>{t('fullName') || 'Полное имя'} *</label>
           <input
             type='text'
@@ -181,7 +296,7 @@ const BookScheduleModal = (props) => {
                     />
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ fontSize: '0.9vw', fontWeight: '500' }}>
-                        {selectedEmployee.name || selectedEmployee.employee_name || `${t('employee')} #${selectedEmployee.id}`}
+                        {selectedEmployee.name || selectedEmployee.employee_name || `${ts('schedule.employee','Сотрудник')} #${selectedEmployee.id}`}
                       </span>
                       {selectedEmployee.profession && (
                         <span style={{ fontSize: '0.75vw', color: '#666' }}>
@@ -219,7 +334,9 @@ const BookScheduleModal = (props) => {
                 zIndex: 1000,
                 boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
               }}>
-                {filteredEmployees.length === 0 ? (
+                {availLoading ? (
+                  <div style={{ padding: '15px', textAlign: 'center', color: '#999' }}>Loading...</div>
+                ) : filteredEmployees.length === 0 ? (
                   <div style={{ padding: '15px', textAlign: 'center', color: '#999' }}>
                     {t('noEmployees') || 'Сотрудники не найдены'}
                   </div>
@@ -270,6 +387,26 @@ const BookScheduleModal = (props) => {
               </div>
             )}
           </div>
+
+          {selectedServiceId && availableSlots.length > 0 && (
+            <div style={{ marginTop: '10px' }}>
+              <label>{t('availableSlots') || 'Доступные слоты'}</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {availableSlots.map((s, idx) => (
+                  <button
+                    key={idx}
+                    type='button'
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, selected_slot_start: s.start }))
+                    }}
+                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd', backgroundColor: (formData.selected_slot_start === s.start ? '#9C2BFF' : '#fff'), color: (formData.selected_slot_start === s.start ? '#fff' : '#000') }}
+                  >
+                    {s.start} - {s.end}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f5f5f5', borderRadius: '5px' }}>
             <p style={{ fontSize: '0.8vw', margin: '5px 0' }}>
