@@ -13,6 +13,7 @@ const AddScheduleModal = () => {
         employeesBySalon,
         fetchEmployees,
         fetchEmployeeBusySlots,
+        checkEmployeeBusyInterval,
         calculateAvailableSlots,
         combinedAppointments,
         schedules
@@ -28,6 +29,7 @@ const AddScheduleModal = () => {
         service_duration: 60, // ✅ Shu qatorni QO'SHISH
         repeat: false,
         repeat_value: '',
+        whole_day: false,
         employee_list: [],
         price: 0,
         full_pay: 0,
@@ -44,9 +46,22 @@ const AddScheduleModal = () => {
         }
     }, [user?.salon_id])
 
+    useEffect(() => {
+        if (user?.role === 'employee') {
+            const selfId = String(user?.id || user?.employee_id || '')
+            if (selfId) {
+                setFormData(prev => ({
+                    ...prev,
+                    employee_list: [selfId]
+                }))
+            }
+        }
+    }, [user?.role, user?.id, user?.employee_id])
+
 
     // end_time ni avtomatik hisoblash
     useEffect(() => {
+        if (formData.whole_day) return
         if (formData.start_time && formData.service_duration) {
             const [hours, minutes] = formData.start_time.split(':').map(Number);
             const totalMinutes = hours * 60 + minutes + formData.service_duration;
@@ -60,6 +75,17 @@ const AddScheduleModal = () => {
             }));
         }
     }, [formData.start_time, formData.service_duration]);
+
+    // whole_day yoqilganda start/end vaqtlarini tozalash
+    useEffect(() => {
+        if (formData.whole_day) {
+            setFormData(prev => ({
+                ...prev,
+                start_time: '',
+                end_time: ''
+            }))
+        }
+    }, [formData.whole_day])
 
     const handleInputChange = (field, value) => {
         setFormData(prev => ({
@@ -96,11 +122,13 @@ const AddScheduleModal = () => {
             if (!formData.date) {
                 throw new Error(t('validation.required'))
             }
-            if (!formData.start_time) {
-                throw new Error(t('validation.required'))
-            }
-            if (!formData.end_time) {
-                throw new Error(t('validation.required'))
+            if (!formData.whole_day) {
+                if (!formData.start_time) {
+                    throw new Error(t('validation.required'))
+                }
+                if (!formData.end_time) {
+                    throw new Error(t('validation.required'))
+                }
             }
             if (!user?.salon_id) {
                 throw new Error(t('errors.salonIdMissing'))
@@ -111,11 +139,12 @@ const AddScheduleModal = () => {
                 name: String(formData.name).trim(),
                 title: String(formData.title).trim(),
                 date: String(formData.date),
-                start_time: String(formData.start_time),
-                end_time: String(formData.end_time),
+                start_time: String(formData.whole_day ? '00:00' : formData.start_time),
+                end_time: String(formData.whole_day ? '23:59' : formData.end_time),
                 service_duration: Number(formData.service_duration), // ✅ Shu qatorni QO'SHISH
                 repeat: Boolean(formData.repeat),
                 repeat_value: String(formData.repeat_value || ''),
+                whole_day: Boolean(formData.whole_day),
                 employee_list: Array.isArray(formData.employee_list) ? formData.employee_list.map(id => String(id)) : [],
                 price: Number(formData.price) || 0,
                 full_pay: Number(formData.full_pay) || 0,
@@ -123,12 +152,26 @@ const AddScheduleModal = () => {
                 is_active: true
             }
 
-            // Validate each selected employee is free at given time (busy slots + appointments + existing schedules)
-            if (Array.isArray(formData.employee_list) && formData.employee_list.length > 0) {
+            // Validate each selected employee is free at given time (backend interval check + local slots)
+            // whole_day bo'lsa, vaqt bo'yicha tekshiruv o'tkazilmaydi
+            if (!formData.whole_day && Array.isArray(formData.employee_list) && formData.employee_list.length > 0) {
                 for (const empId of formData.employee_list) {
                     const empObj = (employeesBySalon || employees || []).find(e => String(e.id) === String(empId)) || {}
                     const workStart = empObj.work_start_time || '09:00'
                     const workEnd = empObj.work_end_time || '20:00'
+                    // Backend interval tekshiruviga mos (agar endpoint muvaffaqiyatli bo'lsa band deb qabul qilamiz)
+                    const intervalBusy = await checkEmployeeBusyInterval(
+                        String(empId),
+                        String(formData.date),
+                        String(formData.start_time),
+                        String(formData.end_time)
+                    )
+                    if (intervalBusy) {
+                        const empName = empObj?.name || t('schedule.employee')
+                        const msg = `${empName}: ${t('employeeBusy') || 'Tanlangan xodim bu vaqtda band'} (${formData.start_time}-${formData.end_time})`
+                        throw new Error(msg)
+                    }
+
                     const busySlots = await fetchEmployeeBusySlots(String(empId), String(formData.date))
                     const employeeAppointments = (combinedAppointments || []).filter(
                         apt => String(apt.employee_id) === String(empId) && String(apt.date) === String(formData.date)
@@ -149,7 +192,9 @@ const AddScheduleModal = () => {
                     )
                     const ok = slots.some(s => s.start_time === String(formData.start_time) && s.end_time === String(formData.end_time))
                     if (!ok) {
-                        throw new Error(t('employeeBusy') || 'Tanlangan xodim bu vaqtda band')
+                        const empName = empObj?.name || t('schedule.employee')
+                        const msg = `${empName}: ${t('noFreeSlot') || "Bu interval bo'sh emas"} (${formData.start_time}-${formData.end_time})`
+                        throw new Error(msg)
                     }
                 }
             }
@@ -168,6 +213,7 @@ const AddScheduleModal = () => {
                 end_time: '',
                 repeat: false,
                 repeat_value: '',
+                whole_day: false,
                 employee_list: [],
                 price: 0,
                 full_pay: 0,
@@ -185,6 +231,11 @@ const AddScheduleModal = () => {
     return (
         <div className='schedule-modal'>
             <div className='schedule-modal-cont'>
+                {formData.whole_day ? (
+                    <div style={{ position: 'absolute', top: '12px', left: '16px', background: '#FFF', color: '#9C2BFF', border: '1px solid #9C2BFF', borderRadius: '12px', padding: '4px 10px', fontSize: '0.8vw' }}>
+                        {t('schedule.wholeDay')}
+                    </div>
+                ) : null}
                 <h4>{t('schedule.add')}</h4>
 
                 {error && (
@@ -200,6 +251,15 @@ const AddScheduleModal = () => {
                 )}
 
                 <div className='schedule-modal-form'>
+                    <label htmlFor="">
+                        <input
+                            type="checkbox"
+                            checked={formData.whole_day}
+                            onChange={(e) => handleInputChange('whole_day', e.target.checked)}
+                            style={{ marginRight: '8px' }}
+                        />
+                        {t('schedule.wholeDay')}
+                    </label>
                     <label htmlFor="">{t('schedule.lesson')}</label>
                     <input
                         type="text"
@@ -229,7 +289,9 @@ const AddScheduleModal = () => {
                         required
                     />
 
-                    <label htmlFor="">{t('schedule.startTime')}</label>
+                    {!formData.whole_day && (
+                        <label htmlFor="">{t('schedule.startTime')}</label>
+                    )}
                     <label htmlFor="">{t('schedule.serviceDuration') || 'Xizmat davomiyligi'}</label>
                     <select
                         className="form-inputs"
@@ -242,24 +304,30 @@ const AddScheduleModal = () => {
                         <option value={90}>90 {t('minutes') || 'daqiqa'}</option>
                         <option value={120}>120 {t('minutes') || 'daqiqa'}</option>
                     </select>
-                    <input
-                        type="time"
-                        className="form-inputs"
-                        value={formData.start_time}
-                        onChange={(e) => handleInputChange('start_time', e.target.value)}
-                        required
-                    />
+                    {!formData.whole_day && (
+                        <input
+                            type="time"
+                            className="form-inputs"
+                            value={formData.start_time}
+                            onChange={(e) => handleInputChange('start_time', e.target.value)}
+                            required
+                        />
+                    )}
 
-                    <label htmlFor="">{t('schedule.endTime')}</label>
-                    <input
-                        type="time"
-                        className="form-inputs"
-                        value={formData.end_time}
-                        onChange={(e) => handleInputChange('end_time', e.target.value)}
-                        disabled // ✅ Shu attributeni QO'SHISH (avtomatik hisoblangani uchun)
-                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }} // ✅ Shu style ni QO'SHISH
-                        required
-                    />
+                    {!formData.whole_day && (
+                        <>
+                            <label htmlFor="">{t('schedule.endTime')}</label>
+                            <input
+                                type="time"
+                                className="form-inputs"
+                                value={formData.end_time}
+                                onChange={(e) => handleInputChange('end_time', e.target.value)}
+                                disabled
+                                style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                                required
+                            />
+                        </>
+                    )}
 
                     <label htmlFor="">
                         <input
@@ -287,10 +355,12 @@ const AddScheduleModal = () => {
 
                 <div className='schedule-modal-addPersonal'>
                     <label htmlFor="">{t('schedule.staff')}</label>
-                    <button onClick={() => setSelectEmploy(true)}>
-                        <img src="/images/+.png" alt="" />
-                        {t('schedule.addStaff')}
-                    </button>
+                    {user?.role !== 'employee' && (
+                        <button onClick={() => setSelectEmploy(true)}>
+                            <img src="/images/+.png" alt="" />
+                            {t('schedule.addStaff')}
+                        </button>
+                    )}
                     {selectEmploy && (
                         <SelectEmployeeModal
                             setSelectEmploy={setSelectEmploy}
@@ -333,7 +403,7 @@ const AddScheduleModal = () => {
                                             </div>
                                             <div className='masters-time' style={{ color: '#555' }}>
                                                 <p style={{ margin: 0 }}>
-                                                    {formData.start_time} - {formData.end_time}
+                                                    {formData.whole_day ? t('schedule.wholeDay') : `${formData.start_time} - ${formData.end_time}`}
                                                 </p>
                                             </div>
                                         </div>

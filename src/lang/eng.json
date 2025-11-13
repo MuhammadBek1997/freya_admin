@@ -147,6 +147,7 @@
     "date": "Date *",
     "startTime": "Start Time *",
     "endTime": "End Time *",
+    "wholeDay": "Whole day",
     "repeat": "Repeat",
     "repeatEvery": "Repeat Every",
     "repeatPlaceholder": "e.g.: 1 week",

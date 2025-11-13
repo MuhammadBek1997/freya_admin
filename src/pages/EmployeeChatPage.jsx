@@ -3,6 +3,7 @@ import '../styles/ChatStyles.css'
 import '../styles/AdminChatOverrides.css'
 import i18next from 'i18next';
 import { UseGlobalContext, getAuthToken } from '../Context';
+import AddScheduleModal from '../components/AddScheduleModal';
 import EmployeeProfileModal from '../components/EmployeeProfileModal';
 import EmployeePostForm from '../components/EmployeePostForm';
 
@@ -28,6 +29,8 @@ const EmployeeChatPage = () => {
     setUser,
     updateEmployeeAvatar,
     ts,
+    addSched,
+    setAddSched,
   } = UseGlobalContext();
 
   const handleBack = () => {
@@ -170,6 +173,12 @@ const EmployeeChatPage = () => {
     }
   }, [selectedPageEmployee, user]);
 
+  useEffect(() => {
+    if (selectedPageEmployee === 'schedule' && user && !addSched) {
+      fetchGroupedSchedules();
+    }
+  }, [addSched, selectedPageEmployee, user]);
+
   const fetchGroupedSchedules = async () => {
     setSchedulesLoading(true);
     setSchedulesError(null);
@@ -190,20 +199,86 @@ const EmployeeChatPage = () => {
       }
 
       const data = await response.json();
-      const schedulesData = data.data || data;
-      let filteredSchedules = {};
-
-      if (user.role === 'employee') {
-        Object.keys(schedulesData).forEach(date => {
-          const employeeSchedules = schedulesData[date].filter(
-            schedule => schedule.employee_id === user.id
-          );
-          if (employeeSchedules.length > 0) {
-            filteredSchedules[date] = employeeSchedules;
-          }
-        });
+      const raw = data?.data ?? data;
+      // Normalize: backend may return object keyed by date or array of schedules
+      let normalized = {};
+      if (Array.isArray(raw)) {
+        // Array of schedules → group by schedule.date
+        for (const item of raw) {
+          const dateKey = String(item?.date || '').substring(0, 10);
+          if (!dateKey) continue;
+          if (!normalized[dateKey]) normalized[dateKey] = [];
+          normalized[dateKey].push(item);
+        }
+      } else if (raw && typeof raw === 'object') {
+        normalized = raw;
       } else {
-        filteredSchedules = schedulesData;
+        normalized = {};
+      }
+
+      let filteredSchedules = {};
+      const uid = String(user?.id || user?.employee_id || '');
+      const onlyEmployee = user.role === 'employee';
+      Object.keys(normalized).forEach(date => {
+        const list = Array.isArray(normalized[date]) ? normalized[date] : [];
+        const employeeSchedules = onlyEmployee
+          ? list.filter(schedule => {
+              const sEmpId = schedule?.employee_id;
+              const sEmpList = Array.isArray(schedule?.employee_list)
+                ? schedule.employee_list.map(id => String(id))
+                : [];
+              return (uid && String(sEmpId) === uid) || (uid && sEmpList.includes(uid));
+            })
+          : list;
+        if (employeeSchedules.length > 0) {
+          filteredSchedules[date] = employeeSchedules;
+        }
+      });
+
+      // If employee and nothing found, fallback to mobile employee daily API for next 7 days
+      if (user.role === 'employee' && Object.keys(filteredSchedules).length === 0) {
+        const makeDate = (d) => {
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          return `${yyyy}-${mm}-${dd}`;
+        };
+        const now = new Date();
+        const headers = {
+          'Content-Type': 'application/json',
+          ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+        };
+        for (let i = 0; i < 7; i++) {
+          const day = new Date(now);
+          day.setDate(now.getDate() + i);
+          const dateStr = makeDate(day);
+          try {
+            const resp = await fetch(`https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/mobile/employees/me/schedules/${dateStr}`, { headers });
+            if (resp.ok) {
+              const j = await resp.json();
+              const items = Array.isArray(j?.data) ? j.data : [];
+              const converted = items.map(it => {
+                const parts = String(it.time || '').split('-');
+                const st = parts[0] || '';
+                const en = parts[1] || '';
+                return {
+                  date: dateStr,
+                  name: it.service_name || it.direction || it.title || 'Schedule',
+                  employee_id: it.employee_id,
+                  employee_name: it.employee_name,
+                  start_time: st,
+                  end_time: en,
+                  is_private: it.is_private,
+                };
+              });
+              if (converted.length > 0) {
+                filteredSchedules[dateStr] = converted;
+              }
+            }
+          } catch (e) {
+            const _ = e;
+          }
+        }
       }
 
       setGroupedSchedules(filteredSchedules);
@@ -293,29 +368,22 @@ const EmployeeChatPage = () => {
 
   const formatDisplayDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('uz-UZ', {
-      day: '2-digit',
-      month: '2-digit'
-    });
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    return `${dd}`;
   };
 
   const formatDateWithDay = (dateString) => {
     const date = new Date(dateString);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const weekday = date.toLocaleDateString(i18next.language || 'ru-RU', { weekday: 'short' });
+    return `${dd}-${mm}, ${weekday}`;
+  };
 
-    if (date.toDateString() === today.toDateString()) {
-      return t('today') || 'Bugun';
-    } else if (date.toDateString() === tomorrow.toDateString()) {
-      return t('tomorrow') || 'Ertaga';
-    } else {
-      return date.toLocaleDateString('uz-UZ', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long'
-      });
-    }
+  const formatWeekdayShort = (dateString) => {
+    const d = new Date(dateString);
+    return d.toLocaleDateString(i18next.language || 'ru-RU', { weekday: 'short' });
   };
 
   const formatTime = (timeString) => {
@@ -791,6 +859,20 @@ const EmployeeChatPage = () => {
                   <img src="/images/arrowLeft.png" alt="" />
                 </button>
                 <p>{t('schedHT')}</p>
+                <button
+                  onClick={() => setAddSched(true)}
+                  style={{
+                    marginLeft: 'auto',
+                    padding: '8px 12px',
+                    backgroundColor: '#9C2BFF',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {t('schedule.add') || 'Добавить'}
+                </button>
               </div>
 
               {schedulesLoading ? (
@@ -862,18 +944,21 @@ const EmployeeChatPage = () => {
                         className={`schedule-nav-item ${selectedDate === date ? 'active' : ''}`}
                         onClick={() => setSelectedDate(date)}
                         style={{
-                          padding: '10px 16px',
+                          padding: '0.5vw 0.3vw',
                           border: selectedDate === date ? '2px solid #9C2BFF' : '1px solid #ddd',
-                          backgroundColor: selectedDate === date ? '#f0e6ff' : 'white',
-                          borderRadius: '8px',
+                          backgroundColor: selectedDate === date ? '#f7f0ff' : 'white',
+                          borderRadius: '12px',
                           cursor: 'pointer',
                           whiteSpace: 'nowrap',
-                          fontSize: '0.85vw',
-                          fontWeight: selectedDate === date ? 'bold' : 'normal',
-                          transition: 'all 0.2s'
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          flexDirection: 'column-reverse',
+                          alignItems: 'center',
+                          gap: '4px'
                         }}
                       >
-                        {formatDisplayDate(date)}
+                        <span style={{ fontSize: '0.7vw', color: '#A8A8B3' }}>{formatWeekdayShort(date)}</span>
+                        <span style={{ fontSize: '0.9vw', fontWeight: selectedDate === date ? 'bold' : 'normal' }}>{formatDisplayDate(date)}</span>
                       </button>
                     ))}
                   </div>
@@ -883,13 +968,23 @@ const EmployeeChatPage = () => {
                     overflowY: 'auto'
                   }}>
                     {selectedDate && (
-                      <h3 style={{
-                        fontSize: '1.2vw',
-                        marginBottom: '1vw',
-                        color: '#333'
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        marginBottom: '1vw'
                       }}>
-                        {formatDateWithDay(selectedDate)}
-                      </h3>
+                        <span style={{
+                          padding: '6px 10px',
+                          backgroundColor: '#FFF',
+                          border: '1px solid #eee',
+                          borderRadius: '12px',
+                          fontSize: '0.9vw',
+                          color: '#333'
+                        }}>
+                          {formatDateWithDay(selectedDate)}
+                        </span>
+                      </div>
                     )}
 
                     {getSchedulesForDate().length === 0 ? (
@@ -927,32 +1022,24 @@ const EmployeeChatPage = () => {
                               fontWeight: 'bold',
                               color: '#333'
                             }}>
-                              {formatTime(item.appointment_time || item.time)}
+                              {item.title || item.name || item.service_name || t('notAvailable') || 'Noma\'lum'}
                             </span>
                             <span style={{
                               padding: '4px 12px',
                               borderRadius: '12px',
                               fontSize: '0.75vw',
                               fontWeight: 'bold',
-                              color: 'white',
-                              backgroundColor: getStatusColor(item.status)
+                              color: '#9C2BFF',
+                              backgroundColor: '#F3E8FF'
                             }}>
-                              {getStatusText(item.status)}
+                              {item.start_time && item.end_time ? `${item.start_time} - ${item.end_time}` : (formatTime(item.appointment_time || item.time) || '')}
                             </span>
                           </div>
 
                           <div style={{ fontSize: '0.9vw', color: '#666' }}>
                             <div style={{ marginBottom: '0.3vw' }}>
-                              <strong>{t('client') || 'Mijoz'}:</strong> {item.client_name || item.client || t('notAvailable') || 'Noma\'lum'}
+                              <strong>{t('service') || 'Xizmat'}:</strong> {item.service_name || item.name || t('notAvailable') || 'Noma\'lum'}
                             </div>
-                            <div style={{ marginBottom: '0.3vw' }}>
-                              <strong>{t('service') || 'Xizmat'}:</strong> {item.service_name || item.service || t('notAvailable') || 'Noma\'lum'}
-                            </div>
-                            {item.employee_name && (
-                              <div>
-                                <strong>{ts('schedule.employee','Сотрудник')}:</strong> {item.employee_name}
-                              </div>
-                            )}
                           </div>
                         </div>
                       ))
@@ -961,6 +1048,7 @@ const EmployeeChatPage = () => {
                 </>
               )}
             </div>
+            {addSched ? <AddScheduleModal /> : null}
           </div>
         ) : selectedPageEmployee === 'posts' ? (
           <div className='chat-posts'>

@@ -147,6 +147,7 @@
         "date": "Дата *",
         "startTime": "Время начала *",
         "endTime": "Время окончания *",
+        "wholeDay": "Целый день",
         "repeat": "Повторить",
         "repeatEvery": "Повторить каждые",
         "repeatPlaceholder": "например: 1 неделя",

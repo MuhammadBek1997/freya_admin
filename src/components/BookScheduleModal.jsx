@@ -12,11 +12,12 @@ const BookScheduleModal = (props) => {
     end_time,
     name,
     service_duration,
+    whole_day,
     setEditModal
   } = props
 
   const { t } = useI18n()
-  const { user, employeesBySalon, fetchEmployees, services, fetchServices, getAvailableSlots, createBooking, ts } = UseGlobalContext()
+  const { user, employeesBySalon, fetchEmployees, services, fetchServices, getAvailableSlots, createBooking, ts, combinedAppointments, calculateAvailableSlots } = UseGlobalContext()
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -27,10 +28,13 @@ const BookScheduleModal = (props) => {
   const [error, setError] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
+  const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false)
+  const timeDropdownRef = useRef(null)
   const [availableEmployees, setAvailableEmployees] = useState(null)
   const [availLoading, setAvailLoading] = useState(false)
   const [selectedServiceId, setSelectedServiceId] = useState('')
   const [availableSlots, setAvailableSlots] = useState([])
+  const isWholeDay = (Boolean(whole_day) || (String(start_time || '').substring(0,5) === '00:00' && String(end_time || '').substring(0,5) === '23:59'))
 
   useEffect(() => {
     if (!employeesBySalon || employeesBySalon.length === 0) {
@@ -63,6 +67,7 @@ const BookScheduleModal = (props) => {
   useEffect(() => {
     setAvailableEmployees(null)
     setAvailLoading(false)
+    if (Boolean(whole_day) || (String(start_time || '').substring(0,5) === '00:00' && String(end_time || '').substring(0,5) === '23:59')) return
     if (!user?.salon_id) return
     if (!date || !start_time || !end_time) return
     const token = getAuthToken()
@@ -100,15 +105,38 @@ const BookScheduleModal = (props) => {
   }, [user?.salon_id, date, start_time, end_time])
 
   useEffect(() => {
+    if (isWholeDay) return
     setAvailableSlots([])
     if (!formData.employee_id || !date) return
     ;(async () => {
       const res = await getAvailableSlots(formData.employee_id, date)
       const data = Array.isArray(res?.data) ? res.data : []
       const svc = selectedServiceId ? data.find(d => String(d.service_id) === String(selectedServiceId)) : null
-      setAvailableSlots(svc ? (svc.slots || []) : [])
+      const slots = svc ? (svc.slots || []) : []
+      const booked = (combinedAppointments || []).filter(a => String(a.employee_id) === String(formData.employee_id) && String(a.date) === String(date))
+      const bookedSet = new Set(booked.map(a => String(a.time || a.application_time || '').substring(0, 5)))
+      const filtered = slots.filter(s => !bookedSet.has(String(s.start).substring(0, 5)))
+      setAvailableSlots(filtered)
     })()
-  }, [formData.employee_id, date, selectedServiceId])
+  }, [formData.employee_id, date, selectedServiceId, isWholeDay])
+
+  useEffect(() => {
+    if (!isWholeDay) return
+    setAvailableSlots([])
+    if (!formData.employee_id || !date) return
+    const empObj = (employeesBySalon || []).find(e => String(e.id) === String(formData.employee_id)) || {}
+    const workStart = empObj.work_start_time || '09:00'
+    const workEnd = empObj.work_end_time || '20:00'
+    const employeeAppointments = (combinedAppointments || []).filter(
+      a => String(a.employee_id) === String(formData.employee_id) && String(a.date) === String(date)
+    ).map(a => ({
+      application_time: String((a.time || a.application_time || '')).substring(0, 5),
+      service_duration: Number(a.service_duration || a.duration || 60)
+    }))
+    const calc = calculateAvailableSlots(workStart, workEnd, [], employeeAppointments, Number(service_duration) || 60)
+    const converted = (calc || []).map(s => ({ start: s.start_time, end: s.end_time }))
+    setAvailableSlots(converted)
+  }, [isWholeDay, formData.employee_id, date, service_duration, employeesBySalon, combinedAppointments])
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -118,8 +146,19 @@ const BookScheduleModal = (props) => {
     }
 
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    const handleKeyDown = (e) => { if (e.key === 'Escape' && !isWholeDay) setIsTimeDropdownOpen(false) }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isWholeDay])
+
+  useEffect(() => {
+    if (isWholeDay && formData.employee_id && availableSlots.length > 0) {
+      setIsTimeDropdownOpen(true)
+    }
+  }, [isWholeDay, formData.employee_id, availableSlots])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -152,6 +191,10 @@ const BookScheduleModal = (props) => {
     }
     if (!formData.employee_id) {
       setError(t('selectEmployeeRequired') || 'Iltimos, xodimni tanlang')
+      return
+    }
+    if ((Boolean(whole_day) || (String(start_time || '').substring(0,5) === '00:00' && String(end_time || '').substring(0,5) === '23:59')) && !formData.selected_slot_start) {
+      setError(t('startTimeRequired') || 'Время начала обязательно')
       return
     }
 
@@ -194,9 +237,29 @@ const BookScheduleModal = (props) => {
     ? filteredEmployees.find(e => String(e.id) === String(formData.employee_id))
     : null
 
+  const displayStart = formData.selected_slot_start || start_time
+  const displayEnd = (() => {
+    if (formData.selected_slot_start) {
+      const sl = (availableSlots || []).find(s => String(s.start) === String(formData.selected_slot_start))
+      if (sl && sl.end) return sl.end
+      const parts = String(formData.selected_slot_start).split(':').map(Number)
+      const add = Number(service_duration) || 60
+      const total = parts[0] * 60 + parts[1] + add
+      const eh = Math.floor(total / 60)
+      const em = total % 60
+      return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
+    }
+    return end_time
+  })()
+
   return (
     <div className='editSchedule-modal'>
       <div className='editSchedule-modal-cont'>
+        {(Boolean(whole_day) || (String(start_time || '').substring(0,5) === '00:00' && String(end_time || '').substring(0,5) === '23:59')) ? (
+          <div style={{ position: 'absolute', top: '12px', left: '16px', background: '#FFF', color: '#9C2BFF', border: '1px solid #9C2BFF', borderRadius: '12px', padding: '4px 10px', fontSize: '0.8vw' }}>
+            {t('schedule.wholeDay') || 'Whole day'}
+          </div>
+        ) : null}
         <h2>{t('book') || 'Забронировать'}</h2>
 
         {error && (
@@ -388,22 +451,83 @@ const BookScheduleModal = (props) => {
             )}
           </div>
 
-          {selectedServiceId && availableSlots.length > 0 && (
+          {availableSlots.length > 0 && (
             <div style={{ marginTop: '10px' }}>
               <label>{t('availableSlots') || 'Доступные слоты'}</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {availableSlots.map((s, idx) => (
-                  <button
-                    key={idx}
-                    type='button'
-                    onClick={() => {
-                      setFormData(prev => ({ ...prev, selected_slot_start: s.start }))
-                    }}
-                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd', backgroundColor: (formData.selected_slot_start === s.start ? '#9C2BFF' : '#fff'), color: (formData.selected_slot_start === s.start ? '#fff' : '#000') }}
+              <div ref={timeDropdownRef} style={{ position: 'relative' }}>
+                <div
+                  onClick={() => setIsTimeDropdownOpen(true)}
+                  style={{
+                    padding: '10px',
+                    borderRadius: '5px',
+                    border: '1px solid #ddd',
+                    backgroundColor: 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    minHeight: '45px'
+                  }}
+                >
+                  <span style={{ fontSize: '0.9vw' }}>
+                    {formData.selected_slot_start
+                      ? `${formData.selected_slot_start}`
+                      : (t('selectTime') || 'Выберите время')}
+                  </span>
+                  <span style={{ fontSize: '1.2vw' }}>
+                    {isTimeDropdownOpen ? 
+                      <img src="/images/Arrow.png" alt="" style={{transition:"100ms"}} /> :
+                      <img src="/images/Arrow.png" alt="" style={{transform:"rotateZ(-90deg)", transition:"200ms"}} />
+                    }
+                  </span>
+                </div>
+                {isTimeDropdownOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    backgroundColor: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '5px',
+                    marginTop: '5px',
+                    maxHeight: '250px',
+                    overflowY: 'auto',
+                    zIndex: 1000,
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                  }}
+                  onWheel={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
                   >
-                    {s.start} - {s.end}
-                  </button>
-                ))}
+                    {availableSlots.map((s, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, selected_slot_start: s.start }))
+                          setIsTimeDropdownOpen(false)
+                        }}
+                        style={{
+                          padding: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '10px',
+                          cursor: 'pointer',
+                          backgroundColor: (formData.selected_slot_start === s.start ? '#f0f0f0' : 'white'),
+                          borderBottom: '1px solid #f0f0f0',
+                          transition: 'background-color 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f8f8'}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = (formData.selected_slot_start === s.start ? '#f0f0f0' : 'white')
+                        }}
+                      >
+                        <span style={{ fontSize: '0.9vw' }}>{s.start} - {s.end}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -413,7 +537,7 @@ const BookScheduleModal = (props) => {
               <strong>{t('modalDate') || 'Дата'}:</strong> {new Date(date).toLocaleDateString('ru-RU')}
             </p>
             <p style={{ fontSize: '0.8vw', margin: '5px 0' }}>
-              <strong>{t('timeLabel') || 'Время'}:</strong> {start_time} - {end_time}
+              <strong>{t('timeLabel') || 'Время'}:</strong> {displayStart} - {displayEnd}
             </p>
           </div>
         </div>

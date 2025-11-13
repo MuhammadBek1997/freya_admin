@@ -30,7 +30,10 @@ import {
 	messagesUrl,
 	photoUploadUrl,
 	bookingsUrl,
-	mobileSchedulesUrl
+	mobileSchedulesUrl,
+	mobileEmployeesBusyUrl,
+	mobileEmployeesUrl,
+	mobileEmployeesMeSchedulesUrl
 } from "./apiUrls"
 
 
@@ -4108,31 +4111,55 @@ export const AppProvider = ({ children }) => {
 	const fetchEmployeeBusySlots = async (employeeId, date) => {
 		try {
 			const token = getAuthToken();
-
 			if (!token) {
 				throw new Error('Tizimga kirish tokeni topilmadi');
 			}
-
-			const response = await fetch(
-				`${mobileEmployeesBusyUrl}?employee_id=${employeeId}&date=${date}`,
-				{
-					method: 'GET',
-					headers: {
-						'Authorization': `Bearer ${token}`,
-						'Content-Type': 'application/json',
-					},
-				}
-			);
-
-			if (!response.ok) {
-				throw new Error('Band vaqtlarni olishda xatolik');
+			const headers = {
+				'Authorization': `Bearer ${token}`,
+				'Content-Type': 'application/json',
+			};
+			const tryFetch = async (url) => {
+				const resp = await fetch(url, { method: 'GET', headers });
+				if (!resp.ok) return null;
+				const json = await resp.json();
+				const arr = json?.data || json;
+				return Array.isArray(arr) ? arr : [];
+			};
+			let result = await tryFetch(`${mobileEmployeesBusyUrl}?employee_id=${employeeId}&date=${date}`);
+			if (!result) {
+				result = await tryFetch(`${mobileEmployeesBusyUrl}?employee_id=${employeeId}&date_str=${date}`);
 			}
-
-			const data = await response.json();
-			return data.data || [];
+			if (!result) {
+				const fallback = await tryFetch(`${mobileEmployeesMeSchedulesUrl}?date=${date}`);
+				if (fallback && Array.isArray(fallback)) {
+					return fallback
+						.filter(it => String(it.employee_id) === String(employeeId))
+						.map(it => ({ start_time: String(it.start_time), end_time: String(it.end_time) }));
+				}
+				return [];
+			}
+			return result;
 		} catch (error) {
 			console.error('❌ Error fetching busy slots:', error);
 			return [];
+		}
+	};
+
+	// Interval bo'yicha muayyan xodim bandligini tekshirish (backendga mos)
+	const checkEmployeeBusyInterval = async (employeeId, dateStr, startTime, endTime) => {
+		try {
+			const token = getAuthToken();
+			if (!token) throw new Error('Tizimga kirish tokeni topilmadi');
+			const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+			const qs = new URLSearchParams({ date_str: String(dateStr), start_time: String(startTime), end_time: String(endTime) }).toString();
+			const url = `${mobileEmployeesUrl}/busy/${employeeId}?${qs}`;
+			const resp = await fetch(url, { method: 'GET', headers });
+			if (!resp.ok) return false;
+			const json = await resp.json();
+			const arr = Array.isArray(json?.data) ? json.data : [];
+			return arr.length > 0;
+		} catch (e) {
+			return false;
 		}
 	};
 
@@ -4192,7 +4219,7 @@ export const AppProvider = ({ children }) => {
 						end_time: formatTime(slotStart + serviceDuration),
 						duration: serviceDuration
 					});
-					slotStart += 30;
+					slotStart += serviceDuration;
 				}
 			}
 			currentTime = Math.max(currentTime, slot.end);
@@ -4207,7 +4234,7 @@ export const AppProvider = ({ children }) => {
 					end_time: formatTime(slotStart + serviceDuration),
 					duration: serviceDuration
 				});
-				slotStart += 30;
+				slotStart += serviceDuration;
 			}
 		}
 
@@ -4332,6 +4359,7 @@ export const AppProvider = ({ children }) => {
 			// ✅ YANGI: Busy slots functions
 			fetchEmployeeBusySlots,
 			calculateAvailableSlots,
+			checkEmployeeBusyInterval,
 
 		}}>
 			{children}
