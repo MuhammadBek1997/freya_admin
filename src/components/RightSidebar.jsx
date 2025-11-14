@@ -97,12 +97,12 @@ const RightSidebar = () => {
             </h3>
 
             <div className='right-custNumb'>
-                <a href={`tel:${selectedElement.phone_number || '+998901231223'}`}>
+                <a href={`tel:${selectedElement.phone_number || selectedElement.phone || '+998901231223'}`}>
                     <img src="/images/callingIcon.png" alt={t("Call")} />
-                    {selectedElement.phone_number || '+998901231223'}
+                    {selectedElement.phone_number || selectedElement.phone || '+998901231223'}
                 </a>
                 <button onClick={() => {
-                    navigator.clipboard.writeText(selectedElement.phone_number || '+998901231223');
+                    navigator.clipboard.writeText(selectedElement.phone_number || selectedElement.phone || '+998901231223');
                 }}>
                     <img src="/images/copyIcon.png" alt={t("Copy")} />
                 </button>
@@ -142,33 +142,34 @@ const RightSidebar = () => {
                     <div className='appTime-left'>
                         <div>
                             <p>
-                                {scheduleLoading
-                                    ? t('loading')
-                                    : scheduleData?.start_time
-                                        ? scheduleData.start_time.substring(0, 5)
-                                        : selectedElement.application_time
-                                            ? selectedElement.application_time.substring(0, 5)
-                                            : t('notAvailable')
-                                }
+                                {(() => {
+                                    if (scheduleLoading) return t('loading');
+                                    const st = scheduleData?.start_time
+                                        || selectedElement.application_time
+                                        || selectedElement.time
+                                        || selectedElement.start_time;
+                                    return st ? String(st).substring(0, 5) : t('notAvailable');
+                                })()}
                             </p>
                         </div>
                     </div>
                     <div className='appTime-right'>
                         <div>
                             <p>
-                                {scheduleLoading
-                                    ? t('loading')
-                                    : scheduleData?.end_time ||
-                                    (selectedElement.application_time ?
-                                        (() => {
-                                            const timeParts = selectedElement.application_time.split(':');
-                                            const hour = parseInt(timeParts[0], 10) + 1;
-                                            const minute = parseInt(timeParts[1], 10);
-                                            return `${hour}:${minute < 10 ? "0" + minute : minute}`;
-                                        })()
-                                        : t('notAvailable')
-                                    )
-                                }
+                                {(() => {
+                                    if (scheduleLoading) return t('loading');
+                                    if (scheduleData?.end_time) return String(scheduleData.end_time).substring(0, 5);
+                                    const base = selectedElement.application_time || selectedElement.time || selectedElement.start_time;
+                                    if (!base) return t('notAvailable');
+                                    const parts = String(base).split(':');
+                                    const h = parseInt(parts[0], 10);
+                                    const m = parseInt(parts[1], 10);
+                                    const dur = parseInt(selectedElement.service_duration, 10) || 60;
+                                    const total = h * 60 + m + dur;
+                                    const eh = Math.floor(total / 60) % 24;
+                                    const em = total % 60;
+                                    return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+                                })()}
                             </p>
                         </div>
                     </div>

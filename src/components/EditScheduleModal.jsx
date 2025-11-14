@@ -5,7 +5,6 @@ import SelectEmployeeModal from './SelectEmployeeModal';
 const EditScheduleModal = (props) => {
     const {
         id,
-        salon_id,
         name,
         title,
         date,
@@ -21,7 +20,7 @@ const EditScheduleModal = (props) => {
         setEditModal
     } = props;
 
-    const { updateSchedule, user, employees, employeesBySalon, t, ts, fetchEmployeeBusySlots, calculateAvailableSlots, combinedAppointments, schedules } = UseGlobalContext();
+    const { updateSchedule, employees, employeesBySalon, t, ts, fetchEmployeeBusySlots, calculateAvailableSlots, combinedAppointments, schedules, checkEmployeeBusyInterval } = UseGlobalContext();
 
     const [selectEmploy, setSelectEmploy] = useState(false);
     const [formData, setFormData] = useState({
@@ -56,12 +55,7 @@ const EditScheduleModal = (props) => {
         }));
     };
 
-    const removeEmployee = (employeeId) => {
-        setFormData(prev => ({
-            ...prev,
-            employee_list: prev.employee_list.filter(id => id !== employeeId)
-        }));
-    };
+    
 
     const handleUpdateSchedule = async () => {
         setError('');
@@ -95,6 +89,17 @@ const EditScheduleModal = (props) => {
                     const empObj = (employeesBySalon || employees || []).find(e => String(e.id) === String(empId)) || {}
                     const workStart = empObj.work_start_time || '09:00'
                     const workEnd = empObj.work_end_time || '20:00'
+                    const intervalBusy = await checkEmployeeBusyInterval(
+                        String(empId),
+                        String(formData.date),
+                        String(formData.start_time),
+                        String(formData.end_time)
+                    )
+                    if (intervalBusy) {
+                        const empName = empObj?.name || t('schedule.employee')
+                        const msg = `${empName}: ${t('employeeBusy') || 'Tanlangan xodim bu vaqtda band'} (${formData.start_time}-${formData.end_time})`
+                        throw new Error(msg)
+                    }
                     const busySlots = await fetchEmployeeBusySlots(String(empId), String(formData.date))
                     const employeeAppointments = (combinedAppointments || []).filter(
                         apt => String(apt.employee_id) === String(empId) && String(apt.date) === String(formData.date)
@@ -116,7 +121,9 @@ const EditScheduleModal = (props) => {
                     )
                     const ok = slots.some(s => s.start_time === String(formData.start_time) && s.end_time === String(formData.end_time))
                     if (!ok) {
-                        throw new Error(t('employeeBusy') || 'Tanlangan xodim bu vaqtda band')
+                        const empName = empObj?.name || t('schedule.employee')
+                        const msg = `${empName}: ${t('employeeBusy') || 'Tanlangan xodim bu vaqtda band'} (${formData.start_time}-${formData.end_time})`
+                        throw new Error(msg)
                     }
                 }
             }

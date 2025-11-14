@@ -5,19 +5,19 @@ import { mobileEmployeesAvailableUrl } from '../apiUrls'
 
 const BookScheduleModal = (props) => {
   const {
-    id,
     salon_id,
     date,
     start_time,
     end_time,
     name,
     service_duration,
+    employee_list,
     whole_day,
     setEditModal
   } = props
 
   const { t } = useI18n()
-  const { user, employeesBySalon, fetchEmployees, services, fetchServices, getAvailableSlots, createBooking, ts, combinedAppointments, calculateAvailableSlots } = UseGlobalContext()
+  const { user, employeesBySalon, fetchEmployees, services, fetchServices, getAvailableSlots, createBooking, ts, combinedAppointments, calculateAvailableSlots, checkEmployeeBusyInterval } = UseGlobalContext()
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -62,6 +62,10 @@ const BookScheduleModal = (props) => {
       auto = list.find(s => Number(s.duration) === Number(service_duration))
     }
     if (auto) setSelectedServiceId(String(auto.id))
+    const schedEmpIds = Array.isArray(employee_list) ? employee_list.map(id => String(id)) : []
+    if (schedEmpIds.length === 1) {
+      setFormData(prev => ({ ...prev, employee_id: schedEmpIds[0] }))
+    }
   }, [services, name, service_duration, salon_id, user?.salon_id])
 
   useEffect(() => {
@@ -210,15 +214,55 @@ const BookScheduleModal = (props) => {
       const [hours, minutes] = String(picked).split(':')
       scheduleDate.setHours(parseInt(hours), parseInt(minutes), 0, 0)
 
+      const startHHMM = String(picked).substring(0, 5)
+      let endHHMM = ''
+      if (formData.selected_slot_start) {
+        const sl = (availableSlots || []).find(s => String(s.start) === String(formData.selected_slot_start))
+        if (sl && sl.end) {
+          endHHMM = String(sl.end).substring(0, 5)
+        } else {
+          const parts = String(formData.selected_slot_start).split(':').map(Number)
+          const add = Number(service_duration) || 60
+          const total = parts[0] * 60 + parts[1] + add
+          const eh = Math.floor(total / 60)
+          const em = total % 60
+          endHHMM = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
+        }
+      } else {
+        if (end_time) {
+          endHHMM = String(end_time).substring(0, 5)
+        } else {
+          const parts = String(picked).split(':').map(Number)
+          const add = Number(service_duration) || 60
+          const total = parts[0] * 60 + parts[1] + add
+          const eh = Math.floor(total / 60)
+          const em = total % 60
+          endHHMM = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
+        }
+      }
+
+      const intervalBusy = await checkEmployeeBusyInterval(
+        String(formData.employee_id),
+        String(date),
+        startHHMM,
+        endHHMM
+      )
+      if (intervalBusy) {
+        const empObj = (employeesBySalon || []).find(e => String(e.id) === String(formData.employee_id)) || {}
+        const empName = empObj?.name || t('schedule.employee')
+        const msg = `${empName}: ${t('employeeBusy') || 'Tanlangan xodim bu vaqtda band'} (${startHHMM}-${endHHMM})`
+        throw new Error(msg)
+      }
+
       const bookingData = {
         salon_id: resolvedSalonId,
         full_name: formData.full_name.trim(),
         phone: formData.phone.trim(),
-        time: scheduleDate.toISOString(),
+        time: `${String(date)}T${startHHMM}:00`,
         employee_id: String(formData.employee_id)
       }
 
-      const data = await createBooking(bookingData)
+      await createBooking(bookingData)
       alert(t('bookingSuccess') || 'Бронирование успешно создано!')
       if (typeof setEditModal === 'function') setEditModal(false)
     } catch (e) {
@@ -229,7 +273,10 @@ const BookScheduleModal = (props) => {
     }
   }
 
-  const filteredEmployeesBase = employeesBySalon || []
+  const scheduleEmployeeIds = Array.isArray(employee_list) ? employee_list.map(id => String(id)) : []
+  const filteredEmployeesBase = (employeesBySalon || []).filter(e =>
+    scheduleEmployeeIds.length === 0 ? true : scheduleEmployeeIds.includes(String(e.id))
+  )
   const filteredEmployees = Array.isArray(availableEmployees) && availableEmployees.length > 0
     ? filteredEmployeesBase.filter(e => availableEmployees.some(a => String(a.id) === String(e.id)))
     : filteredEmployeesBase
@@ -523,7 +570,7 @@ const BookScheduleModal = (props) => {
                           e.currentTarget.style.backgroundColor = (formData.selected_slot_start === s.start ? '#f0f0f0' : 'white')
                         }}
                       >
-                        <span style={{ fontSize: '0.9vw' }}>{s.start} - {s.end}</span>
+                        <span style={{ fontSize: '0.9vw' }}>{String(s.start || '').substring(0,5)} - {String(s.end || '').substring(0,5)}</span>
                       </div>
                     ))}
                   </div>
@@ -537,7 +584,7 @@ const BookScheduleModal = (props) => {
               <strong>{t('modalDate') || 'Дата'}:</strong> {new Date(date).toLocaleDateString('ru-RU')}
             </p>
             <p style={{ fontSize: '0.8vw', margin: '5px 0' }}>
-              <strong>{t('timeLabel') || 'Время'}:</strong> {displayStart} - {displayEnd}
+              <strong>{t('timeLabel') || 'Время'}:</strong> {String(displayStart || '').substring(0,5)} - {String(displayEnd || '').substring(0,5)}
             </p>
           </div>
         </div>

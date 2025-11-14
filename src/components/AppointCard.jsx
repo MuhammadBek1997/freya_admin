@@ -156,7 +156,13 @@ const AppointCard = (props) => {
                         : (date ? new Date(date).toLocaleDateString('ru-RU') : t('notAvailable'))}
                 </p>
                 <p className='appointTime'>
-                    {type === 'appointment' ? (application_time || t('notAvailable')) : (booking_time || t('notAvailable'))}
+                    {type === 'appointment' 
+                        ? (application_time ? String(application_time).substring(0, 5) : t('notAvailable')) 
+                        : (booking_time 
+                            ? (String(booking_time).includes('T') 
+                                ? String(booking_time).substring(11, 16) 
+                                : String(booking_time).substring(0, 5)) 
+                            : t('notAvailable'))}
                 </p>
             </div>
             <div className='appoint-card-master'>

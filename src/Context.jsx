@@ -3368,8 +3368,17 @@ export const AppProvider = ({ children }) => {
 				...(bookings || []).map(book => ({
 					...book,
 					type: 'booking',
-					date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
-					time: book.time ? new Date(book.time).toTimeString().split(' ')[0].substring(0, 5) : null,
+					date: (() => {
+						const raw = book.time ? String(book.time) : null;
+						if (!raw) return null;
+						return raw.includes('T') ? raw.split('T')[0] : raw;
+					})(),
+					time: (() => {
+						const raw = book.time ? String(book.time) : null;
+						if (!raw) return null;
+						const m = raw.match(/\d{2}:\d{2}/);
+						return m ? m[0] : null;
+					})(),
 					employee_name: (() => {
 						const emp = (employeesBySalon || []).find(e => String(e.id) === String(book.employee_id));
 						if (!emp) return null;

@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { UseGlobalContext } from '../Context'
 import AddScheduleModal from '../components/AddScheduleModal';
 import EditScheduleModal from '../components/EditScheduleModal';
@@ -17,15 +17,8 @@ const Schedule = () => {
     setAddSched,
     schedules,
     fetchSchedules,
-    createSchedule,
-    groupedSchedules,
-    fetchGroupedSchedules,
-    groupedSchedulesLoading,
     employees,
-    employeesBySalon,
-    fetchEmployees,
-    services,
-    fetchServices
+    employeesBySalon
   } = UseGlobalContext()
   
   let currentDay = {
@@ -36,15 +29,35 @@ const Schedule = () => {
 
   const weekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
-  const dayListItems = groupedSchedules || [];
+  const dayListItems = useMemo(() => {
+    const list = Array.isArray(schedules) ? [...schedules] : []
+    const groupsMap = new Map()
+    for (const s of list) {
+      if (!s?.date) continue
+      const key = String(s.date)
+      const arr = groupsMap.get(key) || []
+      arr.push(s)
+      groupsMap.set(key, arr)
+    }
+    const groups = Array.from(groupsMap.entries()).map(([key, arr]) => {
+      const sortedArr = arr.sort((a, b) => {
+        const [ah, am] = String(a.start_time || '00:00').split(':').map(Number)
+        const [bh, bm] = String(b.start_time || '00:00').split(':').map(Number)
+        return (ah * 60 + am) - (bh * 60 + bm)
+      })
+      return { key, items: sortedArr }
+    })
+    groups.sort((g1, g2) => new Date(g1.key) - new Date(g2.key))
+    return groups.map(g => g.items)
+  }, [schedules])
   const [editModal, setEditModal] = useState(false)
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Component yuklanganda grouped schedules ni fetch qilish
+  // Component yuklanganda schedules ni fetch qilish
   useEffect(() => {
-    fetchGroupedSchedules();
+    fetchSchedules();
   }, []);
 
   // dayListItems yuklanganda birinchi kunni default tanlash
@@ -125,21 +138,24 @@ const Schedule = () => {
             }}>
             {dayListItems.map((itemArr) => {
               const firstItem = itemArr[0]
+              const groupKey = String(firstItem.date)
+              const dowIndex = new Date(firstItem.date).getDay()
+              const dowKey = weekdays[dowIndex]
 
               return (
                 <button
                     className='sched-dayList-item'
                     onClick={() => handleSelectDay(itemArr)}
-                    key={firstItem.id}
+                    key={groupKey}
                     style={{
-                      color: selectDay.length > 0 && selectDay[0].id === firstItem.id && (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                      color: selectDay.length > 0 && selectDay[0].id === firstItem.id && (dowKey === weekdays[6] || dowKey === weekdays[0])
                         ? 'white'
                         : selectDay.length > 0 && selectDay[0].id === firstItem.id
                           ? 'white'
-                          : (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                          : (dowKey === weekdays[6] || dowKey === weekdays[0])
                             ? '#FF0000'
                             : '#9C2BFF',
-                      backgroundColor: selectDay.length > 0 && selectDay[0].id === firstItem.id && (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                      backgroundColor: selectDay.length > 0 && selectDay[0].id === firstItem.id && (dowKey === weekdays[6] || dowKey === weekdays[0])
                         ? '#FF0000'
                         : selectDay.length > 0 && selectDay[0].id === firstItem.id
                           ? '#9C2BFF'
@@ -149,16 +165,16 @@ const Schedule = () => {
                     <div
                       className='sum-of-orders'
                       style={{
-                        backgroundColor: selectDay.length > 0 && selectDay[0].id === firstItem.id && (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                        backgroundColor: selectDay.length > 0 && selectDay[0].id === firstItem.id && (dowKey === weekdays[6] || dowKey === weekdays[0])
                           ? 'white'
-                          : (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                          : (dowKey === weekdays[6] || dowKey === weekdays[0])
                             ? '#FF0000'
                             : selectDay.length > 0 && selectDay[0].id === firstItem.id ?
                               "white"
                               : '#9C2BFF',
-                        color: selectDay.length > 0 && selectDay[0].id === firstItem.id && (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                        color: selectDay.length > 0 && selectDay[0].id === firstItem.id && (dowKey === weekdays[6] || dowKey === weekdays[0])
                           ? '#FF0000'
-                          : (firstItem.dayOfWeek === weekdays[6] || firstItem.dayOfWeek === weekdays[0])
+                          : (dowKey === weekdays[6] || dowKey === weekdays[0])
                             ? 'white'
                             : selectDay.length > 0 && selectDay[0].id === firstItem.id ?
                               "#9C2BFF"
@@ -167,7 +183,7 @@ const Schedule = () => {
                     >
                       {itemArr.length}
                     </div>
-                    {t(firstItem.dayOfWeek)}
+                    {t(dowKey)}
                   </button>
               )
             })}
@@ -232,7 +248,7 @@ const Schedule = () => {
                         <img src="/images/masterImage.png" alt="" />
                         <p>{master.name.split(" ")[0]}</p>
                         <div className='masters-time'>
-                          <p>{item.start_time} - {item.end_time}</p>
+                          <p>{String(item.start_time || '').substring(0,5)} - {String(item.end_time || '').substring(0,5)}</p>
                         </div>
                       </div>
                     )

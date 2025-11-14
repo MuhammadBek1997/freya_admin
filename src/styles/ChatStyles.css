@@ -1442,8 +1442,9 @@ body {
     font-size: 5vw;
   }
 
-  .schedule-back-button img {
+  .schedule-back-button {
     width: 6vw;
+    display: none;
   }
 
   .schedule-nav {
