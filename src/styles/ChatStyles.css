@@ -36,19 +36,21 @@ body {
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 8px;
-  background: transparent;
+  padding: 4px 15px;
+  background: #9C2BFF;
+  border-radius: 1rem;
   border: none;
   color: var(--text-light);
   cursor: pointer;
   font-size: 24px;
+  
 }
 @media screen and (max-width: 768px) {
   .back-button {
     display: flex;
     position: absolute;
     top: 10px;
-    left: 10px;
+    left: 20px;
     z-index: 1000;
   }
 }
