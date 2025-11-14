@@ -35,6 +35,9 @@ const BookScheduleModal = (props) => {
   const [selectedServiceId, setSelectedServiceId] = useState('')
   const [availableSlots, setAvailableSlots] = useState([])
   const isWholeDay = (Boolean(whole_day) || (String(start_time || '').substring(0,5) === '00:00' && String(end_time || '').substring(0,5) === '23:59'))
+  const isEmployeeRole = String(user?.role) === 'employee'
+  const loggedEmployeeId = String(user?.id || user?.employee_id || '')
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 480 : false
 
   useEffect(() => {
     if (!employeesBySalon || employeesBySalon.length === 0) {
@@ -48,6 +51,12 @@ const BookScheduleModal = (props) => {
       fetchServices()
     }
   }, [])
+
+  useEffect(() => {
+    if (isEmployeeRole && loggedEmployeeId) {
+      setFormData(prev => ({ ...prev, employee_id: loggedEmployeeId }))
+    }
+  }, [isEmployeeRole, loggedEmployeeId])
 
   useEffect(() => {
     if (!services || services.length === 0) return
@@ -72,6 +81,7 @@ const BookScheduleModal = (props) => {
     setAvailableEmployees(null)
     setAvailLoading(false)
     if (Boolean(whole_day) || (String(start_time || '').substring(0,5) === '00:00' && String(end_time || '').substring(0,5) === '23:59')) return
+    if (isEmployeeRole) return
     if (!user?.salon_id) return
     if (!date || !start_time || !end_time) return
     const token = getAuthToken()
@@ -277,9 +287,12 @@ const BookScheduleModal = (props) => {
   const filteredEmployeesBase = (employeesBySalon || []).filter(e =>
     scheduleEmployeeIds.length === 0 ? true : scheduleEmployeeIds.includes(String(e.id))
   )
-  const filteredEmployees = Array.isArray(availableEmployees) && availableEmployees.length > 0
+  const filteredEmployeesUnlocked = Array.isArray(availableEmployees) && availableEmployees.length > 0
     ? filteredEmployeesBase.filter(e => availableEmployees.some(a => String(a.id) === String(e.id)))
     : filteredEmployeesBase
+  const filteredEmployees = isEmployeeRole
+    ? (employeesBySalon || []).filter(e => String(e.id) === loggedEmployeeId)
+    : filteredEmployeesUnlocked
   const selectedEmployee = formData.employee_id 
     ? filteredEmployees.find(e => String(e.id) === String(formData.employee_id))
     : null
@@ -303,7 +316,7 @@ const BookScheduleModal = (props) => {
     <div className='editSchedule-modal'>
       <div className='editSchedule-modal-cont'>
         {(Boolean(whole_day) || (String(start_time || '').substring(0,5) === '00:00' && String(end_time || '').substring(0,5) === '23:59')) ? (
-          <div style={{ position: 'absolute', top: '12px', left: '16px', background: '#FFF', color: '#9C2BFF', border: '1px solid #9C2BFF', borderRadius: '12px', padding: '4px 10px', fontSize: '0.8vw' }}>
+          <div style={{ position: 'absolute', top: '12px', left: '16px', background: '#FFF', color: '#9C2BFF', border: '1px solid #9C2BFF', borderRadius: isMobile ? '4vw' : '12px', padding: isMobile ? '0.8vh 2.8vw' : '4px 10px', fontSize: isMobile ? '3.2vw' : '0.8vw' }}>
             {t('schedule.wholeDay') || 'Whole day'}
           </div>
         ) : null}
@@ -377,13 +390,13 @@ const BookScheduleModal = (props) => {
           <label>{t('selectEmployeeLabel') || 'Выберите сотрудника'} *</label>
           <div ref={dropdownRef} style={{ position: 'relative' }}>
             <div
-              onClick={() => !loading && setIsDropdownOpen(!isDropdownOpen)}
+              onClick={() => (!loading && !isEmployeeRole) && setIsDropdownOpen(!isDropdownOpen)}
               style={{
                 padding: '10px',
                 borderRadius: '5px',
                 border: '1px solid #ddd',
                 backgroundColor: 'white',
-                cursor: loading ? 'not-allowed' : 'pointer',
+                cursor: (loading || isEmployeeRole) ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -405,31 +418,33 @@ const BookScheduleModal = (props) => {
                       }}
                     />
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '0.9vw', fontWeight: '500' }}>
+                      <span style={{ fontSize: isMobile ? '4vw' : '0.9vw', fontWeight: '500' }}>
                         {selectedEmployee.name || selectedEmployee.employee_name || `${ts('schedule.employee','Сотрудник')} #${selectedEmployee.id}`}
                       </span>
                       {selectedEmployee.profession && (
-                        <span style={{ fontSize: '0.75vw', color: '#666' }}>
+                        <span style={{ fontSize: isMobile ? '3.4vw' : '0.75vw', color: '#666' }}>
                           {selectedEmployee.profession}
                         </span>
                       )}
                     </div>
                   </>
                 ) : (
-                  <span style={{ color: '#999', fontSize: '0.9vw' }}>
+                  <span style={{ color: '#999', fontSize: isMobile ? '4vw' : '0.9vw' }}>
                     {t('selectEmployee') || 'Выберите сотрудника'}
                   </span>
                 )}
               </div>
-              <span style={{ fontSize: '1.2vw' }}>
-                {isDropdownOpen ? 
-                  <img src="/images/Arrow.png" alt="" style={{transition:"100ms"}} /> :
-                  <img src="/images/Arrow.png" alt="" style={{transform:"rotateZ(-90deg)", transition:"200ms"}} />
-                }
-              </span>
+              {!isEmployeeRole && (
+                <span style={{ fontSize: '1.2vw' }}>
+                  {isDropdownOpen ? 
+                    <img src="/images/Arrow.png" alt="" style={{transition:"100ms"}} /> :
+                    <img src="/images/Arrow.png" alt="" style={{transform:"rotateZ(-90deg)", transition:"200ms"}} />
+                  }
+                </span>
+              )}
             </div>
 
-            {isDropdownOpen && (
+            {isDropdownOpen && !isEmployeeRole && (
               <div style={{
                 position: 'absolute',
                 top: '100%',
@@ -482,11 +497,11 @@ const BookScheduleModal = (props) => {
                         }}
                       />
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '0.9vw', fontWeight: '500' }}>
+                        <div style={{ fontSize: isMobile ? '4vw' : '0.9vw', fontWeight: '500' }}>
                           {employee.name || employee.employee_name || `${t('employee')} #${employee.id}`}
                         </div>
                         {employee.profession && (
-                          <div style={{ fontSize: '0.75vw', color: '#666' }}>
+                          <div style={{ fontSize: isMobile ? '3.4vw' : '0.75vw', color: '#666' }}>
                             {employee.profession}
                           </div>
                         )}
@@ -516,7 +531,7 @@ const BookScheduleModal = (props) => {
                     minHeight: '45px'
                   }}
                 >
-                  <span style={{ fontSize: '0.9vw' }}>
+                  <span style={{ fontSize: isMobile ? '4vw' : '0.9vw' }}>
                     {formData.selected_slot_start
                       ? `${formData.selected_slot_start}`
                       : (t('selectTime') || 'Выберите время')}
@@ -570,7 +585,7 @@ const BookScheduleModal = (props) => {
                           e.currentTarget.style.backgroundColor = (formData.selected_slot_start === s.start ? '#f0f0f0' : 'white')
                         }}
                       >
-                        <span style={{ fontSize: '0.9vw' }}>{String(s.start || '').substring(0,5)} - {String(s.end || '').substring(0,5)}</span>
+                        <span style={{ fontSize: isMobile ? '4vw' : '0.9vw' }}>{String(s.start || '').substring(0,5)} - {String(s.end || '').substring(0,5)}</span>
                       </div>
                     ))}
                   </div>
@@ -580,10 +595,10 @@ const BookScheduleModal = (props) => {
           )}
 
           <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f5f5f5', borderRadius: '5px' }}>
-            <p style={{ fontSize: '0.8vw', margin: '5px 0' }}>
+            <p style={{ fontSize: isMobile ? '3.6vw' : '0.8vw', margin: '5px 0' }}>
               <strong>{t('modalDate') || 'Дата'}:</strong> {new Date(date).toLocaleDateString('ru-RU')}
             </p>
-            <p style={{ fontSize: '0.8vw', margin: '5px 0' }}>
+            <p style={{ fontSize: isMobile ? '3.6vw' : '0.8vw', margin: '5px 0' }}>
               <strong>{t('timeLabel') || 'Время'}:</strong> {String(displayStart || '').substring(0,5)} - {String(displayEnd || '').substring(0,5)}
             </p>
           </div>

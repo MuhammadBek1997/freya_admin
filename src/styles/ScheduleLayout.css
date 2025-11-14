@@ -574,6 +574,57 @@
 
 /* Mobile overrides for employee schedule view */
 @media (max-width: 480px) {
+  .editSchedule-modal {
+    background: #38383840;
+    backdrop-filter: blur(1.5vw);
+  }
+
+  .editSchedule-modal-cont {
+    width: 92vw;
+    height: auto;
+    max-height: 88vh;
+    border-radius: 4vw;
+    padding-top: 3vh;
+    gap: 3vh;
+  }
+  .editSchedule-modal-cont h2{
+    font-size: 4.2vw;
+    font-weight: 600;
+  }
+
+  .schedule-modal-form {
+    padding-left: 4vw;
+    padding-right: 4vw;
+    gap: 2.5vh;
+  }
+
+  .schedule-modal-form label {
+    font-size: 3.6vw;
+  }
+
+  .form-inputs {
+    height: 6.8vh;
+    font-size: 3.8vw;
+    padding-left: 4vw;
+    border-radius: 3.5vw;
+  }
+
+  .schedule-modal-btns {
+    width: 92vw;
+    height: 8vh;
+    left: 4vw;
+    bottom: 2vh;
+    padding: 2vw 3vw;
+    border-bottom-left-radius: 3vw;
+    border-bottom-right-radius: 3vw;
+    box-shadow: 0 2vw 4vw #00000015;
+  }
+
+  .schedule-modal-btns button {
+    height: 6.5vh;
+    font-size: 3.8vw;
+    border-radius: 3vw;
+  }
   .schedule-body {
     grid-template-columns: 1fr;
     gap: 4vw;

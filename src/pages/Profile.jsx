@@ -1134,13 +1134,13 @@ const Profile = () => {
                 <div>
                   <img src="/images/workTimeIcon.png" alt="" />
                   <h3>
-                    8:00 - 22:00
+                    {salonProfile?.work_hours || '8:00 - 22:00'}
                   </h3>
                 </div>
                 <div>
                   <img src="/images/workDateIcon.png" alt="" />
                   <h3>
-                    {t('profileWorkDays')}
+                    {salonProfile?.work_dates || t('profileWorkDays')}
                   </h3>
                 </div>
               </div>

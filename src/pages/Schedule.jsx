@@ -51,6 +51,8 @@ const Schedule = () => {
     return groups.map(g => g.items)
   }, [schedules])
   const [editModal, setEditModal] = useState(false)
+  const [bookEmployeeId, setBookEmployeeId] = useState(null)
+  const [activeModalScheduleId, setActiveModalScheduleId] = useState(null)
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
@@ -72,6 +74,26 @@ const Schedule = () => {
   const handleSelectDay = (element) => {
     localStorage.setItem("schedDay", JSON.stringify(element))
     setSelectDay(element)
+  }
+
+  const handleOpenEditOrReserve = (scheduleId) => {
+    setActiveModalScheduleId(scheduleId)
+    setBookEmployeeId(null)
+    setEditModal(true)
+  }
+
+  const handleOpenBookingForEmployee = (scheduleId, employeeId) => {
+    setActiveModalScheduleId(scheduleId)
+    setBookEmployeeId(employeeId)
+    setEditModal(true)
+  }
+
+  const handleCloseModal = (value) => {
+    setEditModal(value)
+    if (!value) {
+      setBookEmployeeId(null)
+      setActiveModalScheduleId(null)
+    }
   }
 
   // Filter schedules based on search query
@@ -226,16 +248,16 @@ const Schedule = () => {
                   </div>
                   <button 
                       className='schedule-list-item-btn'
-                      onClick={()=>setEditModal(true)}>
+                      onClick={()=>handleOpenEditOrReserve(item.id)}>
                     <img src={(new Date(item.date).getDate() - 7) <= currentDay.day && new Date(item.date).getMonth() + 1 == currentDay.month ? "/images/reserveIcon.png" : "/images/editPen.png"} alt="" />
                   </button>
                   <div className='editChedule'>
-                    {editModal ? (
+                    {editModal && activeModalScheduleId === item.id ? (
                       <>
                         {(new Date(item.date).getDate() - 7) <= currentDay.day
                         && new Date(item.date).getMonth() + 1 == currentDay.month
-                        ? <BookScheduleModal {...item} setEditModal={setEditModal}/>
-                        : <EditScheduleModal {...item} setEditModal={setEditModal} />}
+                        ? <BookScheduleModal {...item} employee_list={bookEmployeeId ? [bookEmployeeId] : item.employee_list} setEditModal={handleCloseModal}/>
+                        : <EditScheduleModal {...item} setEditModal={handleCloseModal} />}
                       </>
                     ) : null}
                   </div>
@@ -250,6 +272,16 @@ const Schedule = () => {
                         <div className='masters-time'>
                           <p>{String(item.start_time || '').substring(0,5)} - {String(item.end_time || '').substring(0,5)}</p>
                         </div>
+                        <button
+                          style={{
+                            border: 'none',
+                            background: 'transparent',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleOpenBookingForEmployee(item.id, master.id)}
+                        >
+                          <img src="/images/reserveIcon.png" alt="" />
+                        </button>
                       </div>
                     )
                   })}

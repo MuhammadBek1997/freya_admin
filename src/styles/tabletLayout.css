@@ -231,7 +231,42 @@
         justify-content: center;
         gap: 12px;
     }
+    .employ-body{
+        grid-template-columns: repeat(5,auto);
+    }
+    .profile-body{
+        gap: 1vw;
+        flex-direction: row;
+        flex-wrap: nowrap;
+    }
+    .profile-body-left,
+    .company-data,
+    .company-facilities,
+    .company-comments,
+    .profile-body-right{
+        width: 48vw;
+    }
+    .facilities-list-item{
+        font-size: 1.5vw;
+    }
 
+    /* Right nav cards: keep compact on tablet */
+    .profile-nav-right{
+        width: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5vw;
+    }
+    .profile-nav-workTime div{
+        width: 14vw;
+        padding: 1.25vw;
+        border-radius: 0.7vw;
+        font-size: 1vw;
+    }
+    .profile-nav-workTime div img{
+        width: 1.5vw;
+    }
 }
 
 @media screen and (max-width: 600px) {

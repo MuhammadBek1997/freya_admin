@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UseGlobalContext } from '../Context';
+import BookScheduleModal from '../components/BookScheduleModal';
 import EmployeeCard from '../components/EmployeeCard';
 import EditEmployeeBar from '../components/EditEmployeeBar';
 import AboutEmployeeBar from '../components/AboutEmployeeBar';
@@ -12,6 +13,8 @@ const Employees = () => {
   const [isMenuOpen, setIsMenuOpen] = useState({ menu: null, cardId: null });
   const [showWait, setShowWait] = useState(false);
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [bookingEmployeeId, setBookingEmployeeId] = useState(null);
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,6 +100,15 @@ const Employees = () => {
 
   // Find the selected employee based on isMenuOpen.cardId
   const selectedEmployee = (employeesBySalon || employees || []).find((item) => item.id === isMenuOpen.cardId);
+
+  const openBookingForEmployee = (employeeId) => {
+    setBookingEmployeeId(employeeId)
+    setShowBookingModal(true)
+  }
+  const closeBookingModal = () => {
+    setShowBookingModal(false)
+    setBookingEmployeeId(null)
+  }
 
   return (
     <section>
@@ -191,17 +203,32 @@ const Employees = () => {
         ) : (
           filteredWorkingEmployees.length > 0 ? (
             filteredWorkingEmployees.map((item) => (
-              <EmployeeCard
-                key={item.id}
-                {...item}
-                isOpen={openCardId === item.id}
-                handleToggleMenu={() => handleToggleMenu(item.id)}
-                isMenuOpen={isMenuOpen}
-                setIsMenuOpen={setIsMenuOpen}
-                isCheckedItem={isCheckedItem}
-                setIsCheckedItem={setIsCheckedItem}
-                handleAddWaitingEmp={handleAddWaitingEmp}
-              />
+              <div key={item.id} style={{ position: 'relative' }}>
+                <EmployeeCard
+                  {...item}
+                  isOpen={openCardId === item.id}
+                  handleToggleMenu={() => handleToggleMenu(item.id)}
+                  isMenuOpen={isMenuOpen}
+                  setIsMenuOpen={setIsMenuOpen}
+                  isCheckedItem={isCheckedItem}
+                  setIsCheckedItem={setIsCheckedItem}
+                  handleAddWaitingEmp={handleAddWaitingEmp}
+                />
+                <button
+                  onClick={() => openBookingForEmployee(item.id)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '10px',
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer'
+                  }}
+                  title={t('appointmentTypeBooking') || 'Band qilish'}
+                >
+                  <img src="/images/reserveIcon.png" alt="reserve" />
+                </button>
+              </div>
             ))
           ) : (
             <div style={{ textAlign: 'center', padding: '2rem', color: '#A8A8B3' }}>
@@ -225,6 +252,19 @@ const Employees = () => {
           }}
         />
       )}
+      {showBookingModal && bookingEmployeeId ? (
+        <BookScheduleModal
+          salon_id={user?.salon_id}
+          date={new Date().toISOString().substring(0,10)}
+          start_time={'00:00'}
+          end_time={'23:59'}
+          name={t('appointmentTypeBooking') || 'Band qilish'}
+          service_duration={60}
+          employee_list={[bookingEmployeeId]}
+          whole_day={true}
+          setEditModal={(v) => { if (!v) closeBookingModal() }}
+        />
+      ) : null}
     </section>
   );
 };

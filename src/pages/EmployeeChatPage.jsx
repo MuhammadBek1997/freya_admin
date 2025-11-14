@@ -4,6 +4,7 @@ import '../styles/AdminChatOverrides.css'
 import i18next from 'i18next';
 import { UseGlobalContext, getAuthToken } from '../Context';
 import AddScheduleModal from '../components/AddScheduleModal';
+import BookScheduleModal from '../components/BookScheduleModal';
 import EmployeeProfileModal from '../components/EmployeeProfileModal';
 import EmployeePostForm from '../components/EmployeePostForm';
 
@@ -51,6 +52,7 @@ const EmployeeChatPage = () => {
   const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [schedulesError, setSchedulesError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [bookingState, setBookingState] = useState({ open: false, schedule: null, employeeId: null });
 
   // Posts state and carousel indices
   const [employeePosts, setEmployeePosts] = useState([]);
@@ -952,7 +954,8 @@ const EmployeeChatPage = () => {
                           transition: 'all 0.2s',
                           display: 'flex',
                           flexDirection: 'column-reverse',
-                          alignItems: 'center'
+                          alignItems: 'center',
+                          padding:"1.5vw"
                         }}
                       >
                         <span style={{  color: '#A8A8B3' }}>{formatWeekdayShort(date)}</span>
@@ -1005,7 +1008,8 @@ const EmployeeChatPage = () => {
                             backgroundColor: 'white',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                             display: 'flex',
-                            flexDirection: 'column'
+                            flexDirection: 'column',
+                            position:"relative"
                           }}
                         >
                           <div style={{
@@ -1026,6 +1030,22 @@ const EmployeeChatPage = () => {
                             }}>
                               {item.start_time && item.end_time ? `${item.start_time} - ${item.end_time}` : (formatTime(item.appointment_time || item.time) || '')}
                             </span>
+                            <button
+                              onClick={() => setBookingState({ open: true, schedule: item, employeeId: (Array.isArray(item.employee_list) && item.employee_list.length === 1) ? item.employee_list[0] : null })}
+                              style={{
+                                border: 'none',
+                                background: 'transparent',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                position:"absolute",
+                                top:"3vw",
+                                right:"3vw"
+                              }}
+                              title={t('appointmentTypeBooking') || 'Band qilish'}
+                            >
+                              <img src="/images/reserveIcon.png" alt="reserve" />
+                            </button>
                           </div>
 
                           <div style={{  color: '#666' }}>
@@ -1041,6 +1061,15 @@ const EmployeeChatPage = () => {
               )}
             </div>
             {addSched ? <AddScheduleModal /> : null}
+            {bookingState?.open && bookingState?.schedule ? (
+              <BookScheduleModal
+                {...bookingState.schedule}
+                employee_list={bookingState.employeeId ? [bookingState.employeeId] : (bookingState.schedule.employee_list || [])}
+                setEditModal={(v) => {
+                  if (!v) setBookingState({ open: false, schedule: null, employeeId: null })
+                }}
+              />
+            ) : null}
           </div>
         ) : selectedPageEmployee === 'posts' ? (
           <div className='chat-posts'>
