@@ -1221,78 +1221,41 @@ const EmployeeChatPage = () => {
             <div className='comments employee-header' style={user.role === "private_admin" ? { left: "10vw", zIndex: "0" } : null}>
               <h1>{t('commentsCount') || 'Izohlar'}</h1>
             </div>
-            <div style={{ 
-              padding: '1vw',
-              backgroundColor: '#fff',
-              borderRadius: '1vw',
-              marginTop: '1vw'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '1vw',
-                paddingBottom: '0.5vw',
-                borderBottom: '1px solid #eee'
-              }}>
-                <h3 style={{
-                  fontSize: '1.1vw',
-                  fontWeight: '600',
-                  color: '#333',
-                  margin: 0
-                }}>
+            <div className='comments-container'>
+              <div className='comments-header'>
+                <h3 className='comments-title'>
                   {comments.length || '0'} {t('comments') || 'Комментарии'}
                 </h3>
               </div>
 
               {commentsLoading ? (
-                <div style={{ textAlign: 'center', padding: '2vw', color: '#A8A8B3' }}>
-                  <p style={{ fontSize: '3vw', margin: 0 }}>{t('commentsLoading') || 'Izohlar yuklanmoqda...'}</p>
+                <div className='comments-loading'>
+                  <p className='comments-loading-text'>{t('commentsLoading') || 'Izohlar yuklanmoqda...'}</p>
                 </div>
               ) : commentsError ? (
-                <div style={{ textAlign: 'center', padding: '2vw', color: '#FF6B6B' }}>
-                  <p style={{ fontSize: '3vw', margin: 0 }}>{commentsError}</p>
+                <div className='comments-error'>
+                  <p className='comments-error-text'>{commentsError}</p>
                 </div>
               ) : comments.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1vw' }}>
+                <div className='comments-list'>
                   {comments.map(comment => (
-                    <div key={comment.id} style={{
-                      display: 'flex',
-                      gap: '1vw',
-                      padding: '0.8vw',
-                      backgroundColor: '#f8f9fa',
-                      borderRadius: '0.8vw'
-                    }}>
+                    <div key={comment.id} className='comment-item'>
                       <img
                         src={comment.user?.avatar || '/images/Avatar.svg'}
-                        style={{
-                          width: '3vw',
-                          height: '3vw',
-                          borderRadius: '50%',
-                          objectFit: 'cover'
-                        }}
+                        className='comment-avatar'
                         alt={comment.user?.name}
                       />
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginBottom: '0.4vw'
-                        }}>
+                      <div className='comment-content'>
+                        <div className='comment-top'>
                           <span className="comment-author">{comment.user?.name}</span>
                           <span className="comment-date">{comment.created_at?.split("T").at(0).split("-").reverse().join(".")}</span>
                         </div>
-                        <div style={{
-                          display: 'flex',
-                          gap: '0.2vw',
-                          marginBottom: '0.4vw'
-                        }}>
+                        <div className='comment-stars'>
                           {Array.from({ length: 5 }).map((_, i) => (
                             <img
                               key={i}
                               src={i < (comment.rating || 4) ? '/images/starFilled.svg' : '/images/starEmpty.svg'}
-                              style={{ width: '1vw', height: '1vw' }}
+                              className='comment-star'
                               alt="star"
                             />
                           ))}
@@ -1303,12 +1266,8 @@ const EmployeeChatPage = () => {
                   ))}
                 </div>
               ) : (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '2vw',
-                  color: '#A8A8B3'
-                }}>
-                  <p style={{ fontSize: '1vw', margin: 0 }}>
+                <div className='comments-empty'>
+                  <p className='comments-empty-text'>
                     {t('noComments') || 'Izohlar tez orada qo\'shiladi'}
                   </p>
                 </div>

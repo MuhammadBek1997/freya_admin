@@ -982,7 +982,6 @@ body {
     color: #999;
   }
   .chat-comments .comment-author {
-    font-size: 1.05rem !important;
     font-weight: 600;
   }
   .chat-comments .comment-text {
@@ -1359,6 +1358,9 @@ body {
     padding: 0 4vw;
     flex-wrap: wrap;
   }
+  .posts.employee-header{
+    justify-content: end;
+  }
 
   .posts-body > div {
     width: 92vw !important;
@@ -1533,4 +1535,87 @@ body {
   .chat-partner-info {
     margin-left: 0 !important;
   }
+}
+
+.comments-container {
+  background-color: #fff;
+  border-radius: 1vw;
+  margin-top: 1vw;
+  padding-top: 10vh;
+}
+
+.comments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1vw;
+  padding-bottom: 0.5vw;
+  border-bottom: 1px solid #eee;
+}
+
+.comments-title {
+  font-size: 1.1vw;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.comments-loading,
+.comments-error,
+.comments-empty {
+  text-align: center;
+  padding: 2vw;
+}
+
+.comments-loading { color: #A8A8B3; }
+.comments-error { color: #FF6B6B; }
+.comments-empty { color: #A8A8B3; }
+
+.comments-loading-text,
+.comments-error-text { font-size: 3vw; margin: 0; }
+.comments-empty-text { font-size: 1vw; margin: 0; }
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1vw;
+}
+
+.comment-item {
+  display: flex;
+  gap: 1vw;
+  padding: 0.8vw;
+  background-color: #f8f9fa;
+  border-radius: 0.8vw;
+}
+
+.comment-avatar {
+  width: 3vw;
+  height: 3vw;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.comment-content { flex: 1; }
+
+.comment-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4vw;
+}
+
+.comment-stars {
+  display: flex;
+  gap: 0.2vw;
+  margin-bottom: 0.4vw;
+}
+
+.comment-star { width: 1vw; height: 1vw; }
+
+@media (max-width: 480px) {
+  .comments-title { font-size: 4.2vw; }
+  .comments-empty-text { font-size: 3.4vw; }
+  .comment-avatar { width: 10vw; height: 10vw; }
+  .comment-star { width: 3.6vw; height: 3.6vw; }
 }
