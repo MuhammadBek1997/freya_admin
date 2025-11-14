@@ -1436,10 +1436,11 @@ body {
 
   .schedule-header {
     padding: 3vh 4vw;
+    align-items: flex-start;
   }
 
   .schedule-header p {
-    font-size: 5vw;
+    font-size: 4.4vw;
   }
 
   .schedule-back-button {
@@ -1448,14 +1449,15 @@ body {
   }
 
   .schedule-nav {
-    padding: 2vh 4vw;
+    padding: 2vh 6vw;
     gap: 2vw;
   }
 
   .schedule-nav-item {
-    font-size: 3.5vw;
-    padding: 2vh 4vw;
+    font-size: 3.6vw;
+    padding: 2vh 3vw;
     border-radius: 3vw;
+    font-size: 4vw;
   }
 
   .scheduleEmployee-body {
@@ -1470,7 +1472,7 @@ body {
 
   .scheduleEmployee-list-item {
     padding: 3vh 4vw;
-    font-size: 3.5vw;
+    font-size: 3.8vw;
     border-radius: 3vw;
     margin-bottom: 3vh;
     gap: 2vh;
@@ -1483,15 +1485,16 @@ body {
   }
 
   .scheduleEmployee-list-item > div:first-child span:first-child {
-    font-size: 5vw;
+    font-size: 5.2vw;
   }
 
   .scheduleEmployee-list-item > div:first-child span:last-child {
-    font-size: 3vw;
+    font-size: 3.6vw;
   }
 
   .scheduleEmployee-list-item > div:last-child {
-    font-size: 3.5vw;
+    font-size: 3.9vw;
+    align-items: flex-start;
   }
 
   .scheduleEmployee-list-item > div:last-child > div {

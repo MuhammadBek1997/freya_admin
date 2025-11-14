@@ -571,3 +571,98 @@
     background-clip: text;
     font-size: 0.5vw;
 }
+
+/* Mobile overrides for employee schedule view */
+@media (max-width: 480px) {
+  .schedule-body {
+    grid-template-columns: 1fr;
+    gap: 4vw;
+    padding-top: 20vh;
+  }
+
+  .schedule-list-item {
+    width: 92vw;
+  }
+
+  .schedule-list-item-btn {
+    width: 9vw;
+    height: 9vw;
+    border-radius: 3vw;
+    right: 3vw;
+    top: 3vw;
+  }
+
+  .schedule-list-item img {
+    width: 4.2vw;
+  }
+
+  .schedule-item-top {
+    border-radius: 4vw;
+    padding: 3vh 4vw;
+  }
+
+  .schedule-order-type {
+    gap: 3vw;
+    align-items: flex-start;
+  }
+
+  .schedule-order-type h3 {
+    font-size: 4.6vw;
+    font-weight: 600;
+  }
+
+  .order-title {
+    font-size: 3.3vw;
+    margin-top: 2vh;
+  }
+
+  .schedule-order-pricebox {
+    gap: 4vw;
+    margin-top: 3vh;
+  }
+
+  .schedule-order-pricebox p {
+    font-size: 3.2vw;
+  }
+
+  .schedule-order-pricebox div {
+    padding: 2vh 4vw;
+    font-size: 3.6vw;
+    border-radius: 6vw;
+  }
+
+  .schedule-order-pricebox span {
+    font-size: 3.8vw;
+  }
+
+  .schedule-item-masters {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+    gap: 3vh;
+    padding: 2vh 0;
+  }
+
+  .schedule-master-card {
+    gap: 3vw;
+    padding: 2vh 3vw;
+    border-radius: 3vw;
+  }
+
+  .schedule-master-card img {
+    width: 10vw;
+  }
+
+  .schedule-master-card p {
+    font-size: 4.1vw;
+  }
+
+  .masters-time {
+    width: auto;
+    padding: 1vh 2.5vw;
+    border-radius: 4vw;
+  }
+
+  .masters-time p {
+    font-size: 3.4vw;
+  }
+}

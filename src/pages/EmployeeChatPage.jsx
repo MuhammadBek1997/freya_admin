@@ -944,7 +944,6 @@ const EmployeeChatPage = () => {
                         className={`schedule-nav-item ${selectedDate === date ? 'active' : ''}`}
                         onClick={() => setSelectedDate(date)}
                         style={{
-                          padding: '0.5vw 0.3vw',
                           border: selectedDate === date ? '2px solid #9C2BFF' : '1px solid #ddd',
                           backgroundColor: selectedDate === date ? '#f7f0ff' : 'white',
                           borderRadius: '12px',
@@ -953,12 +952,11 @@ const EmployeeChatPage = () => {
                           transition: 'all 0.2s',
                           display: 'flex',
                           flexDirection: 'column-reverse',
-                          alignItems: 'center',
-                          gap: '4px'
+                          alignItems: 'center'
                         }}
                       >
-                        <span style={{ fontSize: '0.7vw', color: '#A8A8B3' }}>{formatWeekdayShort(date)}</span>
-                        <span style={{ fontSize: '0.9vw', fontWeight: selectedDate === date ? 'bold' : 'normal' }}>{formatDisplayDate(date)}</span>
+                        <span style={{  color: '#A8A8B3' }}>{formatWeekdayShort(date)}</span>
+                        <span style={{ fontWeight: selectedDate === date ? 'bold' : 'normal' }}>{formatDisplayDate(date)}</span>
                       </button>
                     ))}
                   </div>
@@ -979,7 +977,6 @@ const EmployeeChatPage = () => {
                           backgroundColor: '#FFF',
                           border: '1px solid #eee',
                           borderRadius: '12px',
-                          fontSize: '0.9vw',
                           color: '#333'
                         }}>
                           {formatDateWithDay(selectedDate)}
@@ -1008,26 +1005,21 @@ const EmployeeChatPage = () => {
                             backgroundColor: 'white',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                             display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.5vw'
+                            flexDirection: 'column'
                           }}
                         >
                           <div style={{
                             display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
+                            justifyContent: 'space-between'
                           }}>
                             <span style={{
-                              fontSize: '1.1vw',
                               fontWeight: 'bold',
                               color: '#333'
                             }}>
                               {item.title || item.name || item.service_name || t('notAvailable') || 'Noma\'lum'}
                             </span>
                             <span style={{
-                              padding: '4px 12px',
                               borderRadius: '12px',
-                              fontSize: '0.75vw',
                               fontWeight: 'bold',
                               color: '#9C2BFF',
                               backgroundColor: '#F3E8FF'
@@ -1036,7 +1028,7 @@ const EmployeeChatPage = () => {
                             </span>
                           </div>
 
-                          <div style={{ fontSize: '0.9vw', color: '#666' }}>
+                          <div style={{  color: '#666' }}>
                             <div style={{ marginBottom: '0.3vw' }}>
                               <strong>{t('service') || 'Xizmat'}:</strong> {item.service_name || item.name || t('notAvailable') || 'Noma\'lum'}
                             </div>
