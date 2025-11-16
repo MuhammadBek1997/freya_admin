@@ -214,20 +214,7 @@ const Employees = () => {
                   setIsCheckedItem={setIsCheckedItem}
                   handleAddWaitingEmp={handleAddWaitingEmp}
                 />
-                <button
-                  onClick={() => openBookingForEmployee(item.id)}
-                  style={{
-                    position: 'absolute',
-                    right: '10px',
-                    top: '10px',
-                    border: 'none',
-                    background: 'transparent',
-                    cursor: 'pointer'
-                  }}
-                  title={t('appointmentTypeBooking') || 'Band qilish'}
-                >
-                  <img src="/images/reserveIcon.png" alt="reserve" />
-                </button>
+                
               </div>
             ))
           ) : (

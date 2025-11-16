@@ -368,6 +368,7 @@ const AddScheduleModal = () => {
                             date={formData.date}
                             start_time={formData.start_time}
                             end_time={formData.end_time}
+                            initialSelected={formData.employee_list}
                         />
                     )}
                     {formData.employee_list.length > 0 && (

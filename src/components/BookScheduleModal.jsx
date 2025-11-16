@@ -476,13 +476,13 @@ const BookScheduleModal = (props) => {
                         alignItems: 'center',
                         gap: '10px',
                         cursor: 'pointer',
-                        backgroundColor: employee.id === parseInt(formData.employee_id) ? '#f0f0f0' : 'white',
+                        backgroundColor: String(employee.id) === String(formData.employee_id) ? '#f0f0f0' : 'white',
                         borderBottom: '1px solid #f0f0f0',
                         transition: 'background-color 0.2s'
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f8f8'}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = employee.id === parseInt(formData.employee_id) ? '#f0f0f0' : 'white'
+                        e.currentTarget.style.backgroundColor = String(employee.id) === String(formData.employee_id) ? '#f0f0f0' : 'white'
                       }}
                     >
                       <img

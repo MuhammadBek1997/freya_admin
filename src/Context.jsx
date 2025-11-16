@@ -3298,6 +3298,37 @@ export const AppProvider = ({ children }) => {
 		}
 	};
 
+	// DELETE booking by booking_number
+	const deleteBooking = async (bookingNumber) => {
+		setBookingsLoading(true);
+		setBookingsError(null);
+		try {
+			const token = getAuthToken();
+			if (!token) throw new Error('Token topilmadi');
+			const response = await fetch(`${bookingsUrl}/number/${bookingNumber}`, {
+				method: 'DELETE',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Bookingni o\'chirishda xatolik');
+			}
+			// State'dan olib tashlash
+			setBookings(prev => (prev || []).filter(b => String(b.booking_number || b.id) !== String(bookingNumber)));
+			setCombinedAppointments(prev => (prev || []).filter(a => String(a.id) !== String(bookingNumber)));
+			return true;
+		} catch (error) {
+			console.error('❌ Bookingni o\'chirishda xatolik:', error);
+			setBookingsError(error.message);
+			throw error;
+		} finally {
+			setBookingsLoading(false);
+		}
+	};
+
 
 	// Context.jsx'ga qo'shish - Appointments va Bookings ni birlashtirish
 	const [combinedAppointments, setCombinedAppointments] = useState([]);
@@ -3316,26 +3347,54 @@ export const AppProvider = ({ children }) => {
 				fetchBookings(salonId)
 			]);
 
-			// Appointments va Bookings ni birlashtirish
+			// Appointments va Bookings ni birlashtirish: bookinglarni appointment bilan bir xil maydonlarga normalize qilamiz
 			const combined = [
 				...(appointments || []).map(app => ({
-					...app,
-					type: 'appointment', // Type qo'shish - qaysi turligini bilish uchun
-					date: app.application_date,
-					time: app.application_time,
-					employee_name: app.employee_name || app.master_name || app.employee || null
+					id: String(app.id),
+					type: 'appointment',
+					application_number: app.application_number || null,
+					user_name: app.user_name || null,
+					phone_number: app.phone_number || null,
+					application_date: app.application_date || null,
+					application_time: app.application_time || null,
+					date: app.application_date || null,
+					time: app.application_time || null,
+					employee_id: app.employee_id || null,
+					employee_name: app.employee_name || app.master_name || app.employee || null,
+					service_name: app.service_name || null,
+					service_price: app.service_price || null,
+					status: app.status || 'pending',
+					notes: app.notes || null,
+					is_paid: Boolean(app.is_paid),
+					paid_amount: app.paid_amount || null
 				})),
-				...(bookings || []).map(book => ({
-					...book,
+				...(bookings || []).map(book => {
+					const dateStr = book.time ? String(book.time) : null;
+					const date = dateStr ? (dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.substring(0,10)) : null;
+					const tStr = book.start_time ? String(book.start_time) : null;
+					const time = tStr ? (tStr.length === 5 ? `${tStr}:00` : tStr) : null;
+					const emp = (employeesBySalon || []).find(e => String(e.id) === String(book.employee_id));
+				return {
+					id: String(book.booking_number || book.id),
 					type: 'booking',
-					date: book.time ? new Date(book.time).toISOString().split('T')[0] : null,
-					time: book.time ? new Date(book.time).toTimeString().split(' ')[0] : null,
-					employee_name: (() => {
-						const emp = (employeesBySalon || []).find(e => String(e.id) === String(book.employee_id));
-						if (!emp) return null;
-						return [emp.name, emp.surname].filter(Boolean).join(' ').trim();
-					})()
-				}))
+					application_number: book.booking_number || null,
+					user_name: book.full_name || null,
+						phone_number: book.phone || null,
+						application_date: date,
+						application_time: time,
+						date,
+						time,
+						end_time: book.end_time ? (String(book.end_time).length === 5 ? `${book.end_time}:00` : String(book.end_time)) : null,
+						employee_id: book.employee_id || null,
+						employee_name: emp ? [emp.name, emp.surname].filter(Boolean).join(' ').trim() : null,
+						service_name: null,
+						service_price: null,
+						status: 'pending',
+						notes: null,
+						is_paid: false,
+						paid_amount: null
+					};
+				})
 			];
 
 			// Sanaga ko'ra saralash (eng yangi birinchi)
@@ -3357,35 +3416,54 @@ export const AppProvider = ({ children }) => {
 	// useEffect - appointments yoki bookings o'zgarganda avtomatik birlashtirish
 	useEffect(() => {
 		if (user?.salon_id) {
-			const combined = [
-				...(appointments || []).map(app => ({
-					...app,
-					type: 'appointment',
-					date: app.application_date,
-					time: app.application_time,
-					employee_name: app.employee_name || app.master_name || app.employee || null
-				})),
-				...(bookings || []).map(book => ({
-					...book,
+		const combined = [
+			...(appointments || []).map(app => ({
+				id: String(app.id),
+				type: 'appointment',
+				application_number: app.application_number || null,
+				user_name: app.user_name || null,
+				phone_number: app.phone_number || null,
+				application_date: app.application_date || null,
+				application_time: app.application_time || null,
+				date: app.application_date || null,
+				time: app.application_time || null,
+				employee_id: app.employee_id || null,
+				employee_name: app.employee_name || app.master_name || app.employee || null,
+				service_name: app.service_name || null,
+				service_price: app.service_price || null,
+				status: app.status || 'pending',
+				notes: app.notes || null,
+				is_paid: Boolean(app.is_paid),
+				paid_amount: app.paid_amount || null
+			})),
+			...(bookings || []).map(book => {
+				const dateRaw = book.time ? String(book.time) : null;
+				const date = dateRaw ? (dateRaw.includes('T') ? dateRaw.split('T')[0] : dateRaw.substring(0,10)) : null;
+				const tStr = book.start_time ? String(book.start_time) : null;
+				const time = tStr ? (tStr.length === 5 ? `${tStr}:00` : tStr) : null;
+				const emp = (employeesBySalon || []).find(e => String(e.id) === String(book.employee_id));
+				return {
+					id: String(book.booking_number || book.id),
 					type: 'booking',
-					date: (() => {
-						const raw = book.time ? String(book.time) : null;
-						if (!raw) return null;
-						return raw.includes('T') ? raw.split('T')[0] : raw;
-					})(),
-					time: (() => {
-						const raw = book.time ? String(book.time) : null;
-						if (!raw) return null;
-						const m = raw.match(/\d{2}:\d{2}/);
-						return m ? m[0] : null;
-					})(),
-					employee_name: (() => {
-						const emp = (employeesBySalon || []).find(e => String(e.id) === String(book.employee_id));
-						if (!emp) return null;
-						return [emp.name, emp.surname].filter(Boolean).join(' ').trim();
-					})()
-				}))
-			];
+					application_number: book.booking_number || null,
+					user_name: book.full_name || null,
+					phone_number: book.phone || null,
+					application_date: date,
+					application_time: time,
+					date,
+					time,
+					end_time: book.end_time ? (String(book.end_time).length === 5 ? `${book.end_time}:00` : String(book.end_time)) : null,
+					employee_id: book.employee_id || null,
+					employee_name: emp ? [emp.name, emp.surname].filter(Boolean).join(' ').trim() : null,
+					service_name: null,
+					service_price: null,
+					status: 'pending',
+					notes: null,
+					is_paid: false,
+					paid_amount: null
+				};
+			})
+		];
 
 			const sorted = combined.sort((a, b) => {
 				const dateA = new Date(`${a.date}T${a.time || '00:00:00'}`);
@@ -4175,7 +4253,13 @@ export const AppProvider = ({ children }) => {
 	// Ustaning mavjud vaqtlarini hisoblash
 	const calculateAvailableSlots = (workStartTime, workEndTime, busySlots, appointments, serviceDuration) => {
 		const parseTime = (timeStr) => {
-			const [hours, minutes] = timeStr.split(':').map(Number);
+			if (timeStr === undefined || timeStr === null) return NaN;
+			const s = String(timeStr);
+			if (!s || s.length < 3 || !s.includes(':')) return NaN;
+			const parts = s.split(':');
+			const hours = parseInt(parts[0], 10);
+			const minutes = parseInt(parts[1], 10);
+			if (isNaN(hours) || isNaN(minutes)) return NaN;
 			return hours * 60 + minutes;
 		};
 
@@ -4185,28 +4269,30 @@ export const AppProvider = ({ children }) => {
 			return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 		};
 
-		const workStart = parseTime(workStartTime);
-		const workEnd = parseTime(workEndTime);
+		const _ws = parseTime(workStartTime);
+		const _we = parseTime(workEndTime);
+		const workStart = isNaN(_ws) ? parseTime('09:00') : _ws;
+		const workEnd = isNaN(_we) ? parseTime('20:00') : _we;
 
 		// Barcha band vaqtlarni yig'ish
 		const occupiedSlots = [];
 
 		// Busy slots dan
 		(busySlots || []).forEach(slot => {
-			occupiedSlots.push({
-				start: parseTime(slot.start_time),
-				end: parseTime(slot.end_time)
-			});
+			const sStart = parseTime(slot.start_time);
+			const sEnd = parseTime(slot.end_time);
+			if (!isNaN(sStart) && !isNaN(sEnd)) {
+				occupiedSlots.push({ start: sStart, end: sEnd });
+			}
 		});
 
 		// Appointments dan
 		(appointments || []).forEach(apt => {
 			const aptStart = parseTime(apt.application_time || apt.start_time);
-			const duration = apt.service_duration || 60;
-			occupiedSlots.push({
-				start: aptStart,
-				end: aptStart + duration
-			});
+			const duration = Number(apt.service_duration || 60);
+			if (!isNaN(aptStart) && duration > 0) {
+				occupiedSlots.push({ start: aptStart, end: aptStart + duration });
+			}
 		});
 
 		// Tartiblash
@@ -4343,6 +4429,7 @@ export const AppProvider = ({ children }) => {
 			bookingsError,
 			fetchBookings,
 			createBooking,
+			deleteBooking,
 
 			// Mobile schedules
 			getAvailableSlots,
@@ -4360,9 +4447,6 @@ export const AppProvider = ({ children }) => {
 			updateEmployeePost,
 			deleteEmployeePost,
 			fetchEmployeeComments,
-			updateEmployeeAvatar,
-
-			// Employee Posts functions (bu qatordan KEYIN qo'shing)
 			updateEmployeeAvatar,
 
 			// ✅ YANGI: Busy slots functions

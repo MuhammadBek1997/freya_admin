@@ -19,7 +19,9 @@ const AppointCard = (props) => {
         phone,
         date,
         time: booking_time,
-        openRightSidebar
+        openRightSidebar,
+        is_paid,
+        paid_amount
     } = props
   
     const { t, selectedElement, employees, employeesBySalon } = UseGlobalContext()
@@ -43,13 +45,11 @@ const AppointCard = (props) => {
         };
     };
 
-    const dateObj = type === 'appointment'
-        ? parseDate(application_date)
-        : parseDate(date);
-
-    const timeObj = type === 'appointment'
-        ? parseTime(application_time)
-        : (typeof booking_time === 'string' ? parseTime(booking_time) : { hour: '', minute: '' });
+    const dateObj = parseDate(application_date || date);
+    const timeObj = (() => {
+        const base = application_time || (typeof booking_time === 'string' ? booking_time : null);
+        return base ? parseTime(base) : { hour: '', minute: '' };
+    })();
 
     const handleCardClick = () => {
         openRightSidebar({
@@ -63,10 +63,12 @@ const AppointCard = (props) => {
             employee_name: masterName || null,
             service_name,
             service_price,
+            is_paid,
+            paid_amount,
             full_name,
             phone,
-            date,
-            time: booking_time,
+            date: application_date || date,
+            time: application_time || booking_time,
             timeObj,
             dateObj,
             status,
@@ -130,7 +132,7 @@ const AppointCard = (props) => {
     })();
 
     return (
-        <div onClick={() => handleCardClick()} className='appoint-card'>
+        <div onClick={() => handleCardClick()} className='appoint-card' style={{ position: 'relative' }}>
             <div className='appoint-card-customer' style={{
                 backgroundColor: selectedElement?.id == id ? "#C3A3D1" : "white",
                 color: "#2C2C2C"
@@ -142,27 +144,28 @@ const AppointCard = (props) => {
                     })()
                 }
                 <p className='customerName'>
-                    {type === 'appointment' ? (user_name) : (full_name || t('notAvailable'))}
+                    {user_name || full_name || t('notAvailable')}
                 </p>
                 <p className='appointNumber'>
-                    {type === 'appointment' ? (application_number) : (id)}
+                    {application_number || id}
                 </p>
                 <a className='customerNumber'>
-                    {type === 'appointment' ? (phone_number) : (phone)}
+                    {phone_number || phone || t('notAvailable')}
                 </a>
                 <p className='appointDate'>
-                    {type === 'appointment'
-                        ? (application_date ? new Date(application_date).toLocaleDateString('ru-RU') : t('notAvailable'))
-                        : (date ? new Date(date).toLocaleDateString('ru-RU') : t('notAvailable'))}
+                    {(() => {
+                        const d = application_date || date;
+                        return d ? new Date(d).toLocaleDateString('ru-RU') : t('notAvailable');
+                    })()}
                 </p>
                 <p className='appointTime'>
-                    {type === 'appointment' 
-                        ? (application_time ? String(application_time).substring(0, 5) : t('notAvailable')) 
-                        : (booking_time 
-                            ? (String(booking_time).includes('T') 
-                                ? String(booking_time).substring(11, 16) 
-                                : String(booking_time).substring(0, 5)) 
-                            : t('notAvailable'))}
+                    {(() => {
+                        const raw = application_time || booking_time;
+                        if (!raw) return t('notAvailable');
+                        const s = String(raw);
+                        if (s.includes('T')) return s.substring(11, 16);
+                        return s.substring(0, 5);
+                    })()}
                 </p>
             </div>
             <div className='appoint-card-master'>

@@ -2,14 +2,19 @@ import React, { useState, useEffect } from 'react'
 import { UseGlobalContext, getAuthToken } from '../Context'
 import { mobileEmployeesAvailableUrl } from '../apiUrls'
 
-const SelectEmployeeModal = ({ setSelectEmploy, onEmployeeSelect, date, start_time, end_time }) => {
+const SelectEmployeeModal = ({ setSelectEmploy, onEmployeeSelect, date, start_time, end_time, initialSelected = [] }) => {
   const { employees, employeesBySalon, fetchEmployees, user, ts, fetchEmployeeBusySlots, calculateAvailableSlots, combinedAppointments, schedules } = UseGlobalContext()
   const [selectedEmployees, setSelectedEmployees] = useState([])
   const [availableEmployees, setAvailableEmployees] = useState(null)
   const [availLoading, setAvailLoading] = useState(false)
   const [availError, setAvailError] = useState('')
   const [filteredEmployees, setFilteredEmployees] = useState(null)
- 
+
+  useEffect(() => {
+    if (Array.isArray(initialSelected) && initialSelected.length > 0) {
+      setSelectedEmployees(initialSelected.map(id => String(id)))
+    }
+  }, [initialSelected])
 
   useEffect(() => {
     if (user?.salon_id) {
@@ -121,11 +126,12 @@ const SelectEmployeeModal = ({ setSelectEmploy, onEmployeeSelect, date, start_ti
  
   const handleEmployeeToggle = (employeeId) => {
     setSelectedEmployees(prev => {
-      if (prev.includes(employeeId)) {
-        return prev.filter(id => id !== employeeId)
-      } else {
-        return [...prev, employeeId]
-      }
+      const key = String(employeeId)
+      const next = prev.includes(key)
+        ? prev.filter(id => id !== key)
+        : [...prev, key]
+      if (onEmployeeSelect) onEmployeeSelect(next)
+      return next
     })
   }
 
@@ -167,7 +173,7 @@ const SelectEmployeeModal = ({ setSelectEmploy, onEmployeeSelect, date, start_ti
             </div>
           ) : listToRender && listToRender.length > 0 ? (
             listToRender.map((employee) => {
-              const isSelected = selectedEmployees.includes(employee.id)
+              const isSelected = selectedEmployees.includes(String(employee.id))
               return (
                 <div className='select-employModal-body-item' key={employee.id}>
                   <div className='select-employModal-body-item-top'>
@@ -185,11 +191,15 @@ const SelectEmployeeModal = ({ setSelectEmploy, onEmployeeSelect, date, start_ti
                     id='select-employModal-body-item-btn'
                     onClick={() => handleEmployeeToggle(employee.id)}
                     style={{
-                      backgroundColor: isSelected ? '#4CAF50' : '#007bff',
-                      color: 'white'
+                      backgroundColor: isSelected ? '#9C2BFF' : '#C3A3D1',
+                      color: '#fff',
+                      borderRadius: '10px',
+                      height: '32px',
+                      minWidth: '190px',
+                      boxShadow: '0 10px 10px rgba(0,0,0,0.2)'
                     }}
                   >
-                    {isSelected ? ts('selected','Выбрано') : ts('select','Выбрать')}
+                    {isSelected ? ts('selected','Tanlangan') : ts('select','Выбрать')}
                   </button>
                 </div>
               )
@@ -201,25 +211,7 @@ const SelectEmployeeModal = ({ setSelectEmploy, onEmployeeSelect, date, start_ti
           )}
         </div>
         
-        {selectedEmployees.length > 0 && (
-          <div style={{ padding: '20px', borderTop: '1px solid #eee' }}>
-            <button 
-              onClick={handleConfirmSelection}
-              style={{
-                width: '100%',
-                padding: '12px',
-                backgroundColor: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                fontSize: '16px',
-                cursor: 'pointer'
-              }}
-            >
-              {ts('confirmSelection','Подтвердить выбор')} ({selectedEmployees.length})
-            </button>
-          </div>
-        )}
+        {/* No confirm button per design */}
       </div>
     </div>
   )

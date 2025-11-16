@@ -118,11 +118,11 @@ const handleAvatarUpload = async (event) => {
     return (
       <div className="employee-profile-modal-overlay" style={{ background: "#38383866", backdropFilter: "blur(4px)" }}>
         <div className="employee-profile-modal" style={{ background: "#E9EDEE", borderRadius: "1vw" }}>
-          <div className='employee-profile-modal-top' style={{ width: "100%", height: "10vh", display: "flex", background: "#9C2BFF", borderTopLeftRadius: "1vw", borderTopRightRadius: "1vw" }}>
+          <div className='employee-profile-modal-top' style={{ width: "100%", height: "10vh", display: "flex", background: "#9C2BFF", borderTopLeftRadius: "1vw", borderTopRightRadius: "1vw", alignItems: "center", justifyContent: "space-between", padding: "1vw" }}>
             {user.role === 'employee' && (
-              <div style={{ display: "flex", alignItems: "center", gap: "1vw", padding: "1vw" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "1vw" }}>
                 <img src="/sidebarLogo.svg" alt="salonIcon" />
-                <h2>ФРЕЯ</h2>
+                <h2 style={{ color: '#FFFFFF' }}>{user?.salon_name || 'ФРЕЯ'}</h2>
               </div>
             )}
             <button
@@ -197,7 +197,10 @@ const handleAvatarUpload = async (event) => {
               disabled={avatarUploading}
               style={{
                 opacity: avatarUploading ? 0.6 : 1,
-                cursor: avatarUploading ? 'not-allowed' : 'pointer'
+                cursor: avatarUploading ? 'not-allowed' : 'pointer',
+                backgroundColor: '#4A90E2',
+                color: '#fff',
+                borderRadius: '10px'
               }}
             >
               <img src="/images/change-foto.png" alt="" />
@@ -240,6 +243,28 @@ const handleAvatarUpload = async (event) => {
               <img src="/images/posts.png" alt="" />
               <p>{t('postsCount') || 'Посты'} ({employeePosts?.length || 0})</p>
             </button>
+
+            <div style={{ width: '100%', padding: '16px' }}>
+              <button
+                onClick={() => {
+                  localStorage.removeItem('authToken');
+                  localStorage.removeItem('userData');
+                  localStorage.removeItem('whiteBoxPos');
+                  window.location.href = '/login';
+                }}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#FF3B30',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  boxShadow: '0 10px 10px rgba(0,0,0,0.2)'
+                }}
+              >
+                {t('logout') || 'Выйти'}
+              </button>
+            </div>
           </div>
         </div>
 

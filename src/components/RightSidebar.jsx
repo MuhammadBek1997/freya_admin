@@ -9,10 +9,12 @@ const RightSidebar = () => {
         commentsArr,
         updateAppointmentStatus,
         cancelAppointment,
+        deleteBooking,
         employees,
         employeesBySalon,
         getAuthToken,
-        setConfirmModal
+        setConfirmModal,
+        user
     } = UseGlobalContext();
 
     const [scheduleData, setScheduleData] = useState(null);
@@ -57,11 +59,16 @@ const RightSidebar = () => {
     
 
     const handleReject = async () => {
-        const reason = prompt(t('cancelReasonPrompt'));
-        if (!reason) return;
-
         try {
-            await cancelAppointment(selectedElement.id, reason);
+            if (String(selectedElement.type) === 'booking') {
+                await deleteBooking(selectedElement.id);
+            } else {
+                try {
+                    await cancelAppointment(selectedElement.id, '');
+                } catch (e) {
+                    await updateAppointmentStatus(selectedElement.id, 'cancelled');
+                }
+            }
             closeRightSidebar();
         } catch (error) {
             console.error('Bekor qilishda xato:', error);
@@ -69,11 +76,42 @@ const RightSidebar = () => {
         }
     };
 
+    const handleArrived = async () => {
+        try {
+            if (String(selectedElement.type) === 'booking') {
+                alert(t('bookingArrivedNotSupported') || 'Booking uchun “Пришла” qo‘llanilmaydi');
+                return;
+            }
+            await updateAppointmentStatus(selectedElement.id, 'accepted');
+            closeRightSidebar();
+        } catch (error) {
+            console.error('Keldi statusini o\'zgartirishda xato:', error);
+            alert(error.message);
+        }
+    };
+
     const employee = (employeesBySalon || employees || []).find(emp => emp.id === selectedElement.employee_id);
 
-    const showButtons = selectedElement.status === 'accepted' &&
-        !selectedElement.is_confirmed &&
-        !selectedElement.is_completed;
+    const apptDateStr = selectedElement.application_date || selectedElement.date || null;
+    const apptTimeStr = selectedElement.application_time || selectedElement.time || selectedElement.start_time || null;
+    const apptDateTime = (() => {
+        if (!apptDateStr || !apptTimeStr) return null;
+        const parts = String(apptTimeStr).split(':');
+        const hh = parseInt(parts[0] || '0', 10);
+        const mm = parseInt(parts[1] || '0', 10);
+        try {
+            return new Date(`${apptDateStr}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`);
+        } catch {
+            return null;
+        }
+    })();
+    const isPast = (() => {
+        if (!apptDateTime) return false;
+        const now = new Date();
+        return now.getTime() > apptDateTime.getTime();
+    })();
+    const canManage = ['employee','admin','private_admin','superadmin'].includes(String(user?.role));
+    const showButtons = (canManage && (['pending','accepted'].includes(String(selectedElement.status))) && !selectedElement.is_cancelled && !selectedElement.is_completed);
 
     const relatedComments = selectedElement.is_completed && commentsArr
         ? commentsArr.filter(comment =>
@@ -114,24 +152,50 @@ const RightSidebar = () => {
                 </h3>
             </div>
 
-            <div className='right-status-cont'>
+            <div className='right-status-cont' style={{ display: 'flex', flexDirection: 'column', gap: '0.6vw' }}>
                 <div className='right-status-badge' style={{
                     backgroundColor:
                         selectedElement.is_completed ? '#4CAF50' :
                             selectedElement.is_confirmed ? '#2196F3' :
-                                selectedElement.is_cancelled ? '#f44336' :
-                                    selectedElement.status === 'accepted' ? '#FF9800' : '#9E9E9E',
-                    borderRadius: "0.5vw",
-                    padding: "0.5vw 1vw"
+                                (selectedElement.is_cancelled || selectedElement.status === 'cancelled') ? '#f44336' :
+                                    (selectedElement.status === 'accepted' ? '#FF9800' : (isPast && selectedElement.status === 'pending' ? '#9E9E9E' : '#9E9E9E')),
+                    borderRadius: "0.8vw",
+                    padding: "0.8vw 1.2vw",
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                 }}>
-                    <p>
+                    <p style={{ margin: 0, color: '#fff', fontWeight: 600 }}>
                         {selectedElement.is_completed ? t('Yakunlangan') :
                             selectedElement.is_confirmed ? t('Tasdiqlangan') :
-                                selectedElement.is_cancelled ? t('Bekor qilingan') :
+                                (selectedElement.is_cancelled || selectedElement.status === 'cancelled') ? t('Bekor qilingan') :
                                     selectedElement.status === 'accepted' ? t('Qabul qilingan') :
-                                        t('Kutilmoqda')}
+                                        (isPast ? "Vaqti o'tgan" : t('Kutilmoqda'))}
                     </p>
                 </div>
+                {selectedElement.is_paid ? (
+                    <div className='right-paid-badge' style={{
+                        backgroundColor: '#9C2BFF',
+                        borderRadius: "0.8vw",
+                        padding: "0.8vw 1.2vw",
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <p style={{ margin: 0, color: '#fff', fontWeight: 600 }}>
+                            {(() => {
+                                const amt = selectedElement.paid_amount;
+                                const n = typeof amt === 'number' ? amt : parseInt(String(amt || ''), 10);
+                                const formatted = isNaN(n) ? '' : new Intl.NumberFormat('ru-RU').format(n);
+                                return `${t('Оплачено') || 'Оплачено'}${formatted ? `: ${formatted} сум` : ''}`;
+                            })()}
+                        </p>
+                    </div>
+                ) : null}
             </div>
 
             <div className='right-appTime-cont'>
@@ -252,7 +316,7 @@ const RightSidebar = () => {
 
             {showButtons && (
                 <div className='right-btm'>
-                    <button onClick={() => setConfirmModal(false)} className='confirm-btn'>
+                    <button onClick={handleArrived} className='confirm-btn'>
                         <img src="/images/verifiedIcon.png" alt={t("Verified")} />
                         {t("Пришла")}
                     </button>

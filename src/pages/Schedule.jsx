@@ -272,7 +272,7 @@ const Schedule = () => {
                         <div className='masters-time'>
                           <p>{String(item.start_time || '').substring(0,5)} - {String(item.end_time || '').substring(0,5)}</p>
                         </div>
-                        <button
+                        {/* <button
                           style={{
                             border: 'none',
                             background: 'transparent',
@@ -281,7 +281,7 @@ const Schedule = () => {
                           onClick={() => handleOpenBookingForEmployee(item.id, master.id)}
                         >
                           <img src="/images/reserveIcon.png" alt="" />
-                        </button>
+                        </button> */}
                       </div>
                     )
                   })}
