@@ -4197,37 +4197,16 @@ export const AppProvider = ({ children }) => {
 	// Ustaning band vaqtlarini olish
 	const fetchEmployeeBusySlots = async (employeeId, date) => {
 		try {
-			const token = getAuthToken();
-			if (!token) {
-				throw new Error('Tizimga kirish tokeni topilmadi');
-			}
-			const headers = {
-				'Authorization': `Bearer ${token}`,
-				'Content-Type': 'application/json',
-			};
-			const tryFetch = async (url) => {
-				const resp = await fetch(url, { method: 'GET', headers });
-				if (!resp.ok) return null;
-				const json = await resp.json();
-				const arr = json?.data || json;
-				return Array.isArray(arr) ? arr : [];
-			};
-			let result = await tryFetch(`${mobileEmployeesBusyUrl}?employee_id=${employeeId}&date=${date}`);
-			if (!result) {
-				result = await tryFetch(`${mobileEmployeesBusyUrl}?employee_id=${employeeId}&date_str=${date}`);
-			}
-			if (!result) {
-				const fallback = await tryFetch(`${mobileEmployeesMeSchedulesUrl}?date=${date}`);
-				if (fallback && Array.isArray(fallback)) {
-					return fallback
-						.filter(it => String(it.employee_id) === String(employeeId))
-						.map(it => ({ start_time: String(it.start_time), end_time: String(it.end_time) }));
-				}
-				return [];
-			}
-			return result;
+			const day = String(date);
+			const empIdStr = String(employeeId);
+			const daySchedules = (schedules || []).filter(s =>
+				String(s.date) === day && Array.isArray(s.employee_list) && s.employee_list.map(id => String(id)).includes(empIdStr)
+			);
+			return daySchedules
+				.map(s => ({ start_time: String(s.start_time), end_time: String(s.end_time) }))
+				.filter(it => it.start_time && it.end_time);
 		} catch (error) {
-			console.error('❌ Error fetching busy slots:', error);
+			console.error('❌ Error fetching busy slots (local calc):', error);
 			return [];
 		}
 	};
