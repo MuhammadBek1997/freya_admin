@@ -1,7 +1,7 @@
 import { UseGlobalContext } from "../Context";
 
 
-const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, comment_count, phone, _isMenuOpen, setIsMenuOpen, _bio, _is_verified, _salon, isOpen, handleToggleMenu, isCheckedItem, setIsCheckedItem, handleAddWaitingEmp, work_start_time, work_end_time }) => {
+const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, comment_count, phone, _isMenuOpen, setIsMenuOpen, _bio, _is_verified, _salon, isOpen, handleToggleMenu, isCheckedItem, setIsCheckedItem, handleAddWaitingEmp, work_start_time, work_end_time, avatar_url, avatar, profile_image, photo }) => {
   const { ts } = UseGlobalContext();
 
   const computeWorkedHours = (start, end) => {
@@ -73,7 +73,7 @@ const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, commen
           <img src="/images/menuImg.png" alt="" />
         </button>
       </div>
-      <img src="/images/masterImage.png" alt="" />
+      <img src={avatar_url || avatar || profile_image || photo || "/images/masterImage.png"} className="employCard-img" alt="" />
       <h2>{name} {surname}</h2>
       <div className="employCard-rating">
         <img src="/images/Star1.png" alt="" />

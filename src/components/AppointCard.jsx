@@ -171,7 +171,7 @@ const AppointCard = (props) => {
             <div className='appoint-card-master'>
                 {(() => {
                     const masterAvatar = masterEmp?.avatar_url || masterEmp?.photo || masterEmp?.profile_image || "/images/masterImage.png";
-                    return <img src={masterAvatar} alt="" />
+                    return <img src={masterAvatar} className='appoint-card-master-img' alt="" />
                 })()}
                 <div className='appoint-card-master-text'>
                     <div className='appoint-card-masterName'>

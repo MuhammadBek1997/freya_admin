@@ -333,7 +333,11 @@
   cursor: pointer;
   background-color: #FFFFFF;
 }
-
+.employCard-img{
+  width: 4vw;
+  height: 4vw;
+  border-radius: 30vw;
+}
 
 
 .employCard-menu{

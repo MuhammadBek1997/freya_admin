@@ -72,7 +72,7 @@ const EditEmployeeBar = ({ employee, onClose }) => {
   return (
     <div className="editEmployeeBar">
       <div className="editEmployeeBar-cont">
-        <img src="/images/masterImage.png" alt="" className="editEmployeeBar-cont-img" />
+        <img src={employee?.avatar_url || employee?.avatar || employee?.profile_image || employee?.photo || "/images/masterImage.png"} alt="" className="editEmployeeBar-cont-img" />
         <div className="editEmployeeBar-rating">
           <img src="/images/Star1.png" alt="" />
           <p>4.5 (12 {t('profileReviews') || 'отзывов'})</p>

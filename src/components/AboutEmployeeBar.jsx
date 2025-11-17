@@ -98,7 +98,7 @@ const AboutEmployeeBar = ({ id, employee, onClose, avg_rating, comment_count }) 
         <button className="aboutEmployeeBar-cont-close" onClick={onClose}>
           <img src="/images/closeSidebar.png" alt="" />
         </button>
-        <img src="/images/masterImage.png" alt="Employee" className='aboutEmployeeBar-cont-img' />
+        <img src={employee?.avatar_url || employee?.avatar || employee?.profile_image || employee?.photo || "/images/masterImage.png"} alt="Employee" className='aboutEmployeeBar-cont-img' />
         <div className='aboutEmployeeBar-masterJob'>
           <p>{employee.profession}</p>
         </div>

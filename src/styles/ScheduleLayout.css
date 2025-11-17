@@ -388,6 +388,11 @@
   width: 3vw;
   border-radius: 10vw;
 }
+.select-employModal-body-item-img{
+  width: 3vw;
+  height: 3vw;
+  border-radius: 10vw;
+}
 .select-employModal-body-item h4{
   font-size: 1vw;
 }
@@ -553,6 +558,7 @@
 }
 .schedule-master-card img{
   width: 2vw;
+  height: 2vw;
   border-radius: 30vw;
 }
 .schedule-master-card p{

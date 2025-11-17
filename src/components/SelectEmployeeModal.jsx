@@ -177,7 +177,7 @@ const SelectEmployeeModal = ({ setSelectEmploy, onEmployeeSelect, date, start_ti
               return (
                 <div className='select-employModal-body-item' key={employee.id}>
                   <div className='select-employModal-body-item-top'>
-                    <img src={employee.avatar_url || employee.avatar || '/images/masterImage.png'} alt="" />
+                    <img src={employee.avatar_url || employee.avatar || '/images/masterImage.png'} className='select-employModal-body-item-img' alt="" />
                     <div>
                       <h4>{employee.employee_name || employee.name}</h4>
                       <p>{employee.position || ts('schedule.employee','Сотрудник')}</p>

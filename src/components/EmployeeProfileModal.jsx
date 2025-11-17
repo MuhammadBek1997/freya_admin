@@ -43,7 +43,7 @@ const handleAvatarUpload = async (event) => {
     setAvatarError(null);
 
     try {
-      const employeeId = user?.id || user?.employee_id;
+      const employeeId = user?.employee_id || user?.id;
       
       // ✅ Faqat updateEmployeeAvatar chaqiriladi
       const avatarUrl = await updateEmployeeAvatar(employeeId, file);

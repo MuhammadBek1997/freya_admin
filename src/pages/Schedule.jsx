@@ -267,21 +267,12 @@ const Schedule = () => {
                     let master = (employeesBySalon || employees || []).find((i) => i.id == employeeId) || { id: employeeId, name: 'Unknown Master' }
                     return (
                       <div className='schedule-master-card' key={master.id}>
-                        <img src="/images/masterImage.png" alt="" />
+                        <img src={master?.avatar_url || master?.avatar || master?.profile_image || master?.photo || "/images/masterImage.png"} className="schedule-master-img" alt="" />
                         <p>{master.name.split(" ")[0]}</p>
                         <div className='masters-time'>
                           <p>{String(item.start_time || '').substring(0,5)} - {String(item.end_time || '').substring(0,5)}</p>
                         </div>
-                        {/* <button
-                          style={{
-                            border: 'none',
-                            background: 'transparent',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => handleOpenBookingForEmployee(item.id, master.id)}
-                        >
-                          <img src="/images/reserveIcon.png" alt="" />
-                        </button> */}
+                        
                       </div>
                     )
                   })}

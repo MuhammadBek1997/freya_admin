@@ -407,7 +407,7 @@ const BookScheduleModal = (props) => {
                 {selectedEmployee ? (
                   <>
                     <img
-                      src={selectedEmployee.photo || selectedEmployee.avatar || '/images/masterImage.png'}
+                      src={selectedEmployee.avatar_url || selectedEmployee.avatar || selectedEmployee.profile_image || selectedEmployee.photo || '/images/masterImage.png'}
                       alt={selectedEmployee.name}
                       style={{
                         width: '35px',
@@ -486,7 +486,7 @@ const BookScheduleModal = (props) => {
                       }}
                     >
                       <img
-                        src={employee.photo || employee.avatar || '/images/masterImage.png'}
+                        src={employee.avatar_url || employee.avatar || employee.profile_image || employee.photo || '/images/masterImage.png'}
                         alt={employee.name}
                         style={{
                           width: '40px',

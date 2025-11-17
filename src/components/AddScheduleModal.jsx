@@ -380,7 +380,7 @@ const AddScheduleModal = () => {
                                 {formData.employee_list.map((employeeId) => {
                                     const emp = (employeesBySalon || employees || []).find(e => String(e.id) === String(employeeId));
                                     const displayName = emp?.name || emp?.employee_name || t('schedule.employee');
-                                    const avatarSrc = emp?.avatar_url || emp?.photo || '/images/masterImage.png';
+                                    const avatarSrc = emp?.avatar_url || emp?.avatar || emp?.profile_image || emp?.photo || '/images/masterImage.png';
                                     return (
                                         <div style={{ display: "flex", flexDirection: "column" }} key={employeeId}>
                                             <div

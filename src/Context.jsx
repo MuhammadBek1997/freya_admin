@@ -1794,32 +1794,39 @@ export const AppProvider = ({ children }) => {
 	};
 
 	// Update employee
-	const updateEmployee = async (employeeId, employeeData) => {
-		try {
-			const token = getAuthToken();
-			const response = await fetch(`${employeesUrl}/${employeeId}`, {  // Fixed: employeesUrl
-				method: 'PUT',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(employeeData),
-			});
+    const updateEmployee = async (employeeId, employeeData) => {
+        try {
+            const token = getAuthToken();
+            // Prefer correct ID for employee role
+            const targetId = (() => {
+                if (user?.role === 'employee') {
+                    return user?.employee_id || user?.id || employeeId;
+                }
+                return employeeId;
+            })();
+            const response = await fetch(`${employeesUrl}/${targetId}`, {  // Fixed: employeesUrl
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(employeeData),
+            });
 
 			if (response.ok) {
 				const data = await response.json();
 				console.log('Employee updated:', data);
-				await fetchEmployees(); // Refresh employees
-				return data;
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to update employee');
-			}
-		} catch (error) {
-			console.error('Error updating employee:', error);
-			throw error;
-		}
-	};
+                await fetchEmployees(); // Refresh employees
+                return data;
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to update employee');
+            }
+        } catch (error) {
+            console.error('Error updating employee:', error);
+            throw error;
+        }
+    };
 
 	// Delete employee
 	const deleteEmployee = async (employeeId) => {
@@ -2424,7 +2431,7 @@ export const AppProvider = ({ children }) => {
 	};
 
 	// Send message from employee/admin - URL ni o'zgartirish
-	const sendMessage = async (receiverId, messageText, messageType = 'text') => {
+    const sendMessage = async (receiverId, messageText, messageType = 'text', fileUrl = null) => {
 		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
 			console.error('Only employees or admins can send messages');
 			return;
@@ -2434,40 +2441,41 @@ export const AppProvider = ({ children }) => {
 			const token = getAuthToken();
 			// ✅ Employee uchun /employee/send, Admin uchun /admin/send
 			const isEmployee = user.role === 'employee';
-			const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/send`, {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					receiver_id: receiverId,
-					message_text: messageText,
-					message_type: messageType
-				}),
-			});
+            const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/send`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    receiver_id: receiverId,
+                    message_text: messageText,
+                    message_type: messageType,
+                    file_url: fileUrl,
+                }),
+            });
 
 			if (response.ok) {
 				const data = await response.json();
 				console.log('Message sent:', data);
 
-				if (currentConversation === receiverId) {
-					const isEmployeeSender = user.role === 'employee';
-					setMessages(prevMessages => [...prevMessages, {
-						id: data.data?.id,
-						sender_id: isEmployeeSender ? user.id : (user.salon_id || user.id),
-						sender_type: isEmployeeSender ? 'employee' : 'salon',
-						receiver_id: receiverId,
-						receiver_type: 'user',
-						message_text: messageText,
-						message_type: messageType,
-						is_read: false,
-						created_at: data.data?.created_at || new Date().toISOString()
-					}]);
-				}
-
-				await fetchConversations();
-				return data;
+                if (currentConversation === receiverId) {
+                    const isEmployeeSender = user.role === 'employee';
+                    setMessages(prevMessages => [...prevMessages, {
+                        id: data.data?.id,
+                        sender_id: isEmployeeSender ? user.id : (user.salon_id || user.id),
+                        sender_type: isEmployeeSender ? 'employee' : 'salon',
+                        receiver_id: receiverId,
+                        receiver_type: 'user',
+                        message_text: messageText,
+                        message_type: messageType,
+                        file_url: fileUrl,
+                        is_read: false,
+                        created_at: data.data?.created_at || new Date().toISOString()
+                    }]);
+                }
+                // Conversations list can be refreshed via WS; avoid hard refresh here
+                return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to send message');
@@ -4065,9 +4073,9 @@ export const AppProvider = ({ children }) => {
 
 
 	// Employee avatarini yangilash funksiyasi
-	const updateEmployeeAvatar = async (employeeId, avatarFile) => {
-		try {
-			console.log('=== UPDATE EMPLOYEE AVATAR START ===');
+    const updateEmployeeAvatar = async (employeeId, avatarFile) => {
+        try {
+            console.log('=== UPDATE EMPLOYEE AVATAR START ===');
 
 			const token = getAuthToken();
 			if (!token) {
@@ -4090,7 +4098,7 @@ export const AppProvider = ({ children }) => {
 
 			// 1️⃣ BIRINCHI: Rasmni uploadPhotosToServer orqali yuklash
 			console.log('📤 Step 1: Uploading avatar file...');
-			const uploadedUrls = await uploadPhotosToServer([avatarFile]);
+            const uploadedUrls = await uploadPhotosToServer([avatarFile]);
 
 			if (!uploadedUrls || uploadedUrls.length === 0) {
 				throw new Error('Rasm yuklashda xatolik yuz berdi');
@@ -4101,20 +4109,39 @@ export const AppProvider = ({ children }) => {
 
 			// 2️⃣ IKKINCHI: Employee ma'lumotlarini yangilash (avatar_url ga saqlash)
 			console.log('📤 Step 2: Updating employee data with avatar URL...');
-			const updateData = {
-				avatar_url: avatarUrl,
-				avatar: avatarUrl,
-				profile_image: avatarUrl
-			};
+            const updateData = {
+                avatar_url: avatarUrl,
+                avatar: avatarUrl,
+                profile_image: avatarUrl
+            };
 
-			const updateResponse = await fetch(`${employeesUrl}/${employeeId}`, {
-				method: 'PUT',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(updateData),
-			});
+            const targetId = (() => {
+                if (user?.role === 'employee') {
+                    return user?.employee_id || user?.id || employeeId;
+                }
+                return employeeId;
+            })();
+
+            let updateResponse;
+            if (user?.role === 'employee' && (String(targetId) === String(user?.id) || String(targetId) === String(user?.employee_id))) {
+                updateResponse = await fetch(`${employeesUrl}/me/avatar`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ avatar_url: avatarUrl }),
+                });
+            } else {
+                updateResponse = await fetch(`${employeesUrl}/${targetId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData),
+                });
+            }
 
 			console.log('📥 Update response status:', updateResponse.status);
 
@@ -4150,13 +4177,13 @@ export const AppProvider = ({ children }) => {
 
 			// 3️⃣ UCHINCHI: Local state'ni yangilash
 			// User state ni yangilash (agar current user o'zi bo'lsa)
-			if (user && (user.id === employeeId || user.employee_id === employeeId)) {
-				setUser(prev => ({
-					...prev,
-					avatar: avatarUrl,
-					avatar_url: avatarUrl,
-					profile_image: avatarUrl
-				}));
+            if (user && (user.id === targetId || user.employee_id === targetId)) {
+                setUser(prev => ({
+                    ...prev,
+                    avatar: avatarUrl,
+                    avatar_url: avatarUrl,
+                    profile_image: avatarUrl
+                }));
 
 				// LocalStorage ni ham yangilash
 				const userData = JSON.parse(localStorage.getItem('userData') || '{}');
@@ -4167,18 +4194,23 @@ export const AppProvider = ({ children }) => {
 			}
 
 			// Employees ro'yxatini yangilash
-			setEmployees(prev =>
-				prev.map(emp =>
-					(emp.id === employeeId || emp.employee_id === employeeId)
-						? {
-							...emp,
-							avatar: avatarUrl,
-							avatar_url: avatarUrl,
-							profile_image: avatarUrl
-						}
-						: emp
-				)
-			);
+            setEmployees(prev =>
+                prev.map(emp =>
+                    (emp.id === targetId || emp.employee_id === targetId)
+                        ? {
+                            ...emp,
+                            avatar: avatarUrl,
+                            avatar_url: avatarUrl,
+                            profile_image: avatarUrl
+                        }
+                        : emp
+                )
+            );
+
+            try {
+                const sid = FORCE_SALON_ID || salonProfile?.id || user?.salon_id || null;
+                await fetchEmployees(sid);
+            } catch (_) {}
 
 			console.log('✅ Employee avatar fully updated:', avatarUrl);
 			return avatarUrl;

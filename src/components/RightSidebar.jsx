@@ -168,11 +168,11 @@ const RightSidebar = () => {
                     justifyContent: 'center'
                 }}>
                     <p style={{ margin: 0, color: '#fff', fontWeight: 600 }}>
-                        {selectedElement.is_completed ? t('Yakunlangan') :
-                            selectedElement.is_confirmed ? t('Tasdiqlangan') :
-                                (selectedElement.is_cancelled || selectedElement.status === 'cancelled') ? t('Bekor qilingan') :
-                                    selectedElement.status === 'accepted' ? t('Qabul qilingan') :
-                                        (isPast ? "Vaqti o'tgan" : t('Kutilmoqda'))}
+                        {selectedElement.is_completed ? t('statusCompleted') :
+                            selectedElement.is_confirmed ? t('statusConfirmed') :
+                                (selectedElement.is_cancelled || selectedElement.status === 'cancelled') ? t('statusCancelled') :
+                                    selectedElement.status === 'accepted' ? t('statusAccepted') :
+                                        (isPast ? t('statusExpired') : t('statusPending'))}
                     </p>
                 </div>
                 {selectedElement.is_paid ? (

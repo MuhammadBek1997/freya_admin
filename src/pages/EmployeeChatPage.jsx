@@ -18,7 +18,7 @@ const EmployeeChatPage = () => {
     messages,
     messagesLoading,
     messagesError,
-  fetchMessages,
+    fetchMessages,
     sendMessage,
     getUnreadCount,
     markConversationAsRead,
@@ -32,6 +32,11 @@ const EmployeeChatPage = () => {
     ts,
     addSched,
     setAddSched,
+    wsStatus,
+    connectChatWs,
+    disconnectChatWs,
+    sendWsMessage,
+    sendWsMarkRead,
   } = UseGlobalContext();
 
   const handleBack = () => {
@@ -44,6 +49,7 @@ const EmployeeChatPage = () => {
   const [selectedPageEmployee, setSelectedPageEmployee] = useState('chat');
   const chatBodyRef = useRef(null);
   const [newMessage, setNewMessage] = useState('');
+  const imageInputRef = useRef(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
 
@@ -162,6 +168,12 @@ const EmployeeChatPage = () => {
       loadUnreadCount();
     }
   }, [user, conversations]);
+
+  useEffect(() => {
+    return () => {
+      try { disconnectChatWs(); } catch {}
+    };
+  }, []);
 
   useEffect(() => {
     if (chatBodyRef.current && messages.length > 0) {
@@ -314,8 +326,17 @@ const EmployeeChatPage = () => {
     setIsMobileChatOpen(true);
 
     try {
-      await fetchMessages(userId);
-      await markConversationAsRead(userId);
+      // Prefer WebSocket for realtime chat
+      const ok = connectChatWs(userId, 'user');
+      if (!ok) {
+        await fetchMessages(userId);
+      }
+      // Mark as read via WS when possible
+      if (ok) {
+        sendWsMarkRead();
+      } else {
+        await markConversationAsRead(userId);
+      }
       const count = await getUnreadCount();
       setUnreadCount(count);
     } catch (error) {
@@ -328,15 +349,47 @@ const EmployeeChatPage = () => {
     if (!newMessage.trim() || !selectedUser) return;
 
     try {
-      await sendMessage(selectedUser.id, newMessage.trim());
+      // Try WS first for realtime delivery
+      const sent = sendWsMessage(newMessage.trim(), 'text');
+      if (!sent) {
+        await sendMessage(selectedUser.id, newMessage.trim(), 'text');
+      }
       setNewMessage('');
-      await fetchMessages(selectedUser.id);
-      await fetchConversations();
-      const count = await getUnreadCount();
-      setUnreadCount(count);
     } catch (error) {
       console.error('Error sending message:', error);
       alert(t('messageSendError') || 'Xabar yuborishda xatolik yuz berdi!');
+    }
+  };
+
+  const handleAttachClick = () => {
+    if (imageInputRef.current) imageInputRef.current.click();
+  };
+
+  const handleImageSelected = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedUser) return;
+    try {
+      if (!file.type?.startsWith('image/')) {
+        alert(t('onlyImageFiles') || 'Faqat rasmlarni yuklash mumkin');
+        return;
+      }
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert(t('imageTooLarge') || 'Rasm juda katta (maks. 4 MB)');
+        return;
+      }
+      const urls = await uploadPhotosToServer([file]);
+      const url = Array.isArray(urls) ? urls[0] : urls;
+      if (!url) throw new Error('Yuklangan rasm URLi topilmadi');
+      const sent = sendWsMessage('', 'image', url);
+      if (!sent) {
+        await sendMessage(selectedUser.id, '', 'image', url);
+      }
+    } catch (err) {
+      console.error('Error sending image:', err);
+      alert(t('messageSendError') || 'Xabar yuborishda xatolik yuz berdi!');
+    } finally {
+      if (imageInputRef.current) imageInputRef.current.value = '';
     }
   };
 
@@ -510,19 +563,7 @@ const EmployeeChatPage = () => {
                 />
               </div>
 
-              {user.role !== 'private_admin' && (
-                <button
-                  className="logout-btn"
-                  onClick={() => {
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('userData');
-                    localStorage.removeItem('whiteBoxPos');
-                    window.location.href = '/login';
-                  }}
-                >
-                  <img src="/images/exit.png" alt="" className="logout-img" />
-                </button>
-              )}
+              
             </div>
           </div>
 
@@ -802,9 +843,17 @@ const EmployeeChatPage = () => {
                                       className={`message ${isMyMessage ? 'send' : 'receive'}`}
                                     >
                                       <div className={isMyMessage ? 'message-content-sent' : 'message-content'}>
-                                        <p className={isMyMessage ? 'message-send-text' : 'message-receive-text'}>
-                                          {message.message_text}
-                                        </p>
+                                        {message.message_type === 'image' && message.file_url ? (
+                                          <img
+                                            src={message.file_url}
+                                            alt="image"
+                                            style={{ maxWidth: '180px', borderRadius: '8px' }}
+                                          />
+                                        ) : (
+                                          <p className={isMyMessage ? 'message-send-text' : 'message-receive-text'}>
+                                            {message.message_text}
+                                          </p>
+                                        )}
                                         <span className={isMyMessage ? 'message-time-sent' : 'message-time'}>
                                           {new Date(message.created_at).toLocaleTimeString('uz-UZ', {
                                             hour: '2-digit',
@@ -824,7 +873,10 @@ const EmployeeChatPage = () => {
                 </div>
 
                 <form onSubmit={handleSendMessage} className="chat-input-container">
-                  <img className="message-pdf" src="pdff.svg" alt="" />
+                  <button type="button" className="attach-button" onClick={handleAttachClick} style={{ background: 'none', border: 'none' }}>
+                    <img className="message-pdf" src="pdff.svg" alt="" />
+                  </button>
+                  <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageSelected} style={{ display: 'none' }} />
                   <div className="chat-input">
                     <input
                       type="text"

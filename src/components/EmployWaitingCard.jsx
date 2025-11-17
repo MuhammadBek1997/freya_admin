@@ -4,7 +4,7 @@ import { UseGlobalContext } from '../Context'
 const EmployWaitingCard = ({ 
     id, name, spec, isMenuOpen, setIsMenuOpen, bio, is_verified, 
     salon, isOpen, handleToggleMenu, isCheckedItem, setIsCheckedItem, 
-    handleRemoveWaitingEmp 
+    handleRemoveWaitingEmp, avatar_url, avatar, profile_image, photo 
 }) => {
     const { t } = UseGlobalContext()
 
@@ -37,7 +37,7 @@ const EmployWaitingCard = ({
                     <img src="/images/menuImg.png" alt="" />
                 </button>
             </div>
-            <img src="/images/masterImage.png" alt="" />
+            <img src={avatar_url || avatar || profile_image || photo || "/images/masterImage.png"} alt="" />
             <h2>{name}</h2>
             <div className="employCard-rating">
                 <img src="/images/Star1.png" alt="" />

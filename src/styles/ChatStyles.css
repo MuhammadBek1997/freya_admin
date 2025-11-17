@@ -114,6 +114,7 @@ body {
 
 .profile-avatar {
   width: 4vw;
+  height: 4vw;
   border-radius: 50%;
   object-fit: cover;
   margin-left: 20%;
@@ -250,6 +251,8 @@ body {
 .chat-avatar {
   border-radius: 50%;
   width: 3.5vw;
+  height: 3.5vw;
+  object-fit: cover;
 }
 
 .chat-info {
@@ -351,6 +354,7 @@ body {
 .chat-header-avatar {
   border-radius: 50%;
   width: 3.1vw;
+  height: 3.1vw;
   margin-right: 2.1vw;
   object-fit: cover;
 }
