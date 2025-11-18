@@ -234,7 +234,7 @@
   }
 
   .employee-profile-modal-top { height: 11vh; border-radius: 0; }
-  .employee-profile-modal-close { color: #ffffff; font-size: 1.6rem; }
+  .employee-profile-modal-close { color: #ffffff; font-size: 1.5rem; }
   .employee-profile-modal-avatar { width: 72px; height: 72px; border-width: 3px; }
   .employee-profile-modal-photo-btn, .employee-profile-modal-edit-button { width: calc(100% - 32px); }
 }

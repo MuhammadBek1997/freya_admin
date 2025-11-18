@@ -326,15 +326,12 @@ const EmployeeChatPage = () => {
     setIsMobileChatOpen(true);
 
     try {
-      // Prefer WebSocket for realtime chat
-      const ok = connectChatWs(userId, 'user');
-      if (!ok) {
-        await fetchMessages(userId);
-      }
-      // Mark as read via WS when possible
-      if (ok) {
-        sendWsMarkRead();
-      } else {
+      // Start WS attempt (may close if chat yet不存在); always load REST messages
+      connectChatWs(userId, 'user');
+      await fetchMessages(userId);
+      // Try WS read-mark; fallback to REST if WS not open
+      const marked = sendWsMarkRead();
+      if (!marked) {
         await markConversationAsRead(userId);
       }
       const count = await getUnreadCount();

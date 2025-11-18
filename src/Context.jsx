@@ -38,7 +38,7 @@ import {
 
 
 // API base URL configuration - Python backend URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://freya-salon-backend-cc373ce6622a.herokuapp.com/api";
 
 // Force a specific salon ID when provided (disabled by default)
 const FORCE_SALON_ID = null;
@@ -2143,6 +2143,8 @@ export const AppProvider = ({ children }) => {
 	const [wsError, setWsError] = useState(null);
 	const wsReceiverRef = useRef({ id: null, type: null });
 	const wsRoomIdRef = useRef(null);
+	const wsReconnectTimerRef = useRef(null);
+	const wsRetryCountRef = useRef(0);
 
 	const buildWsUrl = (receiverId, receiverType) => {
 		// API_BASE_URL points to `.../api`; ws endpoint is `/ws/chat`
@@ -2161,6 +2163,11 @@ export const AppProvider = ({ children }) => {
 		wsRef.current = null;
 		wsRoomIdRef.current = null;
 		wsReceiverRef.current = { id: null, type: null };
+		if (wsReconnectTimerRef.current) {
+			clearTimeout(wsReconnectTimerRef.current);
+			wsReconnectTimerRef.current = null;
+		}
+		wsRetryCountRef.current = 0;
 		setWsStatus('closed');
 		setWsError(null);
 	};
@@ -2193,6 +2200,9 @@ export const AppProvider = ({ children }) => {
 			ws.onopen = () => {
 				setWsStatus('connected');
 				setCurrentConversation(receiverId);
+				wsRetryCountRef.current = 0;
+				// Auto mark read on open
+				try { ws.send(JSON.stringify({ event: 'mark_read' })); } catch {}
 			};
 
 			ws.onmessage = (evt) => {
@@ -2207,6 +2217,22 @@ export const AppProvider = ({ children }) => {
 						const msg = payload?.message;
 						if (msg) {
 							setMessages(prev => [...prev, msg]);
+							// Update conversations last_message/time and unread for this peer
+							const peerId = wsReceiverRef.current?.id;
+							const mineId = user?.id;
+							if (peerId) {
+								setConversations(prev => (Array.isArray(prev) ? prev.map(c => {
+									const cid = c.other_user_id || c.user_id || c.id;
+									if (String(cid) !== String(peerId)) return c;
+									const incoming = String(msg.receiver_id) === String(mineId);
+									return {
+										...c,
+										last_message: msg.message_text || c.last_message,
+										last_message_time: msg.created_at_local || msg.created_at || c.last_message_time,
+										unread_count: incoming ? ((c.unread_count || 0) + 1) : (c.unread_count || 0),
+									};
+								}) : prev));
+							}
 						}
 						wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
 					} else if (ev === 'read') {
@@ -2216,6 +2242,14 @@ export const AppProvider = ({ children }) => {
 							if (String(m.receiver_id) === String(byUserId)) return { ...m, is_read: true };
 							return m;
 						}));
+						// Also zero out unread_count in conversations for this peer
+						const peerId = wsReceiverRef.current?.id;
+						if (peerId) {
+							setConversations(prev => (Array.isArray(prev) ? prev.map(c => {
+								const cid = c.other_user_id || c.user_id || c.id;
+								return String(cid) === String(peerId) ? { ...c, unread_count: 0 } : c;
+							}) : prev));
+						}
 					} else if (ev === 'join') {
 						wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
 					}
@@ -2227,10 +2261,14 @@ export const AppProvider = ({ children }) => {
 			ws.onerror = () => {
 				setWsStatus('error');
 				setWsError('WebSocket error occurred');
+				// schedule reconnect
+				scheduleWsReconnect();
 			};
 
 			ws.onclose = () => {
 				setWsStatus('closed');
+				// schedule reconnect
+				scheduleWsReconnect();
 			};
 			return true;
 		} catch (e) {
@@ -2238,6 +2276,19 @@ export const AppProvider = ({ children }) => {
 			setWsError(e?.message || 'Failed to open WebSocket');
 			return false;
 		}
+	};
+
+	const scheduleWsReconnect = () => {
+		const receiver = wsReceiverRef.current;
+		const role = user?.role;
+		if (!receiver?.id || !role || (role !== 'employee' && role !== 'user')) return;
+		if (wsRetryCountRef.current >= 5) return;
+		if (wsReconnectTimerRef.current) return;
+		wsReconnectTimerRef.current = setTimeout(() => {
+			wsReconnectTimerRef.current = null;
+			wsRetryCountRef.current += 1;
+			connectChatWs(receiver.id, receiver.type || 'user');
+		}, 2000);
 	};
 
 	const sendWsMessage = (messageText, messageType = 'text', fileUrl = null) => {

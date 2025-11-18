@@ -132,7 +132,6 @@ const handleAvatarUpload = async (event) => {
                 color: "white",
                 background: "#9C2BFF",
                 border: "none",
-                fontSize: "1.5vw",
                 fontWeight: "bold"
               }}
             >
