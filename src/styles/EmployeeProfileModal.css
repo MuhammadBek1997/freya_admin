@@ -144,6 +144,11 @@
   box-sizing: border-box;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
+  background-color: #8d2afd;
+}
+.employee-profile-modal-top .employee-profile-modal-close {
+  position: static;
+  margin-left: auto;
 }
 
 .employee-profile-modal-content {

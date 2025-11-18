@@ -144,7 +144,7 @@ const handleAvatarUpload = async (event) => {
               {/* ✅ Avatar bilan container */}
               <div style={{ position: 'relative' }}>
                 <img
-                  src={user?.avatar || user?.profile_image || user?.avatar_url || user?.photo || "/Avatar.svg"}
+                  src={user?.avatar_url || user?.avatar || user?.profile_image || user?.photo || '/images/masterImage.png'}
                   alt="avatar"
                   style={{
                     width: '80px',

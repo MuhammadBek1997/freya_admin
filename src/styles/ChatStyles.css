@@ -45,15 +45,7 @@ body {
   font-size: 24px;
   
 }
-@media screen and (max-width: 768px) {
-  .back-button {
-    display: flex;
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 1000;
-  }
-}
+
 
 /* chatSIDEBAR STYLES */
 .chatSidebar {
@@ -113,7 +105,7 @@ body {
 }
 
 .profile-avatar {
-  width: 4vw;
+  width: 5vw;
   height: 4vw;
   border-radius: 50%;
   object-fit: cover;
@@ -787,7 +779,8 @@ body {
   }
 
   .profile-avatar {
-    width: 4vw;
+    width: 5vw;
+    height: 4vw;
   }
 
   .chat-profile-name {
@@ -816,7 +809,8 @@ body {
   }
 
   .profile-avatar {
-    width: 5vw;
+    width: 6vw;
+    height: 5vw;
   }
 
   .chat-profile-name {
@@ -905,7 +899,7 @@ body {
   }
 
   .profile-avatar {
-    width: 7vw;
+    width: 8vw;
     height: 7vw;
   }
 
@@ -1540,6 +1534,14 @@ body {
 
   ::-webkit-scrollbar {
     width: 0.5vw;
+  }
+
+  .back-button {
+    display: flex;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
   }
 }
 

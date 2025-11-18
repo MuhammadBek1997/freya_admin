@@ -29,6 +29,7 @@ const EmployeeChatPage = () => {
     updateEmployee,
     setUser,
     updateEmployeeAvatar,
+    getEmployeeById,
     ts,
     addSched,
     setAddSched,
@@ -48,6 +49,8 @@ const EmployeeChatPage = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedPageEmployee, setSelectedPageEmployee] = useState('chat');
   const chatBodyRef = useRef(null);
+  const profileRefreshIdRef = useRef(null);
+  const conversationsUserIdRef = useRef(null);
   const [newMessage, setNewMessage] = useState('');
   const imageInputRef = useRef(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -149,10 +152,30 @@ const EmployeeChatPage = () => {
   };
 
   useEffect(() => {
-    if (user && user.role === 'employee') {
-      fetchConversations();
+    if (!user || user.role !== 'employee') return;
+    const eid = user?.employee_id || user?.id;
+    if (!eid) return;
+
+    const hasAvatar = !!(user?.avatar_url || user?.avatar || user?.profile_image || user?.photo);
+    if (!hasAvatar && profileRefreshIdRef.current !== eid) {
+      profileRefreshIdRef.current = eid;
+      (async () => {
+        try {
+          const data = await getEmployeeById(eid);
+          const emp = data?.data || data || {};
+          const url = emp.avatar_url || emp.avatar || emp.profile_image || emp.photo || null;
+          if (url && url !== (user?.avatar_url || user?.avatar || user?.profile_image || user?.photo || '')) {
+            setUser(prev => ({ ...prev, avatar_url: url, avatar: url, profile_image: url }));
+          }
+        } catch (_) {}
+      })();
     }
-  }, [user]);
+
+    if (conversationsUserIdRef.current !== eid) {
+      fetchConversations();
+      conversationsUserIdRef.current = eid;
+    }
+  }, [user?.employee_id, user?.id, user?.role]);
 
   useEffect(() => {
     const loadUnreadCount = async () => {
@@ -539,7 +562,7 @@ const EmployeeChatPage = () => {
             <div className="avatar-logout-wrapper">
               <div className="avatar-wrapper">
                 <img
-                  src={user?.avatar || user?.profile_image || user?.avatar_url || user?.photo || "Avatar.svg"}
+                  src={user?.avatar_url || user?.avatar || user?.profile_image || user?.photo || '/images/masterImage.png'}
                   alt="User"
                   className="profile-avatar"
                 />
