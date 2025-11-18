@@ -2209,33 +2209,46 @@ export const AppProvider = ({ children }) => {
 				try {
 					const payload = JSON.parse(evt.data);
 					const ev = payload?.event || 'message';
-					if (ev === 'history') {
-						const items = Array.isArray(payload?.items) ? payload.items : [];
-						setMessages(items);
-						wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
-					} else if (ev === 'message') {
-						const msg = payload?.message;
-						if (msg) {
-							setMessages(prev => [...prev, msg]);
-							// Update conversations last_message/time and unread for this peer
-							const peerId = wsReceiverRef.current?.id;
-							const mineId = user?.id;
-							if (peerId) {
-								setConversations(prev => (Array.isArray(prev) ? prev.map(c => {
-									const cid = c.other_user_id || c.user_id || c.id;
-									if (String(cid) !== String(peerId)) return c;
-									const incoming = String(msg.receiver_id) === String(mineId);
-									return {
-										...c,
-										last_message: msg.message_text || c.last_message,
-										last_message_time: msg.created_at_local || msg.created_at || c.last_message_time,
-										unread_count: incoming ? ((c.unread_count || 0) + 1) : (c.unread_count || 0),
-									};
-								}) : prev));
-							}
-						}
-						wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
-					} else if (ev === 'read') {
+                    if (ev === 'history') {
+                        const items = Array.isArray(payload?.items) ? payload.items : [];
+                        setMessages(items);
+                        wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
+                    } else if (ev === 'message') {
+                        const msg = payload?.message;
+                        if (msg) {
+                            setMessages(prev => [...prev, msg]);
+                            const mineId = user?.id || user?.employee_id;
+                            const incoming = String(msg?.receiver_id) === String(mineId);
+                            const targetId = incoming ? (msg?.sender_id || msg?.user_id || msg?.senderId) : (msg?.receiver_id);
+                            if (targetId) {
+                                setConversations(prev => {
+                                    const arr = Array.isArray(prev) ? prev : [];
+                                    const idx = arr.findIndex(c => String(c.other_user_id || c.user_id || c.id) === String(targetId));
+                                    if (idx >= 0) {
+                                        const c = arr[idx];
+                                        const updated = {
+                                            ...c,
+                                            last_message: msg.message_text || c.last_message,
+                                            last_message_time: msg.created_at_local || msg.created_at || c.last_message_time,
+                                            unread_count: incoming ? ((c.unread_count || 0) + 1) : (c.unread_count || 0),
+                                        };
+                                        return [...arr.slice(0, idx), updated, ...arr.slice(idx + 1)];
+                                    } else {
+                                        const newConv = {
+                                            other_user_id: targetId,
+                                            other_user_name: msg?.sender_name || 'Unknown User',
+                                            other_user_avatar: msg?.sender_avatar_url || null,
+                                            last_message: msg?.message_text || '',
+                                            last_message_time: msg?.created_at_local || msg?.created_at || new Date().toISOString(),
+                                            unread_count: incoming ? 1 : 0,
+                                        };
+                                        return [newConv, ...arr];
+                                    }
+                                });
+                            }
+                        }
+                        wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
+                    } else if (ev === 'read') {
 						// Mark local messages addressed to current user as read
 						const byUserId = payload?.by_user_id;
 						setMessages(prev => prev.map(m => {

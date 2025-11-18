@@ -199,6 +199,13 @@ const EmployeeChatPage = () => {
   }, []);
 
   useEffect(() => {
+    if (!user || user.role !== 'employee') return;
+    const eid = user?.employee_id || user?.id;
+    if (!eid) return;
+    try { connectChatWs(eid, 'employee'); } catch {}
+  }, [user?.employee_id, user?.id, user?.role]);
+
+  useEffect(() => {
     if (chatBodyRef.current && messages.length > 0) {
       chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
     }
@@ -216,13 +223,17 @@ const EmployeeChatPage = () => {
     }
   }, [addSched, selectedPageEmployee, user]);
 
+  
+
   const fetchGroupedSchedules = async () => {
     setSchedulesLoading(true);
     setSchedulesError(null);
 
     try {
+      const uid = String(user?.id || user?.employee_id || '');
+      const qs = uid ? `?employee_id=${encodeURIComponent(uid)}` : '';
       const response = await fetch(
-        'https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/grouped/by-date',
+        `https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/grouped/by-date${qs}`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -254,7 +265,6 @@ const EmployeeChatPage = () => {
       }
 
       let filteredSchedules = {};
-      const uid = String(user?.id || user?.employee_id || '');
       const onlyEmployee = user.role === 'employee';
       Object.keys(normalized).forEach(date => {
         const list = Array.isArray(normalized[date]) ? normalized[date] : [];
@@ -285,14 +295,13 @@ const EmployeeChatPage = () => {
           'Content-Type': 'application/json',
           ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
         };
-        for (let i = 0; i < 7; i++) {
+        const promises = Array.from({ length: 7 }).map((_, i) => {
           const day = new Date(now);
           day.setDate(now.getDate() + i);
           const dateStr = makeDate(day);
-          try {
-            const resp = await fetch(`https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/mobile/employees/me/schedules/${dateStr}`, { headers });
-            if (resp.ok) {
-              const j = await resp.json();
+          return fetch(`https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/mobile/employees/me/schedules/${dateStr}`, { headers })
+            .then(resp => resp.ok ? resp.json() : null)
+            .then(j => {
               const items = Array.isArray(j?.data) ? j.data : [];
               const converted = items.map(it => {
                 const parts = String(it.time || '').split('-');
@@ -308,14 +317,17 @@ const EmployeeChatPage = () => {
                   is_private: it.is_private,
                 };
               });
-              if (converted.length > 0) {
-                filteredSchedules[dateStr] = converted;
-              }
-            }
-          } catch (e) {
-            const _ = e;
+              return { dateStr, converted };
+            })
+            .catch(() => null);
+        });
+        const results = await Promise.allSettled(promises);
+        results.forEach(r => {
+          const val = r?.value;
+          if (val && Array.isArray(val.converted) && val.converted.length > 0) {
+            filteredSchedules[val.dateStr] = val.converted;
           }
-        }
+        });
       }
 
       setGroupedSchedules(filteredSchedules);
@@ -349,8 +361,9 @@ const EmployeeChatPage = () => {
     setIsMobileChatOpen(true);
 
     try {
-      // Start WS attempt (may close if chat yet不存在); always load REST messages
+      // Open WS room for this conversation to enable realtime
       connectChatWs(userId, 'user');
+      // Load REST history for safety
       await fetchMessages(userId);
       // Try WS read-mark; fallback to REST if WS not open
       const marked = sendWsMarkRead();
@@ -439,6 +452,13 @@ const EmployeeChatPage = () => {
   const handleMobileBack = () => {
     setIsMobileChatOpen(false);
     setSelectedUser(null);
+    try {
+      const eid = user?.employee_id || user?.id;
+      if (user?.role === 'employee' && eid) {
+        // Reconnect to global employee channel to receive new conversations
+        connectChatWs(eid, 'employee');
+      }
+    } catch {}
   };
 
   const formatDisplayDate = (dateString) => {
