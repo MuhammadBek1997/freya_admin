@@ -2147,10 +2147,11 @@ export const AppProvider = ({ children }) => {
 	const wsRetryCountRef = useRef(0);
 
 	const buildWsUrl = (receiverId, receiverType) => {
-		// API_BASE_URL points to `.../api`; ws endpoint is `/ws/chat`
 		const scheme = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
-		const base = API_BASE_URL; // e.g. https://host/api
-		const url = `${scheme}://${base.replace(/^https?:\/\//, '')}/ws/chat?token=${encodeURIComponent(getAuthToken() || '')}&receiver_id=${encodeURIComponent(receiverId)}&receiver_type=${encodeURIComponent(receiverType)}`;
+		const baseHost = API_BASE_URL
+			.replace(/^https?:\/\//, '')
+			.replace(/\/api\/?$/, '');
+		const url = `${scheme}://${baseHost}/ws/chat?token=${encodeURIComponent(getAuthToken() || '')}&receiver_id=${encodeURIComponent(receiverId || '')}&receiver_type=${encodeURIComponent(receiverType || '')}`;
 		return url;
 	};
 
@@ -2186,6 +2187,13 @@ export const AppProvider = ({ children }) => {
 			return false;
 		}
 
+		const token = getAuthToken();
+		if (!token) {
+			setWsStatus('error');
+			setWsError('Missing auth token for WebSocket connection');
+			return false;
+		}
+
 		// Reset previous connection
 		disconnectChatWs();
 		setWsStatus('connecting');
@@ -2203,6 +2211,8 @@ export const AppProvider = ({ children }) => {
 				wsRetryCountRef.current = 0;
 				// Auto mark read on open
 				try { ws.send(JSON.stringify({ event: 'mark_read' })); } catch {}
+				// Request history if backend supports it
+				try { ws.send(JSON.stringify({ event: 'history' })); } catch {}
 			};
 
 			ws.onmessage = (evt) => {
@@ -2309,11 +2319,17 @@ export const AppProvider = ({ children }) => {
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
 			return false;
 		}
+		const isEmployeeSender = user?.role === 'employee';
 		const payload = {
 			event: 'message',
 			message_text: messageText,
 			message_type: messageType,
 			file_url: fileUrl,
+			receiver_id: wsReceiverRef.current?.id || null,
+			receiver_type: wsReceiverRef.current?.type || null,
+			room_id: wsRoomIdRef.current || null,
+			sender_id: isEmployeeSender ? (user?.id || user?.employee_id) : (user?.salon_id || user?.id),
+			sender_type: isEmployeeSender ? 'employee' : 'salon',
 		};
 		try {
 			ws.send(JSON.stringify(payload));

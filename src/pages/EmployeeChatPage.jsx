@@ -382,8 +382,16 @@ const EmployeeChatPage = () => {
     if (!newMessage.trim() || !selectedUser) return;
 
     try {
-      // Ensure WS connected to this conversation, then try WS send with quick retry
       try { connectChatWs(selectedUser.id, 'user'); } catch {}
+      const ensureOpen = async () => {
+        const t0 = Date.now();
+        while (Date.now() - t0 < 3000) {
+          if (wsStatus === 'connected') return true;
+          await new Promise(r => setTimeout(r, 100));
+        }
+        return false;
+      };
+      await ensureOpen();
       const sendWithRetry = async () => {
         const ok1 = sendWsMessage(newMessage.trim(), 'text');
         if (ok1) return true;
@@ -393,7 +401,7 @@ const EmployeeChatPage = () => {
       };
       const sent = await sendWithRetry();
       if (!sent) {
-        throw new Error('WS send failed');
+        await sendMessage(selectedUser.id, newMessage.trim(), 'text');
       }
       setNewMessage('');
     } catch (error) {
@@ -423,6 +431,15 @@ const EmployeeChatPage = () => {
       const url = Array.isArray(urls) ? urls[0] : urls;
       if (!url) throw new Error('Yuklangan rasm URLi topilmadi');
       try { connectChatWs(selectedUser.id, 'user'); } catch {}
+      const ensureOpenImg = async () => {
+        const t0 = Date.now();
+        while (Date.now() - t0 < 3000) {
+          if (wsStatus === 'connected') return true;
+          await new Promise(r => setTimeout(r, 100));
+        }
+        return false;
+      };
+      await ensureOpenImg();
       const sendImageWithRetry = async () => {
         const ok1 = sendWsMessage('', 'image', url);
         if (ok1) return true;
@@ -432,7 +449,7 @@ const EmployeeChatPage = () => {
       };
       const sent = await sendImageWithRetry();
       if (!sent) {
-        throw new Error('WS image send failed');
+        await sendMessage(selectedUser.id, '', 'image', url);
       }
     } catch (err) {
       console.error('Error sending image:', err);
