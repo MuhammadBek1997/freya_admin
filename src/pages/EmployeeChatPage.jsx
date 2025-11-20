@@ -382,8 +382,16 @@ const EmployeeChatPage = () => {
     if (!newMessage.trim() || !selectedUser) return;
 
     try {
-      // Try WS first for realtime delivery
-      const sent = sendWsMessage(newMessage.trim(), 'text');
+      // Ensure WS connected to this conversation, then try WS send with quick retry
+      try { connectChatWs(selectedUser.id, 'user'); } catch {}
+      const sendWithRetry = async () => {
+        const ok1 = sendWsMessage(newMessage.trim(), 'text');
+        if (ok1) return true;
+        await new Promise(r => setTimeout(r, 200));
+        const ok2 = sendWsMessage(newMessage.trim(), 'text');
+        return ok2;
+      };
+      const sent = await sendWithRetry();
       if (!sent) {
         await sendMessage(selectedUser.id, newMessage.trim(), 'text');
       }
@@ -414,7 +422,15 @@ const EmployeeChatPage = () => {
       const urls = await uploadPhotosToServer([file]);
       const url = Array.isArray(urls) ? urls[0] : urls;
       if (!url) throw new Error('Yuklangan rasm URLi topilmadi');
-      const sent = sendWsMessage('', 'image', url);
+      try { connectChatWs(selectedUser.id, 'user'); } catch {}
+      const sendImageWithRetry = async () => {
+        const ok1 = sendWsMessage('', 'image', url);
+        if (ok1) return true;
+        await new Promise(r => setTimeout(r, 200));
+        const ok2 = sendWsMessage('', 'image', url);
+        return ok2;
+      };
+      const sent = await sendImageWithRetry();
       if (!sent) {
         await sendMessage(selectedUser.id, '', 'image', url);
       }
