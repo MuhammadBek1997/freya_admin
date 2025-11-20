@@ -382,11 +382,7 @@ const EmployeeChatPage = () => {
     if (!newMessage.trim() || !selectedUser) return;
 
     try {
-      // Try WS first for realtime delivery
-      const sent = sendWsMessage(newMessage.trim(), 'text');
-      if (!sent) {
-        await sendMessage(selectedUser.id, newMessage.trim(), 'text');
-      }
+      await sendMessage(selectedUser.id, newMessage.trim(), 'text');
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -414,10 +410,7 @@ const EmployeeChatPage = () => {
       const urls = await uploadPhotosToServer([file]);
       const url = Array.isArray(urls) ? urls[0] : urls;
       if (!url) throw new Error('Yuklangan rasm URLi topilmadi');
-      const sent = sendWsMessage('', 'image', url);
-      if (!sent) {
-        await sendMessage(selectedUser.id, '', 'image', url);
-      }
+      await sendMessage(selectedUser.id, '', 'image', url);
     } catch (err) {
       console.error('Error sending image:', err);
       alert(t('messageSendError') || 'Xabar yuborishda xatolik yuz berdi!');
