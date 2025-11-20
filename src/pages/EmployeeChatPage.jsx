@@ -393,7 +393,7 @@ const EmployeeChatPage = () => {
       };
       const sent = await sendWithRetry();
       if (!sent) {
-        await sendMessage(selectedUser.id, newMessage.trim(), 'text');
+        throw new Error('WS send failed');
       }
       setNewMessage('');
     } catch (error) {
@@ -432,7 +432,7 @@ const EmployeeChatPage = () => {
       };
       const sent = await sendImageWithRetry();
       if (!sent) {
-        await sendMessage(selectedUser.id, '', 'image', url);
+        throw new Error('WS image send failed');
       }
     } catch (err) {
       console.error('Error sending image:', err);
