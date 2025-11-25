@@ -38,7 +38,7 @@ import {
 
 
 // API base URL configuration - Python backend URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://freya-salon-backend-cc373ce6622a.herokuapp.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 // Force a specific salon ID when provided (disabled by default)
 const FORCE_SALON_ID = null;
@@ -2143,16 +2143,102 @@ export const AppProvider = ({ children }) => {
 	const [wsError, setWsError] = useState(null);
 	const wsReceiverRef = useRef({ id: null, type: null });
 	const wsRoomIdRef = useRef(null);
+	const currentChatIdRef = useRef(null);
+	const wsHistoryRequestedRef = useRef(false);
+	const wsHistoryHandledRef = useRef(false);
+	const wsLastFetchTsRef = useRef(0);
 	const wsReconnectTimerRef = useRef(null);
 	const wsRetryCountRef = useRef(0);
+	const wsCandidateIdxRef = useRef(0);
+	const wsUrlCandidatesRef = useRef([]);
 
 	const buildWsUrl = (receiverId, receiverType) => {
-		const scheme = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
-		const baseHost = API_BASE_URL
-			.replace(/^https?:\/\//, '')
-			.replace(/\/api\/?$/, '');
-		const url = `${scheme}://${baseHost}/ws/chat?token=${encodeURIComponent(getAuthToken() || '')}&receiver_id=${encodeURIComponent(receiverId || '')}&receiver_type=${encodeURIComponent(receiverType || '')}`;
+		let scheme;
+		let originHost;
+		if (API_BASE_URL.startsWith('http')) {
+			scheme = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
+			const hostWithPath = API_BASE_URL.replace(/^https?:\/\//, '');
+			originHost = hostWithPath.split('/')[0];
+		} else {
+			const loc = typeof window !== 'undefined' ? window.location : null;
+			scheme = loc && String(loc.protocol || '').startsWith('https') ? 'wss' : 'ws';
+			originHost = loc ? loc.host : '';
+		}
+		const url = `${scheme}://${originHost}/api/ws/chat?token=${encodeURIComponent(getAuthToken() || '')}&receiver_id=${encodeURIComponent(receiverId || '')}&receiver_type=${encodeURIComponent(receiverType || '')}`;
+		try { console.log('WS buildUrl', { scheme, originHost, receiverId, receiverType, url }); } catch {}
 		return url;
+	};
+
+	const buildWsUrlCandidates = (receiverId, receiverType) => {
+		let scheme;
+		let originHost;
+		if (API_BASE_URL.startsWith('http')) {
+			scheme = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
+			const hostWithPath = API_BASE_URL.replace(/^https?:\/\//, '');
+			originHost = hostWithPath.split('/')[0];
+		} else {
+			const loc = typeof window !== 'undefined' ? window.location : null;
+			scheme = loc && String(loc.protocol || '').startsWith('https') ? 'wss' : 'ws';
+			originHost = loc ? loc.host : '';
+		}
+		const token = getAuthToken() || '';
+		const receiverIdEncoded = encodeURIComponent(receiverId || '');
+		const receiverTypeEncoded = encodeURIComponent(receiverType || 'user');
+		
+		// Backendchi aytgan format: ws://<host>/api/ws/chat?token=...&receiver_id=...&receiver_type=user
+		const baseUrl = `${scheme}://${originHost}/api/ws/chat`;
+		const queryParams = new URLSearchParams({
+			token: token,
+			receiver_id: receiverIdEncoded,
+			receiver_type: receiverTypeEncoded
+		});
+		
+		return [
+			`${baseUrl}?${queryParams.toString()}`,
+			// Fallback: /ws/chat endpoint
+			`${scheme}://${originHost}/ws/chat?${queryParams.toString()}`
+		];
+	};
+
+	const buildWsUrlCustom = (params = {}) => {
+		let scheme;
+		let originHost;
+		if (API_BASE_URL.startsWith('http')) {
+			scheme = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
+			const hostWithPath = API_BASE_URL.replace(/^https?:\/\//, '');
+			originHost = hostWithPath.split('/')[0];
+		} else {
+			const loc = typeof window !== 'undefined' ? window.location : null;
+			scheme = loc && String(loc.protocol || '').startsWith('https') ? 'wss' : 'ws';
+			originHost = loc ? loc.host : '';
+		}
+		const q = new URLSearchParams({ token: getAuthToken() || '' });
+		Object.entries(params).forEach(([k, v]) => {
+			if (v !== undefined && v !== null) q.set(String(k), String(v));
+		});
+		return `${scheme}://${originHost}/api/ws/chat?${q.toString()}`;
+	};
+
+	const getWsChatInfo = async (params = {}) => {
+		let schemeHttp;
+		let originHost;
+		if (API_BASE_URL.startsWith('http')) {
+			schemeHttp = API_BASE_URL.startsWith('https') ? 'https' : 'http';
+			const hostWithPath = API_BASE_URL.replace(/^https?:\/\//, '');
+			originHost = hostWithPath.split('/')[0];
+		} else {
+			const loc = typeof window !== 'undefined' ? window.location : null;
+			schemeHttp = loc && String(loc.protocol || '').startsWith('https') ? 'https' : 'http';
+			originHost = loc ? loc.host : '';
+		}
+		const q = new URLSearchParams({ token: getAuthToken() || '' });
+		Object.entries(params).forEach(([k, v]) => {
+			if (v !== undefined && v !== null) q.set(String(k), String(v));
+		});
+		const url = `${schemeHttp}://${originHost}/api/ws/chat/info?${q.toString()}`;
+		const resp = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+		if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+		try { return await resp.json(); } catch { return await resp.text(); }
 	};
 
 	const disconnectChatWs = () => {
@@ -2163,6 +2249,8 @@ export const AppProvider = ({ children }) => {
 		} catch { }
 		wsRef.current = null;
 		wsRoomIdRef.current = null;
+		wsHistoryRequestedRef.current = false;
+		wsHistoryHandledRef.current = false;
 		wsReceiverRef.current = { id: null, type: null };
 		if (wsReconnectTimerRef.current) {
 			clearTimeout(wsReconnectTimerRef.current);
@@ -2194,71 +2282,191 @@ export const AppProvider = ({ children }) => {
 			return false;
 		}
 
-		// Reset previous connection
+		// If already connected to this receiver, do not reconnect
+		if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+			const cur = wsReceiverRef.current;
+			if (String(cur?.id) === String(receiverId) && String(cur?.type || 'user') === String(receiverType || 'user')) {
+				return true;
+			}
+		}
+
+		// If connecting to same receiver, let it finish
+		const cur = wsReceiverRef.current;
+		if (wsStatus === 'connecting' && String(cur?.id) === String(receiverId) && String(cur?.type || 'user') === String(receiverType || 'user')) {
+			return true;
+		}
+
+		// Reset previous connection and start fresh
 		disconnectChatWs();
 		setWsStatus('connecting');
 		setWsError(null);
 		wsReceiverRef.current = { id: receiverId, type: receiverType };
-
-		const url = buildWsUrl(receiverId, receiverType);
+		wsHistoryRequestedRef.current = false;
+		wsHistoryHandledRef.current = false;
+		wsUrlCandidatesRef.current = buildWsUrlCandidates(receiverId, receiverType);
+		wsCandidateIdxRef.current = 0;
+		const url = wsUrlCandidatesRef.current[wsCandidateIdxRef.current];
+		try { console.log('WS connecting', { url, receiverId, receiverType, role }); } catch {}
 		try {
 			const ws = new WebSocket(url);
 			wsRef.current = ws;
 
 			ws.onopen = () => {
+				try { console.log('WS open', { url }); } catch {}
 				setWsStatus('connected');
 				setCurrentConversation(receiverId);
 				wsRetryCountRef.current = 0;
-				// Auto mark read on open
-				try { ws.send(JSON.stringify({ event: 'mark_read' })); } catch {}
-				// Request history if backend supports it
-				try { ws.send(JSON.stringify({ event: 'history' })); } catch {}
+				// Auto mark read on open and request history once
+				try { const s = wsRef.current; s && s.send(JSON.stringify({ event: 'mark_read' })); } catch {}
+				try { const s = wsRef.current; s && s.send(JSON.stringify({ event: 'join' })); } catch {}
+				try {
+					if (!wsHistoryRequestedRef.current) {
+						const s = wsRef.current; s && s.send(JSON.stringify({ event: 'history' }));
+						wsHistoryRequestedRef.current = true;
+					}
+				} catch {}
 			};
 
 			ws.onmessage = (evt) => {
 				try {
 					const payload = JSON.parse(evt.data);
 					const ev = payload?.event || 'message';
+					try { 
+						console.log('📨 WS message received', { 
+							event: ev, 
+							room_id: payload?.room_id,
+							hasMessage: !!payload?.message,
+							senderId: payload?.message?.sender_id,
+							receiverId: payload?.message?.receiver_id
+						}); 
+					} catch {}
                     if (ev === 'history') {
-                        const items = Array.isArray(payload?.items) ? payload.items : [];
-                        setMessages(items);
-                        wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
-                    } else if (ev === 'message') {
-                        const msg = payload?.message;
-                        if (msg) {
-                            setMessages(prev => [...prev, msg]);
-                            const mineId = user?.id || user?.employee_id;
-                            const incoming = String(msg?.receiver_id) === String(mineId);
-                            const targetId = incoming ? (msg?.sender_id || msg?.user_id || msg?.senderId) : (msg?.receiver_id);
-                            if (targetId) {
-                                setConversations(prev => {
-                                    const arr = Array.isArray(prev) ? prev : [];
-                                    const idx = arr.findIndex(c => String(c.other_user_id || c.user_id || c.id) === String(targetId));
-                                    if (idx >= 0) {
-                                        const c = arr[idx];
-                                        const updated = {
-                                            ...c,
-                                            last_message: msg.message_text || c.last_message,
-                                            last_message_time: msg.created_at_local || msg.created_at || c.last_message_time,
-                                            unread_count: incoming ? ((c.unread_count || 0) + 1) : (c.unread_count || 0),
-                                        };
-                                        return [...arr.slice(0, idx), updated, ...arr.slice(idx + 1)];
-                                    } else {
-                                        const newConv = {
-                                            other_user_id: targetId,
-                                            other_user_name: msg?.sender_name || 'Unknown User',
-                                            other_user_avatar: msg?.sender_avatar_url || null,
-                                            last_message: msg?.message_text || '',
-                                            last_message_time: msg?.created_at_local || msg?.created_at || new Date().toISOString(),
-                                            unread_count: incoming ? 1 : 0,
-                                        };
-                                        return [newConv, ...arr];
-                                    }
-                                });
-                            }
+                        if (wsHistoryHandledRef.current) {
+                            try { console.log('⚠️ History already handled, skipping...'); } catch {}
+                            return;
                         }
+                        const items = Array.isArray(payload?.items) ? payload.items : [];
+                        const normalized = items.map(m => ({
+                            ...m,
+                            created_at: m?.created_at_local || m?.created_at || m?.createdAt || new Date().toISOString(),
+                            created_at_local: m?.created_at_local || m?.created_at || m?.createdAt || new Date().toISOString(),
+                            message_text: m?.message_text || m?.message || '',
+                        }));
+                        try { console.log('📥 History received:', normalized.length, 'messages'); } catch {}
+                        setMessages(normalized);
+                        wsHistoryHandledRef.current = true;
                         wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
-                    } else if (ev === 'read') {
+                        currentChatIdRef.current = payload?.room_id || currentChatIdRef.current;
+                    } else if (ev === 'message') {
+                        const msg = payload?.message || payload;
+                        if (!msg) {
+                            try { console.warn('⚠️ Empty message payload'); } catch {}
+                            return;
+                        }
+                        
+                        const mineId = String(user?.id || user?.employee_id || '');
+                        const peerId = String(wsReceiverRef.current?.id || '');
+                        const currentRoomId = String(wsRoomIdRef.current || currentChatIdRef.current || '');
+                        const msgRoomId = String(payload?.room_id || '');
+                        const msgSenderId = String(msg?.sender_id || '');
+                        const msgReceiverId = String(msg?.receiver_id || '');
+                        
+                        // Room ID ni yangilash agar mavjud bo'lsa
+                        if (msgRoomId) {
+                            wsRoomIdRef.current = msgRoomId;
+                            currentChatIdRef.current = msgRoomId;
+                        }
+                        
+                        // VAQTINCHA: Barcha xabarlarni qabul qilish (debug uchun)
+                        // Keyinroq tekshiruvni qayta qo'shamiz
+                        try { 
+                            console.log('📨 Processing message', { 
+                                msgSenderId, 
+                                msgReceiverId, 
+                                mineId, 
+                                peerId,
+                                msgRoomId,
+                                currentRoomId,
+                                hasMessage: !!msg,
+                                messageText: msg?.message_text?.substring(0, 50),
+                                fullPayload: payload
+                            }); 
+                        } catch {}
+                        
+                        const createdAt = msg?.created_at_local || msg?.created_at || msg?.createdAt || new Date().toISOString();
+                        const norm = { ...msg, created_at: createdAt, created_at_local: createdAt, message_text: msg?.message_text || msg?.message || '' };
+                        
+                        try { console.log('✅ Normalized message:', { id: norm.id, text: norm.message_text?.substring(0, 50), sender: norm.sender_id, receiver: norm.receiver_id }); } catch {}
+                        setMessages(prev => {
+                            const arr = Array.isArray(prev) ? prev : [];
+                            if (norm?.id) {
+                                const exists = arr.some(m => String(m.id) === String(norm.id));
+                                if (exists) { try { console.log('⚠️ Duplicate message by ID ignored:', norm.id); } catch {} ; return arr; }
+                            }
+                            // mineId va peerId allaqachon yuqorida e'lon qilingan
+                            const dupIdx = arr.findIndex(m => (
+                                (m._isOptimistic && String(m.sender_id) === String(mineId) && String(m.receiver_id) === String(peerId) && m.message_type === norm.message_type && m.message_text === norm.message_text) ||
+                                (m.message_text === norm.message_text && Math.abs(new Date(m.created_at) - new Date(norm.created_at)) < 2000) ||
+                                (norm.message_type === 'image' && m.file_url && norm.file_url && String(m.file_url) === String(norm.file_url))
+                            ));
+                            if (dupIdx >= 0) {
+                                try { console.log('⚠️ Replacing optimistic with real'); } catch {}
+                                const replaced = [...arr];
+                                replaced[dupIdx] = { ...arr[dupIdx], ...norm, _isOptimistic: false };
+                                return replaced;
+                            }
+                            try { console.log('✅ Adding new message to state'); } catch {}
+                            return [...arr, norm];
+                        });
+                        // Throttled resync with server to ensure UI consistency
+                        try {
+                            const nowTs = Date.now();
+                            if (peerId && (nowTs - wsLastFetchTsRef.current > 600)) {
+                                wsLastFetchTsRef.current = nowTs;
+                                fetchMessages(peerId);
+                            }
+                        } catch {}
+							const incoming = String(msg?.receiver_id) === String(mineId);
+							const targetId = incoming ? (msg?.sender_id || msg?.user_id || msg?.senderId) : (msg?.receiver_id);
+							if (targetId) {
+								setConversations(prev => {
+									const arr = Array.isArray(prev) ? prev : [];
+									const idx = arr.findIndex(c => String(c.other_user_id || c.user_id || c.id) === String(targetId));
+									if (idx >= 0) {
+										const c = arr[idx];
+										const updated = {
+											...c,
+											last_message: norm.message_text || c.last_message,
+											last_message_time: norm.created_at || c.last_message_time,
+											unread_count: incoming ? ((c.unread_count || 0) + 1) : (c.unread_count || 0),
+										};
+										return [...arr.slice(0, idx), updated, ...arr.slice(idx + 1)];
+									} else {
+										const newConv = {
+											other_user_id: targetId,
+											other_user_name: norm?.sender_name || 'Unknown User',
+											other_user_avatar: norm?.sender_avatar_url || null,
+											last_message: norm?.message_text || '',
+											last_message_time: norm?.created_at || new Date().toISOString(),
+											unread_count: incoming ? 1 : 0,
+										};
+										return [newConv, ...arr];
+									}
+								});
+							}
+                        wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
+                        }
+                        if (ev === 'notification') {
+                            const peerId = wsReceiverRef.current?.id;
+                            const toEmp = payload?.to_employee_id;
+                            const toUser = payload?.to_user_id;
+                            const pRoomId = payload?.room_id;
+                            const nowTs = Date.now();
+                            if ((String(toUser) === String(peerId) || String(toEmp) === String(user?.employee_id) || (pRoomId && String(pRoomId) === String(wsRoomIdRef.current || currentChatIdRef.current || ''))) && nowTs - wsLastFetchTsRef.current > 800) {
+                                wsLastFetchTsRef.current = nowTs;
+                                try { fetchMessages(peerId); } catch {}
+                            }
+                        } if (ev === 'read') {
 						// Mark local messages addressed to current user as read
 						const byUserId = payload?.by_user_id;
 						setMessages(prev => prev.map(m => {
@@ -2273,25 +2481,167 @@ export const AppProvider = ({ children }) => {
 								return String(cid) === String(peerId) ? { ...c, unread_count: 0 } : c;
 							}) : prev));
 						}
-					} else if (ev === 'join') {
+                    } if (ev === 'join') {
 						wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
+						wsHistoryRequestedRef.current = wsHistoryRequestedRef.current || false;
 					}
 				} catch (e) {
 					// ignore parse errors
 				}
 			};
 
+			ws.onerror = (err) => {
+				// Faqat ochilmagan bo'lsa error holatiga o'tkazish
+				const sErr = wsRef.current;
+				const connected = sErr && sErr.readyState === WebSocket.OPEN;
+				if (!connected) {
+					// Xatolarni faqat birinchi marta yoki muhim bo'lsa log qilish
+					if (wsRetryCountRef.current === 0) {
+						try { 
+							console.error('WS error', { 
+								readyState: sErr?.readyState,
+								url: sErr?.url?.substring(0, 100) + '...' // URL ni qisqartirish
+							}); 
+						} catch {}
+					}
+					setWsStatus('error');
+					setWsError('WebSocket connection failed');
+					// Try next URL candidate if not yet connected
+					const nextIdx = wsCandidateIdxRef.current + 1;
+					const candidates = wsUrlCandidatesRef.current || [];
+					if (nextIdx < candidates.length) {
+						wsCandidateIdxRef.current = nextIdx;
+						try {
+							const nextUrl = candidates[nextIdx];
+							if (wsRetryCountRef.current === 0) {
+								console.warn('WS retry with alternate URL');
+							}
+							const nws = new WebSocket(nextUrl);
+							wsRef.current = nws;
+							// rebind handlers
+							nws.onopen = ws.onopen;
+							nws.onmessage = ws.onmessage;
+							nws.onerror = ws.onerror;
+							nws.onclose = ws.onclose;
+							return;
+						} catch {}
+					}
+					// Reconnect ni faqat bir marta chaqirish
+					if (wsRetryCountRef.current === 0) {
+						scheduleWsReconnect();
+					}
+				}
+			};
+
+			ws.onclose = (evt) => {
+				// Xatolarni faqat birinchi marta yoki muhim bo'lsa log qilish
+				if (wsRetryCountRef.current === 0 || evt?.code === 1000) {
+					try { 
+						console.warn('WS close', { 
+							code: evt?.code, 
+							reason: evt?.reason || '',
+							wasClean: evt?.wasClean
+						}); 
+					} catch {}
+				}
+				setWsStatus('closed');
+				// If closed before connect, try alternate URL once
+				const sClose = wsRef.current;
+				const connected = sClose && sClose.readyState === WebSocket.OPEN;
+				if (!connected) {
+					const nextIdx = wsCandidateIdxRef.current + 1;
+					const candidates = wsUrlCandidatesRef.current || [];
+					if (nextIdx < candidates.length) {
+						wsCandidateIdxRef.current = nextIdx;
+						try {
+							const nextUrl = candidates[nextIdx];
+							if (wsRetryCountRef.current === 0) {
+								console.warn('WS close fallback connect');
+							}
+							const nws = new WebSocket(nextUrl);
+							wsRef.current = nws;
+							nws.onopen = ws.onopen;
+							nws.onmessage = ws.onmessage;
+							nws.onerror = ws.onerror;
+							nws.onclose = ws.onclose;
+							return;
+						} catch {}
+					}
+				}
+				// Reconnect ni faqat bir marta chaqirish (code 1006 - abnormal closure)
+				// Agar code 1000 (normal closure) bo'lsa, reconnect qilmaslik
+				if (evt?.code !== 1000 && wsRetryCountRef.current < 3) {
+					scheduleWsReconnect();
+				}
+			};
+			return true;
+		} catch (e) {
+			try { console.error('WS connect exception', e); } catch {}
+			setWsStatus('error');
+			setWsError(e?.message || 'Failed to open WebSocket');
+			return false;
+		}
+	};
+
+	const isWsOpenFor = (receiverId) => {
+		const ws = wsRef.current;
+		const cur = wsReceiverRef.current;
+		return !!(ws && ws.readyState === WebSocket.OPEN && String(cur?.id) === String(receiverId));
+	};
+
+	const waitWsOpenFor = async (receiverId, receiverType = 'user', timeoutMs = 3000) => {
+		if (!isWsOpenFor(receiverId)) {
+			connectChatWs(receiverId, receiverType);
+		}
+		const start = Date.now();
+		while (Date.now() - start < timeoutMs) {
+			if (isWsOpenFor(receiverId)) return true;
+			await new Promise(r => setTimeout(r, 100));
+		}
+		return isWsOpenFor(receiverId);
+	};
+
+	const connectChatWsCustom = (params = {}) => {
+		const token = getAuthToken();
+		if (!token) {
+			setWsStatus('error');
+			setWsError('Missing auth token for WebSocket connection');
+			return false;
+		}
+		disconnectChatWs();
+		setWsStatus('connecting');
+		setWsError(null);
+		const url = buildWsUrlCustom(params);
+		try {
+			const ws = new WebSocket(url);
+			wsRef.current = ws;
+			ws.onopen = () => {
+				setWsStatus('connected');
+				wsRetryCountRef.current = 0;
+			};
+			ws.onmessage = (evt) => {
+				try {
+					const payload = JSON.parse(evt.data);
+					const ev = payload?.event || 'message';
+					if (ev === 'history') {
+						const items = Array.isArray(payload?.items) ? payload.items : [];
+						setMessages(items);
+						wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
+					} else if (ev === 'message') {
+						const msg = payload?.message || payload;
+						if (msg) setMessages(prev => [...prev, msg]);
+					} else if (ev === 'notification') {
+						// optional: surface notifications
+						// no-op if UI handler is not needed
+					}
+				} catch {}
+			};
 			ws.onerror = () => {
 				setWsStatus('error');
 				setWsError('WebSocket error occurred');
-				// schedule reconnect
-				scheduleWsReconnect();
 			};
-
 			ws.onclose = () => {
 				setWsStatus('closed');
-				// schedule reconnect
-				scheduleWsReconnect();
 			};
 			return true;
 		} catch (e) {
@@ -2305,32 +2655,64 @@ export const AppProvider = ({ children }) => {
 		const receiver = wsReceiverRef.current;
 		const role = user?.role;
 		if (!receiver?.id || !role || (role !== 'employee' && role !== 'user')) return;
-		if (wsRetryCountRef.current >= 5) return;
+		if (wsRetryCountRef.current >= 3) {
+			// 3 marta urinishdan keyin to'xtatish
+			try { console.warn('WS reconnect limit reached, stopping'); } catch {}
+			return;
+		}
 		if (wsReconnectTimerRef.current) return;
 		wsReconnectTimerRef.current = setTimeout(() => {
 			wsReconnectTimerRef.current = null;
 			wsRetryCountRef.current += 1;
-			connectChatWs(receiver.id, receiver.type || 'user');
-		}, 2000);
+			if (wsRetryCountRef.current <= 3) {
+				try { console.log(`WS reconnect attempt ${wsRetryCountRef.current}/3`); } catch {}
+				connectChatWs(receiver.id, receiver.type || 'user');
+			}
+		}, 3000); // 3 soniya kutish
 	};
 
 	const sendWsMessage = (messageText, messageType = 'text', fileUrl = null) => {
 		const ws = wsRef.current;
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
+			try { console.error('❌ WS not open', { readyState: ws?.readyState, messageType }); } catch {}
 			return false;
 		}
-		const isEmployeeSender = user?.role === 'employee';
-		const payload = {
-			event: 'message',
-			message_text: messageText,
+		const payload = fileUrl
+			? { message_type: messageType, file_url: fileUrl }
+			: { message_text: messageText, message_type: messageType };
+		try {
+			try { console.log('📤 WS sending message', { messageType, hasText: !!messageText, hasFile: !!fileUrl }); } catch {}
+			ws.send(JSON.stringify(payload));
+			try { console.log('✅ WS message sent successfully'); } catch {}
+			return true;
+		} catch (e) {
+			try { console.error('❌ WS send exception', e); } catch {}
+			return false;
+		}
+	};
+
+	const appendLocalMessage = (receiverId, messageText, messageType = 'text', fileUrl = null) => {
+		const mineId = user?.id || user?.employee_id;
+		const now = new Date().toISOString();
+		const local = {
+			id: `local-${Date.now()}`,
+			sender_id: mineId,
+			sender_type: 'employee',
+			receiver_id: receiverId,
+			receiver_type: 'user',
+			message_text: messageText || '',
 			message_type: messageType,
-			file_url: fileUrl,
-			receiver_id: wsReceiverRef.current?.id || null,
-			receiver_type: wsReceiverRef.current?.type || null,
-			room_id: wsRoomIdRef.current || null,
-			sender_id: isEmployeeSender ? (user?.id || user?.employee_id) : (user?.salon_id || user?.id),
-			sender_type: isEmployeeSender ? 'employee' : 'salon',
+			file_url: fileUrl || null,
+			is_read: false,
+			created_at: now,
+			_isOptimistic: true,
 		};
+		setMessages(prev => [...(Array.isArray(prev) ? prev : []), local]);
+	};
+
+	const sendWsCustom = (payload = {}) => {
+		const ws = wsRef.current;
+		if (!ws || ws.readyState !== WebSocket.OPEN) return false;
 		try {
 			ws.send(JSON.stringify(payload));
 			return true;
@@ -2450,6 +2832,12 @@ export const AppProvider = ({ children }) => {
 			return;
 		}
 
+		// YANGI: Agar WS ochiq va history yuklangan bo'lsa, skip qilish
+		if (isWsOpenFor(userId) && wsHistoryHandledRef.current) {
+			try { console.log('✅ WS already loaded history, skipping REST API call'); } catch {}
+			return;
+		}
+
 		setMessagesLoading(true);
 		setMessagesError(null);
 
@@ -2459,8 +2847,10 @@ export const AppProvider = ({ children }) => {
 			console.log('📤 Fetching messages for user:', userId);
 
 			const isEmployee = user.role === 'employee';
-			const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/conversation/${userId}`, {
+			const ts = Date.now();
+			const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/conversation/${userId}?ts=${ts}`, {
 				method: 'GET',
+				cache: 'no-store',
 				headers: {
 					'Authorization': `Bearer ${token}`,
 					'Content-Type': 'application/json',
@@ -2474,9 +2864,32 @@ export const AppProvider = ({ children }) => {
 				console.log('✅ Messages fetched:', data);
 
 				const messagesList = data.data?.messages || data.messages || data.data || data || [];
+				currentChatIdRef.current = data.data?.chat_id || data.chat_id || currentChatIdRef.current;
 				console.log('📊 Messages list length:', messagesList.length);
 
-				setMessages(messagesList);
+                const normalized = (Array.isArray(messagesList) ? messagesList : []).map(m => ({
+                    ...m,
+                    created_at: m?.created_at_local || m?.created_at || m?.createdAt || new Date().toISOString(),
+                    created_at_local: m?.created_at_local || m?.created_at || m?.createdAt || new Date().toISOString(),
+                    message_text: m?.message_text || m?.message || '',
+                }));
+				try { console.log('📥 REST API loaded:', normalized.length, 'messages'); } catch {}
+				if (isWsOpenFor(userId)) {
+					try { console.log('🔄 Merging with existing WS messages'); } catch {}
+					setMessages(prev => {
+						const combined = [...(Array.isArray(prev) ? prev : []), ...normalized];
+						const seen = new Set();
+						const unique = [];
+						for (const msg of combined) {
+							const key = msg?.id || `${msg?.sender_id}-${msg?.receiver_id}-${msg?.message_text}-${msg?.created_at}`;
+							if (!seen.has(key)) { seen.add(key); unique.push(msg); }
+						}
+						return unique;
+					});
+				} else {
+					try { console.log('📝 Setting messages from REST API'); } catch {}
+					setMessages(normalized);
+				}
 				setCurrentConversation(userId);
 			} else {
 				const contentType = response.headers.get('content-type');
@@ -4477,9 +4890,9 @@ export const AppProvider = ({ children }) => {
 			// Chat state va funksiyalari
 			conversations, conversationsLoading, conversationsError, fetchConversations,
 			currentConversation, setCurrentConversation,
-			messages, messagesLoading, messagesError, fetchMessages, sendMessage, getUnreadCount, markMessagesAsRead, markConversationAsRead,
+			messages, setMessages, messagesLoading, messagesError, fetchMessages, sendMessage, getUnreadCount, markMessagesAsRead, markConversationAsRead,
 			// WebSocket chat
-			wsStatus, wsError, connectChatWs, disconnectChatWs, sendWsMessage, sendWsMarkRead,
+			wsStatus, wsError, connectChatWs, connectChatWsCustom, disconnectChatWs, isWsOpenFor, waitWsOpenFor, sendWsMessage, appendLocalMessage, sendWsCustom, sendWsMarkRead, getWsChatInfo,
 			// Salons state va funksiyalari
 			salons, salonsLoading, salonsError, fetchSalons, updateSalon,
 			// Salon rasmlarini yuklash va o'chirish funksiyalari

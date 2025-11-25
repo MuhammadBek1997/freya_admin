@@ -3,6 +3,7 @@ import '../styles/ChatStyles.css'
 import '../styles/AdminChatOverrides.css'
 import i18next from 'i18next';
 import { UseGlobalContext, getAuthToken } from '../Context';
+import { scheduleGroupedUrl, mobileEmployeesMeSchedulesUrl } from '../apiUrls';
 import AddScheduleModal from '../components/AddScheduleModal';
 import BookScheduleModal from '../components/BookScheduleModal';
 import EmployeeProfileModal from '../components/EmployeeProfileModal';
@@ -16,6 +17,7 @@ const EmployeeChatPage = () => {
     conversationsError,
     fetchConversations,
     messages,
+    setMessages,
     messagesLoading,
     messagesError,
     fetchMessages,
@@ -38,6 +40,8 @@ const EmployeeChatPage = () => {
     disconnectChatWs,
     sendWsMessage,
     sendWsMarkRead,
+    waitWsOpenFor,
+    appendLocalMessage,
   } = UseGlobalContext();
 
   const handleBack = () => {
@@ -199,15 +203,17 @@ const EmployeeChatPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!user || user.role !== 'employee') return;
-    const eid = user?.employee_id || user?.id;
-    if (!eid) return;
-    try { connectChatWs(eid, 'employee'); } catch {}
+    // no global employee WS connection
   }, [user?.employee_id, user?.id, user?.role]);
 
   useEffect(() => {
     if (chatBodyRef.current && messages.length > 0) {
-      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+      requestAnimationFrame(() => {
+        if (chatBodyRef.current) {
+          chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+          try { console.log('📜 Scrolled to bottom'); } catch {}
+        }
+      });
     }
   }, [messages]);
 
@@ -233,7 +239,7 @@ const EmployeeChatPage = () => {
       const uid = String(user?.id || user?.employee_id || '');
       const qs = uid ? `?employee_id=${encodeURIComponent(uid)}` : '';
       const response = await fetch(
-        `https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/grouped/by-date${qs}`,
+        `${scheduleGroupedUrl}${qs}`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -299,7 +305,7 @@ const EmployeeChatPage = () => {
           const day = new Date(now);
           day.setDate(now.getDate() + i);
           const dateStr = makeDate(day);
-          return fetch(`https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/mobile/employees/me/schedules/${dateStr}`, { headers })
+          return fetch(`${mobileEmployeesMeSchedulesUrl}/${dateStr}`, { headers })
             .then(resp => resp.ok ? resp.json() : null)
             .then(j => {
               const items = Array.isArray(j?.data) ? j.data : [];
@@ -361,31 +367,134 @@ const EmployeeChatPage = () => {
     setIsMobileChatOpen(true);
 
     try {
-      // Open WS room for this conversation to enable realtime
-      connectChatWs(userId, 'user');
-      // Load REST history for safety
-      await fetchMessages(userId);
-      // Try WS read-mark; fallback to REST if WS not open
-      const marked = sendWsMarkRead();
-      if (!marked) {
+      console.log('📞 Opening conversation with user:', userId);
+      
+      // 1. WS ulanishni ochish
+      const connected = connectChatWs(userId, 'user');
+      
+      if (connected) {
+        // 2. WS ochilguncha kutish
+        const wsOpened = await waitWsOpenFor(userId, 'user', 3000);
+        
+        if (wsOpened) {
+          console.log('✅ WS opened, history will be loaded via WS');
+          // ❌ fetchMessages ni CHAQIRMASLIK! WS history avtomatik keladi
+          
+          // 3. Mark as read
+          const marked = sendWsMarkRead();
+          if (!marked) {
+            await markConversationAsRead(userId);
+          }
+        } else {
+          // WS ochilmasa, fallback: REST API
+          console.warn('⚠️ WS failed to open, falling back to REST API');
+          await fetchMessages(userId);
+          await markConversationAsRead(userId);
+        }
+      } else {
+        // WS ulanish bo'lmasa, REST API
+        console.warn('⚠️ WS connection failed, using REST API');
+        await fetchMessages(userId);
         await markConversationAsRead(userId);
       }
+      
+      // 4. Unread count yangilash
       const count = await getUnreadCount();
       setUnreadCount(count);
+      
     } catch (error) {
-      console.error('Error loading conversation:', error);
+      console.error('❌ Error loading conversation:', error);
+      // Fallback: REST API
+      try {
+        await fetchMessages(userId);
+      } catch (e) {
+        console.error('❌ Failed to load messages:', e);
+      }
     }
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedUser) return;
+    
+    // Input tozalash va tekshirish
+    const trimmedMessage = newMessage.trim();
+    if (!trimmedMessage || trimmedMessage.length === 0) {
+      console.warn('⚠️ Empty message, skipping');
+      return;
+    }
+    
+    if (!selectedUser || !selectedUser.id) {
+      console.warn('⚠️ No selected user, skipping');
+      return;
+    }
+
+    const messageText = trimmedMessage;
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    
+    // Optimistic UI: darhol ko'rsatish
+    const optimisticMessage = {
+      id: tempId,
+      sender_id: user?.id || user?.employee_id,
+      sender_type: 'employee',
+      receiver_id: selectedUser.id,
+      receiver_type: 'user',
+      message_text: messageText,
+      message_type: 'text',
+      is_read: false,
+      created_at: new Date().toISOString(),
+      _isOptimistic: true // Optimistic flag
+    };
 
     try {
-      await sendMessage(selectedUser.id, newMessage.trim(), 'text');
-      setNewMessage('');
+      // 1. Darhol UI ga qo'shish va input tozalash
+      setMessages(prev => [...(Array.isArray(prev) ? prev : []), optimisticMessage]);
+      setNewMessage(''); // Input tozalash
+      
+      console.log('📤 Sending message via WS...', { messageText, receiverId: selectedUser.id });
+      
+      // 2. WS ochilganligini ta'minlash
+      const wsOpened = await waitWsOpenFor(selectedUser.id, 'user', 5000);
+      
+      if (!wsOpened) {
+        console.error('❌ WS failed to open');
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        alert(t('messageSendError') || 'Xabar yuborishda xatolik: WebSocket ulanmadi!');
+        return;
+      }
+      
+      // 3. WS orqali yuborish (retry bilan)
+      const sendWithRetry = async (retries = 3) => {
+        for (let i = 0; i <= retries; i++) {
+          const sent = sendWsMessage(messageText, 'text');
+          if (sent) {
+            console.log('✅ Message sent via WS');
+            return true;
+          }
+          if (i < retries) {
+            console.warn(`⚠️ WS send failed, retry ${i + 1}/${retries}`);
+            await new Promise(r => setTimeout(r, 500));
+          }
+        }
+        return false;
+      };
+      
+      const sent = await sendWithRetry();
+      
+      if (!sent) {
+        // Yuborilmasa optimistic xabarni o'chirish
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        throw new Error('WS send failed after retries');
+      }
+      
+      // Backend echo xabar kelganda optimistic xabar o'rniga qo'yiladi
+      // (Context.jsx dagi onmessage handler dublikatni tekshiradi)
+      
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('❌ Error sending message:', error);
+      
+      // Optimistic xabarni o'chirish
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      
       alert(t('messageSendError') || 'Xabar yuborishda xatolik yuz berdi!');
     }
   };
@@ -410,7 +519,40 @@ const EmployeeChatPage = () => {
       const urls = await uploadPhotosToServer([file]);
       const url = Array.isArray(urls) ? urls[0] : urls;
       if (!url) throw new Error('Yuklangan rasm URLi topilmadi');
-      await sendMessage(selectedUser.id, '', 'image', url);
+      await waitWsOpenFor(selectedUser.id, 'user', 3000);
+      
+      const tempId = `temp-img-${Date.now()}-${Math.random()}`;
+      const optimisticImage = {
+        id: tempId,
+        sender_id: user?.id || user?.employee_id,
+        sender_type: 'employee',
+        receiver_id: selectedUser.id,
+        receiver_type: 'user',
+        message_text: '',
+        message_type: 'image',
+        file_url: url,
+        is_read: false,
+        created_at: new Date().toISOString(),
+        _isOptimistic: true
+      };
+      
+      // Optimistic UI: darhol ko'rsatish
+      setMessages(prev => [...(Array.isArray(prev) ? prev : []), optimisticImage]);
+      
+      const sendImageWithRetry = async () => {
+        const ok1 = sendWsMessage('', 'image', url);
+        if (ok1) return true;
+        await new Promise(r => setTimeout(r, 200));
+        const ok2 = sendWsMessage('', 'image', url);
+        return ok2;
+      };
+      const sent = await sendImageWithRetry();
+      if (!sent) {
+        // Yuborilmasa optimistic xabarni o'chirish
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        throw new Error('WS image send failed');
+      }
+      // Backend echo kelganda optimistic xabar almashtiriladi
     } catch (err) {
       console.error('Error sending image:', err);
       alert(t('messageSendError') || 'Xabar yuborishda xatolik yuz berdi!');
@@ -445,13 +587,7 @@ const EmployeeChatPage = () => {
   const handleMobileBack = () => {
     setIsMobileChatOpen(false);
     setSelectedUser(null);
-    try {
-      const eid = user?.employee_id || user?.id;
-      if (user?.role === 'employee' && eid) {
-        // Reconnect to global employee channel to receive new conversations
-        connectChatWs(eid, 'employee');
-      }
-    } catch {}
+    try { disconnectChatWs(); } catch {}
   };
 
   const formatDisplayDate = (dateString) => {
@@ -771,26 +907,7 @@ const EmployeeChatPage = () => {
                 </div>
 
                 <div className="chat-body" ref={chatBodyRef}>
-                  {messagesLoading ? (
-                    <div style={{
-                      padding: '20px',
-                      textAlign: 'center',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      flexDirection: 'column',
-                      gap: '1vw',
-                      minHeight: '50vh'
-                    }}>
-                      <div className="loading-spinner" style={{
-                        border: "3px solid #f3f3f3",
-                        borderTop: "3px solid #9C2BFF",
-                      }}></div>
-                      <p style={{ color: "#A8A8B3" }}>
-                        {t('messagesLoading') || 'Xabarlar yuklanmoqda...'}
-                      </p>
-                    </div>
-                  ) : messagesError ? (
+                  {messagesError ? (
                     <div style={{
                       padding: '20px',
                       textAlign: 'center',
@@ -828,10 +945,33 @@ const EmployeeChatPage = () => {
                     </div>
                   ) : (
                     <div style={{ position: "relative" }}>
+                      {messagesLoading && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '10px',
+                          right: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          <div className="loading-spinner" style={{
+                            width: '16px',
+                            height: '16px',
+                            border: "3px solid #f3f3f3",
+                            borderTop: "3px solid #9C2BFF",
+                            borderRadius: '50%'
+                          }}></div>
+                          <span style={{ color: "#A8A8B3", fontSize: '12px' }}>{t('loading') || 'Yuklanmoqda...'}</span>
+                        </div>
+                      )}
                       {(() => {
                         const groupedMessages = {};
-                        messages.forEach(message => {
-                          const messageDate = new Date(message.created_at);
+                        const uid = selectedUser?.id;
+                        const visibleMessages = Array.isArray(messages)
+                          ? messages.filter(m => !uid || String(m.sender_id) === String(uid) || String(m.receiver_id) === String(uid))
+                          : [];
+                        visibleMessages.forEach(message => {
+                          const messageDate = new Date(message.created_at_local || message.created_at);
                           const dateKey = messageDate.toDateString();
                           if (!groupedMessages[dateKey]) {
                             groupedMessages[dateKey] = [];
@@ -861,7 +1001,7 @@ const EmployeeChatPage = () => {
                           .sort(([a], [b]) => new Date(a) - new Date(b))
                           .map(([dateKey, dayMessages]) => {
                             const sortedMessages = dayMessages.sort((a, b) =>
-                              new Date(a.created_at) - new Date(b.created_at)
+                              new Date(a.created_at_local || a.created_at) - new Date(b.created_at_local || b.created_at)
                             );
 
                             return (
@@ -884,15 +1024,15 @@ const EmployeeChatPage = () => {
                                           />
                                         ) : (
                                           <p className={isMyMessage ? 'message-send-text' : 'message-receive-text'}>
-                                            {message.message_text}
+                                            {message.message_text || message.message}
                                           </p>
                                         )}
-                                        <span className={isMyMessage ? 'message-time-sent' : 'message-time'}>
-                                          {new Date(message.created_at).toLocaleTimeString('uz-UZ', {
+                                          <span className={isMyMessage ? 'message-time-sent' : 'message-time'}>
+                                          {new Date(message.created_at_local || message.created_at).toLocaleTimeString('uz-UZ', {
                                             hour: '2-digit',
                                             minute: '2-digit'
                                           })}
-                                        </span>
+                                          </span>
                                       </div>
                                     </div>
                                   );

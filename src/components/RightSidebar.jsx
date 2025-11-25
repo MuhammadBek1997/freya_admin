@@ -1,4 +1,5 @@
 import { UseGlobalContext } from '../Context';
+import { schedulesUrl } from '../apiUrls';
 import { useState, useEffect } from 'react';
 
 const RightSidebar = () => {
@@ -28,7 +29,7 @@ const RightSidebar = () => {
             setScheduleLoading(true);
             try {
                 const response = await fetch(
-                    `https://freya-salon-backend-cc373ce6622a.herokuapp.com/api/schedules/${selectedElement.schedule_id}`,
+                    `${schedulesUrl}/${selectedElement.schedule_id}`,
                     {
                         method: 'GET',
                         headers: {
