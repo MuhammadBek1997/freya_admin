@@ -38,7 +38,14 @@ import {
 
 
 // API base URL configuration - Python backend URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.freyapp.uz/api";
+const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.freyapp.uz/api";
+let API_BASE_URL = RAW_API_BASE_URL;
+try {
+  const isHttpsPage = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
+  if (isHttpsPage && RAW_API_BASE_URL.startsWith('http://')) {
+    API_BASE_URL = RAW_API_BASE_URL.replace(/^http:\/\//, 'https://');
+  }
+} catch {}
 
 // Force a specific salon ID when provided (disabled by default)
 const FORCE_SALON_ID = null;
