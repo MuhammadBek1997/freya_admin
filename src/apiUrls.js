@@ -1,5 +1,5 @@
 // Base URL: uses env var in dev/prod; falls back to relative '/api' for dev proxy
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.freyapp.uz/api";
 
 // Authentication endpoints
 export const authUrl         = `${BASE_URL}/auth`;
