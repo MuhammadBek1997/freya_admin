@@ -67,6 +67,9 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
     setLoading(true);
     setError('');
     try {
+      if (!user || user.role !== 'admin') {
+        throw new Error(t('errors.onlyAdminCanCreate', { defaultValue: 'Faqat admin xodim qo‘shishi mumkin' }));
+      }
       if (!user?.salon_id) {
         throw new Error(t('errors.salonIdMissing', { defaultValue: 'Salon ID topilmadi. Iltimos, qaytadan login qiling.' }));
       }
@@ -227,7 +230,7 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
                 <button type="button" onClick={handleClose} className="cancel-btn" disabled={loading}>
                   {t('cancel')}
                 </button>
-                <button type="submit" className="submit-btn" disabled={loading || isSubmitting}>
+                <button type="submit" className="submit-btn" disabled={loading || isSubmitting || !user || user.role !== 'admin'}>
                   {loading ? t('saving', { defaultValue: 'Saqlanmoqda...' }) : t('employAddBtn')}
                 </button>
               </div>

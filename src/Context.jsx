@@ -39,13 +39,7 @@ import {
 
 // API base URL configuration - Python backend URL
 const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.freyapp.uz/api";
-let API_BASE_URL = RAW_API_BASE_URL;
-try {
-  const isHttpsPage = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
-  if (isHttpsPage && RAW_API_BASE_URL.startsWith('http://')) {
-    API_BASE_URL = RAW_API_BASE_URL.replace(/^http:\/\//, 'https://');
-  }
-} catch {}
+let API_BASE_URL = RAW_API_BASE_URL.replace(/^http:\/\//, 'https://');
 
 // Force a specific salon ID when provided (disabled by default)
 const FORCE_SALON_ID = null;
@@ -3131,20 +3125,21 @@ export const AppProvider = ({ children }) => {
 			// UUID formatni tekshirish (backend UUID talab qiladi)
 			const isValidUUID = (v) => typeof v === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v);
 
-			// Try multiple URL variants to handle different backend routes, faqat ID to‘g‘ri bo‘lsa
+			// Try multiple URL variants to handle different backend routes; prioritize query variant first
 			const urlVariants = isValidUUID(idToUse)
 				? [
+					`${employeesUrl}?salon_id=${idToUse}&page=1&limit=100`,
 					`${employeesUrl}/salon/${idToUse}?page=1&limit=100`,
 					`${employeesUrl}/salon?id=${idToUse}&page=1&limit=100`,
-					`${employeesUrl}?salon_id=${idToUse}&page=1&limit=100`,
 				]
 				: [
-					// ID yo‘q yoki noto‘g‘ri — umumiy ro‘yxatni olib, keyin UI’da filtr yoki kontekstdan foydalanamiz
 					`${employeesUrl}?page=1&limit=100`,
 				];
 
 			let success = false;
-			for (const url of urlVariants) {
+			let lastErrorMessage = '';
+			for (let i = 0; i < urlVariants.length; i++) {
+				const url = urlVariants[i];
 				console.log('Fetching employees from:', url);
 				const response = await fetch(url, { method: 'GET', headers });
 
@@ -3152,22 +3147,20 @@ export const AppProvider = ({ children }) => {
 					const responseData = await response.json();
 					console.log('Employees response:', responseData);
 
-                    let items = responseData?.data ?? responseData ?? [];
-                    if (idToUse) {
-                        const target = String(idToUse);
-                        items = (Array.isArray(items) ? items : []).filter(emp => {
-                            const sid = emp?.salon_id ?? emp?.salonId ?? (emp?.salon && emp.salon.id);
-                            return sid && String(sid) === target;
-                        });
-                    }
-                    setEmployees(items);
-
+					let items = responseData?.data ?? responseData ?? [];
+					if (idToUse) {
+						const target = String(idToUse);
+						items = (Array.isArray(items) ? items : []).filter(emp => {
+							const sid = emp?.salon_id ?? emp?.salonId ?? (emp?.salon && emp.salon.id);
+							return sid && String(sid) === target;
+						});
+					}
+					setEmployees(items);
 					console.log('Employees loaded:', items.length);
 					success = true;
 					break;
 				}
 
-				// Gracefully ignore 404 Topilmadi and try next variant
 				if (response.status === 404) {
 					let errJson = {};
 					try { errJson = await response.json(); } catch { }
@@ -3175,23 +3168,26 @@ export const AppProvider = ({ children }) => {
 					continue;
 				}
 
-				// Other errors: capture detail and stop
 				let errorData = {};
 				try { errorData = await response.json(); } catch { }
 				const detailText = Array.isArray(errorData?.detail)
 					? errorData.detail.map(d => (typeof d === 'string' ? d : (d?.msg || d?.message || JSON.stringify(d)))).join('; ')
 					: (typeof errorData?.detail === 'string' ? errorData.detail : (errorData?.detail ? JSON.stringify(errorData.detail) : ''));
-				const msg = errorData?.message || errorData?.error || detailText || 'Failed to fetch employees';
-				console.error('Error response:', { status: response.status, error: msg, raw: errorData });
-				throw new Error(msg);
+				lastErrorMessage = errorData?.message || errorData?.error || detailText || `HTTP ${response.status}`;
+				console.error('Employees endpoint error, trying next variant:', { status: response.status, error: lastErrorMessage });
+				// Continue to next variant instead of throwing immediately
 			}
 
 			if (!success) {
-				// No variant succeeded; treat as empty list rather than hard error
 				setEmployees([]);
-
-				setEmployeesError(null);
-				console.warn('No employees found for salon or endpoint; returned empty list.');
+				// If we had an error message, surface it; otherwise keep silent
+				if (lastErrorMessage) {
+					setEmployeesError(lastErrorMessage);
+					console.warn('Employees fetch failed on all variants:', lastErrorMessage);
+				} else {
+					setEmployeesError(null);
+					console.warn('No employees found for salon or endpoint; returned empty list.');
+				}
 			}
 		} catch (error) {
 			console.error('Error fetching employees:', error);
