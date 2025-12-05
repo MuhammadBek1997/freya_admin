@@ -3276,14 +3276,10 @@ export const AppProvider = ({ children }) => {
 			const data = await response.json();
 			console.log('✅ Xodim yaratildi:', data);
 
-			// State'ni yangilash
-			const newEmployee = data?.data || data;
-			setEmployees(prev => [...prev, newEmployee]);
-
-				// Ro'yxatni qayta yuklash — aniq salon bo'yicha
-				try {
-					await fetchEmployees(salonId);
-				} catch {}
+			// Ro'yxatni faqat backenddan qayta yuklaymiz — optimistik qo'shish yo'q
+			try {
+				await fetchEmployees(salonId);
+			} catch {}
 
 			return data;
 		} catch (error) {
