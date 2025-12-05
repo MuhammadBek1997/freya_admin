@@ -166,10 +166,12 @@ const Employees = () => {
                 <img src="/images/employSendWait.png" alt="" />
                 {t('employSendWait')}
               </button>
-              <button className="employ-filter-add" onClick={() => setShowAddEmployeeModal(true)}>
-                <img src="/images/+.png" alt="" />
-                {t('employAddBtn')}
-              </button>
+              {user && user.role === 'admin' && (
+                <button className="employ-filter-add" onClick={() => setShowAddEmployeeModal(true)}>
+                  <img src="/images/+.png" alt="" />
+                  {t('employAddBtn')}
+                </button>
+              )}
             </>
           )}
         </div>
