@@ -3280,8 +3280,10 @@ export const AppProvider = ({ children }) => {
 			const newEmployee = data?.data || data;
 			setEmployees(prev => [...prev, newEmployee]);
 
-			// Ro'yxatni qayta yuklash
-			await fetchEmployees();
+				// Ro'yxatni qayta yuklash — aniq salon bo'yicha
+				try {
+					await fetchEmployees(salonId);
+				} catch {}
 
 			return data;
 		} catch (error) {

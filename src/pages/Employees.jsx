@@ -237,7 +237,7 @@ const Employees = () => {
           onClose={() => setShowAddEmployeeModal(false)}
           onEmployeeAdded={() => {
             setShowAddEmployeeModal(false);
-            fetchEmployees();
+            fetchEmployees(user?.salon_id);
           }}
         />
       )}
