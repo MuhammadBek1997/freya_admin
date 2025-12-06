@@ -2744,8 +2744,12 @@ export const AppProvider = ({ children }) => {
 	const sendWsMessage = (messageText, messageType = 'text', fileUrl = null) => {
 		const ws = wsRef.current;
 		if (!ws || ws.readyState !== WebSocket.OPEN) {
-			try { console.error('❌ WS not open', { readyState: ws?.readyState, messageType }); } catch {}
-			return false;
+			const receiverId = wsReceiverRef.current?.id;
+			if (!receiverId) { try { console.error('❌ WS not open and no receiver'); } catch {} ; return false; }
+			appendLocalMessage(receiverId, messageText, messageType, fileUrl);
+			try { sendMessage(receiverId, messageText, messageType, fileUrl).catch(() => {}); } catch {}
+			try { setTimeout(() => { try { fetchMessages(receiverId); } catch {} }, 500); } catch {}
+			return true;
 		}
 		const payload = fileUrl
 			? { message_type: messageType, file_url: fileUrl }
@@ -2763,11 +2767,12 @@ export const AppProvider = ({ children }) => {
 
 	const appendLocalMessage = (receiverId, messageText, messageType = 'text', fileUrl = null) => {
 		const mineId = user?.id || user?.employee_id;
+		const sType = user?.role === 'employee' ? 'employee' : 'salon';
 		const now = new Date().toISOString();
 		const local = {
 			id: `local-${Date.now()}`,
 			sender_id: mineId,
-			sender_type: 'employee',
+			sender_type: sType,
 			receiver_id: receiverId,
 			receiver_type: 'user',
 			message_text: messageText || '',
