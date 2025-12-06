@@ -1250,6 +1250,16 @@ export const AppProvider = ({ children }) => {
 					errorMessage = errorText || errorMessage;
 				}
 
+				// Auto-handle auth loss: if backend says Not authenticated, clear token and require re-login
+				if (response.status === 403 && /Not authenticated/i.test(String(errorMessage))) {
+					try {
+						localStorage.removeItem('authToken');
+						localStorage.removeItem('userData');
+					} catch {}
+					setUser(null);
+					setIsAuthenticated(false);
+					throw new Error('Tizimga kirish talab etiladi. Iltimos, qayta login qiling.');
+				}
 				throw new Error(errorMessage);
 			}
 
