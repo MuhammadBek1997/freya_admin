@@ -3217,8 +3217,37 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Salon ID topilmadi');
 			}
 
+			// Preflight: check duplicates within current salon to guide user
+			let existing = [];
+			try {
+				const resp = await fetch(`${employeesUrl}?salon_id=${salonId}&page=1&limit=1000`, {
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						...(token ? { Authorization: `Bearer ${token}` } : {})
+					}
+				});
+				if (resp.ok) {
+					const data = await resp.json();
+					existing = data?.data || [];
+				}
+			} catch {}
+
+			const dupPhone = existing.find(e => e?.phone && e.phone === employeeData.employee_phone);
+			const dupEmail = existing.find(e => e?.email && e.email === employeeData.employee_email);
+			const dupUsername = existing.find(e => e?.username && e.username === employeeData.username);
+			if (dupPhone || dupEmail || dupUsername) {
+				let msg = "Bu foydalanuvchi allaqachon ro'yxatdan o'tgan";
+				const parts = [];
+				if (dupPhone) parts.push('Telefon');
+				if (dupEmail) parts.push('Email');
+				if (dupUsername) parts.push('Username');
+				if (parts.length) msg = `${msg}: ${parts.join(', ')}`;
+				throw new Error(msg);
+			}
+
 			// Backend kutgan formatda data tayyorlash
-			const dataToSend = {
+			let dataToSend = {
 				salon_id: salonId,
 				employee_name: employeeData.employee_name,
 				employee_phone: employeeData.employee_phone,
@@ -3234,7 +3263,7 @@ export const AppProvider = ({ children }) => {
 			console.log('📤 Yuborilayotgan ma\'lumot:', dataToSend);
 			console.log('🔗 URL:', employeesUrl);
 
-			const response = await fetch(employeesUrl, {
+			let response = await fetch(employeesUrl, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -3270,7 +3299,24 @@ export const AppProvider = ({ children }) => {
 					errorMessage = errorText || errorMessage;
 				}
 
-				throw new Error(errorMessage);
+				// If only username conflict on backend, auto-adjust and retry once
+				if (response.status === 400 && /ro'yxatdan o'tgan/i.test(errorMessage) && employeeData.username) {
+					const suffix = Math.random().toString(36).slice(2, 6);
+					dataToSend = { ...dataToSend, username: `${employeeData.username}_${suffix}` };
+					response = await fetch(employeesUrl, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+						},
+						body: JSON.stringify(dataToSend),
+					});
+					if (!response.ok) {
+						throw new Error(errorMessage);
+					}
+				} else {
+					throw new Error(errorMessage);
+				}
 			}
 
 			const data = await response.json();
