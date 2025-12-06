@@ -108,14 +108,18 @@ const AddScheduleModal = () => {
         }))
     }
 
-    const handleSaveSchedule = async () => {
-        setError('')
-        setLoading(true)
+  const handleSaveSchedule = async () => {
+    setError('')
+    setLoading(true)
 
-        try {
-            if (!formData.name?.trim()) {
-                throw new Error(t('validation.required'))
-            }
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error(t('errors.notAuthenticated', { defaultValue: 'Tizimga kirish talab etiladi. Iltimos, qayta login qiling.' }))
+      }
+      if (!formData.name?.trim()) {
+        throw new Error(t('validation.required'))
+      }
             if (!formData.title?.trim()) {
                 throw new Error(t('validation.required'))
             }
