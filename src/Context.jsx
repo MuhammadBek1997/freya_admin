@@ -1173,7 +1173,18 @@ export const AppProvider = ({ children }) => {
 					);
 				}
 
-				setSchedules(filteredSchedules);
+				// Merge with locally stored schedules (offline created)
+				try {
+					const localList = lsGet(LS_KEYS.schedules, []);
+					const localFiltered = (user && user.salon_id)
+						? localList.filter(s => String(s.salon_id) === String(user.salon_id))
+						: localList;
+					const existingIds = new Set(filteredSchedules.map(s => String(s.id)));
+					const merged = [...filteredSchedules, ...localFiltered.filter(s => !existingIds.has(String(s.id)))];
+					setSchedules(merged);
+				} catch {
+					setSchedules(filteredSchedules);
+				}
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch schedules');
@@ -1181,7 +1192,15 @@ export const AppProvider = ({ children }) => {
 		} catch (error) {
 			console.error('Error fetching schedules:', error);
 			setSchedulesError(error.message);
-			setSchedules([]);
+			try {
+				const localList = lsGet(LS_KEYS.schedules, []);
+				const localFiltered = (user && user.salon_id)
+					? localList.filter(s => String(s.salon_id) === String(user.salon_id))
+					: localList;
+				setSchedules(localFiltered);
+			} catch {
+				setSchedules([]);
+			}
 		} finally {
 			setSchedulesLoading(false);
 		}
@@ -1196,7 +1215,12 @@ export const AppProvider = ({ children }) => {
 			const token = getAuthToken();
 
 			if (!token) {
-				throw new Error('Tizimga kirish tokeni topilmadi');
+				const localId = `local_${Date.now()}`;
+				const localSchedule = { id: localId, ...scheduleData };
+				try { lsUpsert(LS_KEYS.schedules, localSchedule); } catch {}
+				setSchedules(prev => [...prev, localSchedule]);
+				try { await fetchGroupedSchedules(); } catch {}
+				return { success: true, data: localSchedule, message: 'Schedule local saqlandi' };
 			}
 
 			const dataToSend = {
@@ -1250,9 +1274,13 @@ export const AppProvider = ({ children }) => {
 					errorMessage = errorText || errorMessage;
 				}
 
-				// Auth error: show message but do NOT force logout here to avoid modal closing
 				if (response.status === 403 && /Not authenticated/i.test(String(errorMessage))) {
-					throw new Error('Tizimga kirish talab etiladi. Iltimos, qayta login qiling.');
+					const localId = `local_${Date.now()}`;
+					const localSchedule = { id: localId, ...dataToSend };
+					try { lsUpsert(LS_KEYS.schedules, localSchedule); } catch {}
+					setSchedules(prev => [...prev, localSchedule]);
+					try { await fetchGroupedSchedules(); } catch {}
+					return { success: true, data: localSchedule, message: 'Schedule local saqlandi' };
 				}
 				throw new Error(errorMessage);
 			}
@@ -1312,11 +1340,48 @@ export const AppProvider = ({ children }) => {
 					.filter(daySchedules => daySchedules.length > 0);
 			}
 
-			setGroupedSchedules(filteredGroupedSchedules);
+			// Merge locally stored schedules into grouped view
+			try {
+				const localList = lsGet(LS_KEYS.schedules, []);
+				const localFiltered = (user && user.salon_id)
+					? localList.filter(s => String(s.salon_id) === String(user.salon_id))
+					: localList;
+				const byDate = new Map();
+				filteredGroupedSchedules.forEach(arr => {
+					const key = String(arr?.[0]?.date || '');
+					if (!byDate.has(key)) byDate.set(key, []);
+					byDate.get(key).push(...arr);
+				});
+				localFiltered.forEach(s => {
+					const key = String(s.date || '');
+					if (!byDate.has(key)) byDate.set(key, []);
+					const exists = byDate.get(key).some(it => String(it.id) === String(s.id));
+					if (!exists) byDate.get(key).push(s);
+				});
+				const merged = Array.from(byDate.values()).filter(arr => arr.length > 0);
+				setGroupedSchedules(merged);
+			} catch {
+				setGroupedSchedules(filteredGroupedSchedules);
+			}
 		} catch (error) {
 			console.error('Error fetching grouped schedules:', error);
 			setGroupedSchedulesError(error.message);
-			setGroupedSchedules([]);
+			try {
+				const localList = lsGet(LS_KEYS.schedules, []);
+				const localFiltered = (user && user.salon_id)
+					? localList.filter(s => String(s.salon_id) === String(user.salon_id))
+					: localList;
+				const byDate = new Map();
+				localFiltered.forEach(s => {
+					const key = String(s.date || '');
+					if (!byDate.has(key)) byDate.set(key, []);
+					byDate.get(key).push(s);
+				});
+				const merged = Array.from(byDate.values());
+				setGroupedSchedules(merged);
+			} catch {
+				setGroupedSchedules([]);
+			}
 		} finally {
 			setGroupedSchedulesLoading(false);
 		}
