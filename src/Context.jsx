@@ -40,6 +40,17 @@ import {
 // API base URL configuration - Python backend URL
 const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.freyapp.uz/api";
 let API_BASE_URL = RAW_API_BASE_URL.replace(/^http:\/\//, 'https://');
+const WS_HOST = (() => {
+	try {
+		const hostWithPath = API_BASE_URL.replace(/^https?:\/\//, '');
+		const h = hostWithPath.split('/')[0];
+		if (h && h.includes('.')) return h;
+		const loc = typeof window !== 'undefined' ? window.location : null;
+		const lh = loc ? loc.host : '';
+		if (!lh || lh.includes('localhost') || lh.includes('127.0.0.1')) return 'api.freyapp.uz';
+		return lh;
+	} catch { return 'api.freyapp.uz'; }
+})();
 
 // Force a specific salon ID when provided (disabled by default)
 const FORCE_SALON_ID = null;
@@ -2223,65 +2234,35 @@ export const AppProvider = ({ children }) => {
 	const wsUrlCandidatesRef = useRef([]);
 
 	const buildWsUrl = (receiverId, receiverType) => {
-		let scheme;
-		let originHost;
-		if (API_BASE_URL.startsWith('http')) {
-			scheme = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
-			const hostWithPath = API_BASE_URL.replace(/^https?:\/\//, '');
-			originHost = hostWithPath.split('/')[0];
-		} else {
-			const loc = typeof window !== 'undefined' ? window.location : null;
-			scheme = loc && String(loc.protocol || '').startsWith('https') ? 'wss' : 'ws';
-			originHost = loc ? loc.host : '';
-		}
+		const scheme = 'wss';
+		const originHost = WS_HOST;
 		const url = `${scheme}://${originHost}/api/ws/chat?token=${encodeURIComponent(getAuthToken() || '')}&receiver_id=${encodeURIComponent(receiverId || '')}&receiver_type=${encodeURIComponent(receiverType || '')}`;
 		try { console.log('WS buildUrl', { scheme, originHost, receiverId, receiverType, url }); } catch {}
 		return url;
 	};
 
 	const buildWsUrlCandidates = (receiverId, receiverType) => {
-		let scheme;
-		let originHost;
-		if (API_BASE_URL.startsWith('http')) {
-			scheme = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
-			const hostWithPath = API_BASE_URL.replace(/^https?:\/\//, '');
-			originHost = hostWithPath.split('/')[0];
-		} else {
-			const loc = typeof window !== 'undefined' ? window.location : null;
-			scheme = loc && String(loc.protocol || '').startsWith('https') ? 'wss' : 'ws';
-			originHost = loc ? loc.host : '';
-		}
+		const scheme = 'wss';
+		const originHost = WS_HOST;
 		const token = getAuthToken() || '';
 		const receiverIdEncoded = encodeURIComponent(receiverId || '');
 		const receiverTypeEncoded = encodeURIComponent(receiverType || 'user');
-		
-		// Backendchi aytgan format: ws://<host>/api/ws/chat?token=...&receiver_id=...&receiver_type=user
 		const baseUrl = `${scheme}://${originHost}/api/ws/chat`;
 		const queryParams = new URLSearchParams({
 			token: token,
 			receiver_id: receiverIdEncoded,
 			receiver_type: receiverTypeEncoded
 		});
-		
-		return [
+		const candidates = [
 			`${baseUrl}?${queryParams.toString()}`,
-			// Fallback: /ws/chat endpoint
 			`${scheme}://${originHost}/ws/chat?${queryParams.toString()}`
 		];
+		return candidates;
 	};
 
 	const buildWsUrlCustom = (params = {}) => {
-		let scheme;
-		let originHost;
-		if (API_BASE_URL.startsWith('http')) {
-			scheme = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
-			const hostWithPath = API_BASE_URL.replace(/^https?:\/\//, '');
-			originHost = hostWithPath.split('/')[0];
-		} else {
-			const loc = typeof window !== 'undefined' ? window.location : null;
-			scheme = loc && String(loc.protocol || '').startsWith('https') ? 'wss' : 'ws';
-			originHost = loc ? loc.host : '';
-		}
+		const scheme = 'wss';
+		const originHost = WS_HOST;
 		const q = new URLSearchParams({ token: getAuthToken() || '' });
 		Object.entries(params).forEach(([k, v]) => {
 			if (v !== undefined && v !== null) q.set(String(k), String(v));
@@ -2290,17 +2271,8 @@ export const AppProvider = ({ children }) => {
 	};
 
 	const getWsChatInfo = async (params = {}) => {
-		let schemeHttp;
-		let originHost;
-		if (API_BASE_URL.startsWith('http')) {
-			schemeHttp = API_BASE_URL.startsWith('https') ? 'https' : 'http';
-			const hostWithPath = API_BASE_URL.replace(/^https?:\/\//, '');
-			originHost = hostWithPath.split('/')[0];
-		} else {
-			const loc = typeof window !== 'undefined' ? window.location : null;
-			schemeHttp = loc && String(loc.protocol || '').startsWith('https') ? 'https' : 'http';
-			originHost = loc ? loc.host : '';
-		}
+		const schemeHttp = 'https';
+		const originHost = WS_HOST;
 		const q = new URLSearchParams({ token: getAuthToken() || '' });
 		Object.entries(params).forEach(([k, v]) => {
 			if (v !== undefined && v !== null) q.set(String(k), String(v));
@@ -2332,9 +2304,8 @@ export const AppProvider = ({ children }) => {
 	};
 
 	const connectChatWs = (receiverId, receiverType = 'user') => {
-		// Only employees and users are supported by backend WS right now
 		const role = user?.role;
-		if (!role || (role !== 'employee' && role !== 'user')) {
+		if (!role || (role !== 'employee' && role !== 'user' && role !== 'private_admin' && role !== 'private_salon_admin' && role !== 'admin')) {
 			setWsStatus('unsupported');
 			setWsError('WebSocket chat is supported for employees and users only.');
 			return false;
@@ -2369,6 +2340,7 @@ export const AppProvider = ({ children }) => {
 		// Reset previous connection and start fresh
 		disconnectChatWs();
 		setWsStatus('connecting');
+		setMessagesLoading(true);
 		setWsError(null);
 		wsReceiverRef.current = { id: receiverId, type: receiverType };
 		wsHistoryRequestedRef.current = false;
