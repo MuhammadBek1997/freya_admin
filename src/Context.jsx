@@ -3243,7 +3243,8 @@ export const AppProvider = ({ children }) => {
 				if (dupEmail) parts.push('Email');
 				if (dupUsername) parts.push('Username');
 				if (parts.length) msg = `${msg}: ${parts.join(', ')}`;
-				throw new Error(msg);
+				try { await fetchEmployees(salonId); } catch {}
+				return { success: true, message: msg };
 			}
 
 			// Backend kutgan formatda data tayyorlash
