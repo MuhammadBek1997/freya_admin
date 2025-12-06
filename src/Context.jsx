@@ -2384,11 +2384,11 @@ export const AppProvider = ({ children }) => {
 			ws.onopen = () => {
 				try { console.log('WS open', { url }); } catch {}
 				setWsStatus('connected');
+				setMessagesLoading(false);
 				setCurrentConversation(receiverId);
 				wsRetryCountRef.current = 0;
 				// Auto mark read on open and request history once
 				try { const s = wsRef.current; s && s.send(JSON.stringify({ event: 'mark_read' })); } catch {}
-				try { const s = wsRef.current; s && s.send(JSON.stringify({ event: 'join' })); } catch {}
 				try {
 					if (!wsHistoryRequestedRef.current) {
 						const s = wsRef.current; s && s.send(JSON.stringify({ event: 'history' }));
@@ -2422,12 +2422,13 @@ export const AppProvider = ({ children }) => {
                             created_at_local: m?.created_at_local || m?.created_at || m?.createdAt || new Date().toISOString(),
                             message_text: m?.message_text || m?.message || '',
                         }));
-                        try { console.log('📥 History received:', normalized.length, 'messages'); } catch {}
-                        setMessages(normalized);
-                        wsHistoryHandledRef.current = true;
-                        wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
-                        currentChatIdRef.current = payload?.room_id || currentChatIdRef.current;
-                    } else if (ev === 'message') {
+						try { console.log('📥 History received:', normalized.length, 'messages'); } catch {}
+						setMessages(normalized);
+						setMessagesLoading(false);
+						wsHistoryHandledRef.current = true;
+						wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
+						currentChatIdRef.current = payload?.room_id || currentChatIdRef.current;
+					} else if (ev === 'message') {
                         const msg = payload?.message || payload;
                         if (!msg) {
                             try { console.warn('⚠️ Empty message payload'); } catch {}
@@ -2575,6 +2576,7 @@ export const AppProvider = ({ children }) => {
 						} catch {}
 					}
 					setWsStatus('error');
+					setMessagesLoading(false);
 					setWsError('WebSocket connection failed');
 					// Try next URL candidate if not yet connected
 					const nextIdx = wsCandidateIdxRef.current + 1;
@@ -2615,6 +2617,7 @@ export const AppProvider = ({ children }) => {
 					} catch {}
 				}
 				setWsStatus('closed');
+				setMessagesLoading(false);
 				// If closed before connect, try alternate URL once
 				const sClose = wsRef.current;
 				const connected = sClose && sClose.readyState === WebSocket.OPEN;
