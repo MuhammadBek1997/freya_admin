@@ -1,7 +1,17 @@
-// Base URL: uses env var in dev/prod; falls back to relative '/api' for dev proxy
+// Base URL: use env in dev/prod; default to production API
 const RAW_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.freyapp.uz/api";
-let BASE_URL = RAW_BASE_URL.replace(/^http:\/\//, 'https://');
-// Respect relative '/api' for dev proxy; do not force production URL
+let BASE_URL = RAW_BASE_URL;
+// Force production if a relative '/api' or localhost base is provided
+if (BASE_URL.startsWith('/')) {
+  BASE_URL = "https://api.freyapp.uz/api";
+}
+if (/localhost|127\.0\.0\.1/i.test(BASE_URL)) {
+  BASE_URL = "https://api.freyapp.uz/api";
+}
+// Upgrade to HTTPS for non-local hosts if mistakenly set to http
+if (/^http:\/\//i.test(BASE_URL) && !/localhost|127\.0\.0\.1/i.test(BASE_URL)) {
+  BASE_URL = BASE_URL.replace(/^http:\/\//i, 'https://');
+}
 
 // Authentication endpoints
 export const authUrl         = `${BASE_URL}/auth`;
