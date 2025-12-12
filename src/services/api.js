@@ -29,6 +29,24 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
+// Response interceptor to handle 401 errors
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token is invalid or expired, clear it
+      console.warn('401 Unauthorized - clearing auth token');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+      // Redirect to login if not already there
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 const unwrap = (resp) => resp?.data?.data ?? resp?.data;
 const toError = (error) => {
   const err = new Error(error?.response?.data?.message || error?.message || 'Request failed');

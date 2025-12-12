@@ -1,4 +1,4 @@
-import { UseGlobalContext } from '../Context';
+import { UseGlobalContext } from '../Context.jsx';
 import { schedulesUrl } from '../apiUrls';
 import { useState, useEffect } from 'react';
 

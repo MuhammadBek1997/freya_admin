@@ -14,7 +14,7 @@ import Employees from './pages/Employees'
 import EmployeeChatPage from './pages/EmployeeChatPage'
 import Profile from './pages/Profile'
 
-import { UseGlobalContext } from './Context'
+import { UseGlobalContext } from './Context.jsx'
 import "react-datepicker/dist/react-datepicker.css";
 
 function App() {

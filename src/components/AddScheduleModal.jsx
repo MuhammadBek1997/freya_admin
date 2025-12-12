@@ -113,10 +113,6 @@ const AddScheduleModal = () => {
     setLoading(true)
 
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error(t('errors.notAuthenticated', { defaultValue: 'Tizimga kirish talab etiladi. Iltimos, qayta login qiling.' }))
-      }
       if (!formData.name?.trim()) {
         throw new Error(t('validation.required'))
       }
@@ -138,6 +134,11 @@ const AddScheduleModal = () => {
                 throw new Error(t('errors.salonIdMissing'))
             }
 
+            const loggedEmployeeId = String(user?.id || user?.employee_id || '');
+            const selectedEmployees = (Array.isArray(formData.employee_list) && formData.employee_list.length > 0)
+              ? formData.employee_list.map(id => String(id))
+              : (loggedEmployeeId ? [loggedEmployeeId] : []);
+
             const scheduleData = {
                 salon_id: String(user.salon_id),
                 name: String(formData.name).trim(),
@@ -149,7 +150,7 @@ const AddScheduleModal = () => {
                 repeat: Boolean(formData.repeat),
                 repeat_value: String(formData.repeat_value || ''),
                 whole_day: Boolean(formData.whole_day),
-                employee_list: Array.isArray(formData.employee_list) ? formData.employee_list.map(id => String(id)) : [],
+                employee_list: selectedEmployees,
                 price: Number(formData.price) || 0,
                 full_pay: Number(formData.full_pay) || 0,
                 deposit: Number(formData.deposit) || 0,

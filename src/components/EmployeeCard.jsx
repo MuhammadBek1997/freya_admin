@@ -1,4 +1,4 @@
-import { UseGlobalContext } from "../Context";
+import { UseGlobalContext } from "../Context.jsx";
 
 
 const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, comment_count, phone, _isMenuOpen, setIsMenuOpen, _bio, _is_verified, _salon, isOpen, handleToggleMenu, isCheckedItem, setIsCheckedItem, handleAddWaitingEmp, work_start_time, work_end_time, avatar_url, avatar, profile_image, photo }) => {
@@ -105,6 +105,10 @@ const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, commen
           <div onClick={()=>handleAddWaitingEmp([id])}>
             <img src="/images/sendWaitEmploy.png" alt="" />
             <p>{ts("setWaiting","Отправить в ожидание")}</p>
+          </div>
+          <div onClick={()=>handleToggleEmployMenu(id , 'busy')}>
+            <img src="/images/clock.png" alt="" />
+            <p>{ts("busy","Занят")}</p>
           </div>
         </div>
       )}

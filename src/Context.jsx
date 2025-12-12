@@ -1,40 +1,42 @@
 import { createContext, useContext, useEffect, useMemo, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "./i18n";
-import {
-	authUrl,
-	adminLoginUrl,
-	employeeLoginUrl,
-	superAdminLoginUrl,
-	adminUrl,
-	salonsUrl,
-	adminSalonsUrl,
-	adminMySalonUrl,
-	appointUrl,
-	commentsUrl,
-	mastersUrl,
-	employeesUrl,
-	employeeBulkWaitingStatusUrl,
-	servicesUrl,
-	appointmentsUrl,
-	salonsListUrl,
-	salonDetailUrl,
-	schedulesUrl,
-	scheduleGroupedUrl,
-	salonServicesUrl,
-	statisticsUrl,
-	paymentUrl,
-	smsUrl,
-	translationUrl,
-	translationDetectLanguageUrl,
-	messagesUrl,
-	photoUploadUrl,
-	bookingsUrl,
-	mobileSchedulesUrl,
-	mobileEmployeesBusyUrl,
-	mobileEmployeesUrl,
-	mobileEmployeesMeSchedulesUrl
-} from "./apiUrls"
+	import {
+		authUrl,
+		adminLoginUrl,
+		employeeLoginUrl,
+		superAdminLoginUrl,
+		adminUrl,
+		salonsUrl,
+		adminSalonsUrl,
+		adminMySalonUrl,
+		appointUrl,
+		commentsUrl,
+		mastersUrl,
+		employeesUrl,
+		employeeBulkWaitingStatusUrl,
+		servicesUrl,
+		appointmentsUrl,
+		salonsListUrl,
+		salonDetailUrl,
+		schedulesUrl,
+		scheduleGroupedUrl,
+		salonServicesUrl,
+		statisticsUrl,
+		paymentUrl,
+		smsUrl,
+		translationUrl,
+		translationDetectLanguageUrl,
+		messagesUrl,
+		photoUploadUrl,
+		bookingsUrl,
+		mobileSchedulesUrl,
+		mobileEmployeesBusyUrl,
+		mobileEmployeesUrl,
+		mobileEmployeesMeSchedulesUrl,
+		mobileEmployeeMeWeeklyUrl,
+		userGenerateTokenUrl
+	} from "./apiUrls"
 
 
 // API base URL configuration - Python backend URL
@@ -70,6 +72,7 @@ const LS_KEYS = {
 	conversations: 'conversations',
 	messages: 'messages',
 	statistics: 'statistics',
+	pendingSchedules: 'pendingSchedules'
 };
 
 // LocalStorage helpers
@@ -124,8 +127,33 @@ const seedLocalData = () => {
 
 // Top-level helpers for headers and auth
 export const getAuthToken = () => {
-	return localStorage.getItem('authToken');
+	const token = localStorage.getItem('authToken');
+	console.log('🔑 getAuthToken called, token:', token ? `${token.substring(0, 20)}...` : 'NULL');
+	return token;
 };
+
+const refreshAuthToken = async () => {
+	const oldToken = getAuthToken();
+	if (!oldToken) throw new Error('Not authenticated');
+	const resp = await fetch(userGenerateTokenUrl, {
+		method: 'POST',
+		headers: {
+			'Authorization': `Bearer ${oldToken}`,
+			'Content-Type': 'application/json'
+		}
+	});
+	if (!resp.ok) {
+		const text = await resp.text();
+		throw new Error(text || `HTTP ${resp.status}`);
+	}
+	const data = await resp.json();
+	const newToken = data?.data?.token || data?.token;
+	if (!newToken) throw new Error('Token refresh failed');
+	localStorage.setItem('authToken', newToken);
+	return newToken;
+};
+
+const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
 // getHeaders helper removed as per request; use inline headers where needed
 
@@ -147,11 +175,45 @@ export const AppProvider = ({ children }) => {
 	const [schedules, setSchedules] = useState([]);
 	const [schedulesLoading, setSchedulesLoading] = useState(false);
 	const [schedulesError, setSchedulesError] = useState(null);
+	const [pendingSchedules, setPendingSchedules] = useState([]);
+	const pendingSyncTimerRef = useRef(null);
+
+	const syncPendingSchedules = async () => {
+		const tok = getAuthToken();
+		if (!tok) return;
+		if (!Array.isArray(pendingSchedules) || pendingSchedules.length === 0) return;
+		const remain = [];
+		for (const ps of pendingSchedules) {
+			try {
+				await createSchedule(ps);
+			} catch (e) {
+				remain.push(ps);
+			}
+		}
+		setPendingSchedules(remain);
+		lsSet(LS_KEYS.pendingSchedules, remain);
+	};
+
+	const startPendingSync = () => {
+		if (pendingSyncTimerRef.current) return;
+		pendingSyncTimerRef.current = setInterval(() => {
+			try { syncPendingSchedules(); } catch {}
+		}, 5000);
+	};
+
+	useEffect(() => {
+		if (isAuthenticated && getAuthToken()) {
+			startPendingSync();
+		}
+	}, [isAuthenticated]);
 
 	// Grouped schedules state
 	const [groupedSchedules, setGroupedSchedules] = useState([]);
 	const [groupedSchedulesLoading, setGroupedSchedulesLoading] = useState(false);
 	const [groupedSchedulesError, setGroupedSchedulesError] = useState(null);
+	const [mySchedules, setMySchedules] = useState([]);
+	const [mySchedulesLoading, setMySchedulesLoading] = useState(false);
+	const [mySchedulesError, setMySchedulesError] = useState(null);
 
 	// Employees state
 	const [employees, setEmployees] = useState([]);
@@ -1040,6 +1102,9 @@ export const AppProvider = ({ children }) => {
 
 				if (response.ok) {
 					console.log('✅ Admin login successful');
+					console.log('✅ Backend response:', data);
+
+					// Verify token payload matches user role
 					const userData = {
 						id: data.user.id,
 						username: data.user.username,
@@ -1049,13 +1114,17 @@ export const AppProvider = ({ children }) => {
 						salon_id: data.user.salon_id || null
 					};
 
+					console.log('✅ Admin userData to save:', userData);
+					console.log('✅ Token to save:', data.token);
+
 					localStorage.setItem('authToken', data.token);
 					localStorage.setItem('userData', JSON.stringify(userData));
 
 					setUser(userData);
 					setIsAuthenticated(true);
 
-					return { success: true, user: userData, role: 'admin' };
+
+					return { success: true, user: userData, role: data.user.role };
 				} else {
 					// Admin login failed, try employee
 					throw new Error('Admin login failed');
@@ -1086,7 +1155,8 @@ export const AppProvider = ({ children }) => {
 						email: data.user.email,
 						name: data.user.username || data.user.name,
 						role: 'employee',
-						salon_id: data.user.salon_id
+						salon_id: data.user.salon_id,
+						employee_id: data.user.id
 					};
 
 					localStorage.setItem('authToken', data.token);
@@ -1094,6 +1164,7 @@ export const AppProvider = ({ children }) => {
 
 					setUser(userData);
 					setIsAuthenticated(true);
+
 
 					return { success: true, user: userData, role: 'employee' };
 				} else {
@@ -1164,11 +1235,16 @@ export const AppProvider = ({ children }) => {
 		setSchedulesError(null);
 
 		try {
+			const token = getAuthToken();
+			if (!token) {
+				throw new Error('Not authenticated - no token found');
+			}
+
 			const response = await fetch(schedulesUrl, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
-					...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+					'Authorization': `Bearer ${token}`
 				},
 			});
 
@@ -1179,23 +1255,21 @@ export const AppProvider = ({ children }) => {
 				// Filter schedules by salon_id if user has salon_id
 				let filteredSchedules = data.data || [];
 				if (user && user.salon_id) {
-					filteredSchedules = filteredSchedules.filter(schedule =>
-						schedule.salon_id === user.salon_id
-					);
+					const target = String(user.salon_id);
+					filteredSchedules = (Array.isArray(filteredSchedules) ? filteredSchedules : []).filter(schedule => {
+						const sid = schedule?.salon_id ?? schedule?.salonId ?? (schedule?.salon && schedule.salon.id);
+						return sid && String(sid) === target;
+					});
 				}
 
-				// Merge with locally stored schedules (offline created)
-				try {
-					const localList = lsGet(LS_KEYS.schedules, []);
-					const localFiltered = (user && user.salon_id)
-						? localList.filter(s => String(s.salon_id) === String(user.salon_id))
-						: localList;
-					const existingIds = new Set(filteredSchedules.map(s => String(s.id)));
-					const merged = [...filteredSchedules, ...localFiltered.filter(s => !existingIds.has(String(s.id)))];
-					setSchedules(merged);
-				} catch {
-					setSchedules(filteredSchedules);
-				}
+				setSchedules(filteredSchedules);
+			} else if (response.status === 401) {
+				// Token invalid, clear auth state
+				localStorage.removeItem('authToken');
+				localStorage.removeItem('userData');
+				setUser(null);
+				setIsAuthenticated(false);
+				throw new Error('Authentication expired - please login again');
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch schedules');
@@ -1203,15 +1277,7 @@ export const AppProvider = ({ children }) => {
 		} catch (error) {
 			console.error('Error fetching schedules:', error);
 			setSchedulesError(error.message);
-			try {
-				const localList = lsGet(LS_KEYS.schedules, []);
-				const localFiltered = (user && user.salon_id)
-					? localList.filter(s => String(s.salon_id) === String(user.salon_id))
-					: localList;
-				setSchedules(localFiltered);
-			} catch {
-				setSchedules([]);
-			}
+			setSchedules([]);
 		} finally {
 			setSchedulesLoading(false);
 		}
@@ -1226,12 +1292,7 @@ export const AppProvider = ({ children }) => {
 			const token = getAuthToken();
 
 			if (!token) {
-				const localId = `local_${Date.now()}`;
-				const localSchedule = { id: localId, ...scheduleData };
-				try { lsUpsert(LS_KEYS.schedules, localSchedule); } catch {}
-				setSchedules(prev => [...prev, localSchedule]);
-				try { await fetchGroupedSchedules(); } catch {}
-				return { success: true, data: localSchedule, message: 'Schedule local saqlandi' };
+				throw new Error('Not authenticated');
 			}
 
 			const dataToSend = {
@@ -1246,14 +1307,64 @@ export const AppProvider = ({ children }) => {
 			console.log('📮 Context.jsx - yuborilayotgan data:', dataToSend)
 			console.log('📮 JSON stringify:', JSON.stringify(dataToSend, null, 2))
 
-			const response = await fetch(schedulesUrl, {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${token}`,
+			let response;
+			const makeRequest = async (tok) => {
+				if (String(user?.role || '').toLowerCase() === 'employee') {
+					const st = String(dataToSend.start_time || '00:00').substring(0, 5);
+					const en = String(dataToSend.end_time || '23:59').substring(0, 5);
+					const mobilePayload = {
+						name: String(dataToSend.name || dataToSend.title || 'Schedule'),
+						title: String(dataToSend.title || ''),
+						date: String(dataToSend.date),
+						start_time: st,
+						end_time: en,
+						price: Number(dataToSend.price || 0),
+						repeat: Boolean(dataToSend.repeat || false),
+						repeat_value: dataToSend.repeat_value ? String(dataToSend.repeat_value) : null,
+						is_active: true,
+					};
+					console.log('🔷 Employee POST to:', mobileEmployeesMeSchedulesUrl);
+					console.log('🔷 Token (first 20 chars):', tok?.substring(0, 20));
+					return fetch(mobileEmployeesMeSchedulesUrl, {
+						method: 'POST',
+						headers: {
+							'Authorization': `Bearer ${tok}`,
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify(mobilePayload),
+					});
+				}
+				console.log('🔶 Admin POST to:', schedulesUrl);
+				console.log('🔶 Token (first 20 chars):', tok?.substring(0, 20));
+				console.log('🔶 Headers:', {
+					'Authorization': `Bearer ${tok?.substring(0, 20)}...`,
 					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(dataToSend),
-			});
+				});
+				return fetch(schedulesUrl, {
+					method: 'POST',
+					headers: {
+						'Authorization': `Bearer ${tok}`,
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(dataToSend),
+				});
+			};
+
+			response = await makeRequest(token);
+			// Server xatolarida tez-tez qayta urinish
+			if (!response.ok && response.status >= 500) {
+				await sleep(500);
+				response = await makeRequest(getAuthToken());
+			}
+			// Auth xatolarida tokenni yangilab, bir marta qayta urinish
+			if (!response.ok && (response.status === 401 || response.status === 403) && String(user?.role || '').toLowerCase() === 'user') {
+				try {
+					const refreshed = await refreshAuthToken();
+					response = await makeRequest(refreshed);
+				} catch (e) {
+					// refresh muvaffaqiyatsiz bo'lsa, pastda xato tashlanadi
+				}
+			}
 
 			console.log('Response status:', response.status);
 
@@ -1285,13 +1396,8 @@ export const AppProvider = ({ children }) => {
 					errorMessage = errorText || errorMessage;
 				}
 
-				if (response.status === 403 && /Not authenticated/i.test(String(errorMessage))) {
-					const localId = `local_${Date.now()}`;
-					const localSchedule = { id: localId, ...dataToSend };
-					try { lsUpsert(LS_KEYS.schedules, localSchedule); } catch {}
-					setSchedules(prev => [...prev, localSchedule]);
-					try { await fetchGroupedSchedules(); } catch {}
-					return { success: true, data: localSchedule, message: 'Schedule local saqlandi' };
+				if ((response.status === 401 || response.status === 403) && /Not authenticated|Token yaroqsiz/i.test(String(errorMessage))) {
+					throw new Error(errorMessage);
 				}
 				throw new Error(errorMessage);
 			}
@@ -1299,8 +1405,43 @@ export const AppProvider = ({ children }) => {
 			const data = await response.json();
 			console.log('✅ Schedule yaratildi:', data);
 
-			const newSchedule = data?.data || data;
+			let newSchedule = data?.data || data;
+			if (String(user?.role || '').toLowerCase() === 'employee') {
+				const raw = data?.data || data || {};
+				newSchedule = {
+					id: String(raw?.id || `${Date.now()}`),
+					date: String(raw?.date || dataToSend.date),
+					start_time: String(raw?.start_time || dataToSend.start_time || '00:00'),
+					end_time: String(raw?.end_time || dataToSend.end_time || '23:59'),
+					name: String(raw?.name || dataToSend.name || dataToSend.title || 'Schedule'),
+					title: String(raw?.title || dataToSend.title || ''),
+					employee_id: String(user?.employee_id || user?.id || ''),
+					employee_list: [String(user?.employee_id || user?.id || '')],
+					salon_id: String(user?.salon_id || dataToSend.salon_id || ''),
+					price: Number(raw?.price ?? dataToSend.price ?? 0),
+					is_active: true
+				};
+			}
 			setSchedules(prev => [...prev, newSchedule]);
+
+			try {
+				const uid = String(user?.employee_id || user?.id || '');
+				if (uid) {
+					const ids = (() => {
+						const arr = [];
+						if (Array.isArray(newSchedule.employee_list)) arr.push(...newSchedule.employee_list);
+						if (Array.isArray(newSchedule.employees)) arr.push(...newSchedule.employees.map(e => (e && typeof e === 'object') ? (e.id ?? e.employee_id ?? e) : e));
+						if (newSchedule.employee_id) arr.push(newSchedule.employee_id);
+						return arr.map(x => String(x));
+					})();
+					if (ids.includes(uid)) {
+						setMySchedules(prev => {
+							const next = [...(prev || []), newSchedule];
+							return next.sort((a, b) => new Date(String(a.date || '')) - new Date(String(b.date || '')));
+						});
+					}
+				}
+			} catch {}
 
 			await fetchSchedules();
 			await fetchGroupedSchedules();
@@ -1318,85 +1459,57 @@ export const AppProvider = ({ children }) => {
 	const fetchGroupedSchedules = async () => {
 		setGroupedSchedulesLoading(true);
 		setGroupedSchedulesError(null);
-
 		try {
+			const employeeId = user?.employee_id || user?.id;
+			if (!employeeId) throw new Error('Employee ID topilmadi');
 			const token = getAuthToken();
 			const headers = {
-				'Authorization': `Bearer ${token}`,
 				'Content-Type': 'application/json',
+				...(token ? { Authorization: `Bearer ${token}` } : {})
 			};
-
-			// Explicit backend endpoint requested
-			const resp = await fetch(scheduleGroupedUrl, { method: 'GET', headers });
-			if (!resp.ok) {
-				let errMsg = '';
-				try {
-					const errJson = await resp.json();
-					errMsg = errJson?.message || '';
-				} catch {
-					const errText = await resp.text();
-					errMsg = errText || `HTTP ${resp.status}`;
+			const url = `${scheduleGroupedUrl}?employee_id=${encodeURIComponent(employeeId)}`;
+			const response = await fetch(url, { method: 'GET', headers });
+			if (!response.ok) {
+				const text = await response.text();
+				throw new Error(`HTTP ${response.status}: ${text}`);
+			}
+			const data = await response.json();
+			const raw = data?.data || data;
+			let schedules = [];
+			if (Array.isArray(raw)) {
+				schedules = raw;
+			} else if (raw && typeof raw === 'object') {
+				const isGrouped = Object.keys(raw).some(k => /^\d{4}-\d{2}-\d{2}$/.test(k));
+				if (isGrouped) {
+					const orderedKeys = Object.keys(raw).sort();
+					const arrOfArrays = orderedKeys.map(k => raw[k]);
+					const mergedGroups = orderedKeys.map(k => Array.isArray(raw[k]) ? raw[k] : []);
+					setGroupedSchedules(mergedGroups);
+					return;
 				}
-				throw new Error(errMsg || 'Failed to fetch grouped schedules');
+				schedules = Object.values(raw).flat();
 			}
-			const data = await resp.json();
-
-			console.log('Grouped schedules fetched:', data);
-
-			// Filter grouped schedules by salon_id if user has salon_id
-			let filteredGroupedSchedules = data.data || [];
-			if (user && user.salon_id) {
-				filteredGroupedSchedules = filteredGroupedSchedules
-					.map(daySchedules => daySchedules.filter(schedule => schedule.salon_id === user.salon_id))
-					.filter(daySchedules => daySchedules.length > 0);
+			const byDate = new Map();
+			for (const s of schedules) {
+				const key = String(s?.date || '').substring(0, 10);
+				if (!key) continue;
+				if (!byDate.has(key)) byDate.set(key, []);
+				byDate.get(key).push(s);
 			}
 
-			// Merge locally stored schedules into grouped view
-			try {
-				const localList = lsGet(LS_KEYS.schedules, []);
-				const localFiltered = (user && user.salon_id)
-					? localList.filter(s => String(s.salon_id) === String(user.salon_id))
-					: localList;
-				const byDate = new Map();
-				filteredGroupedSchedules.forEach(arr => {
-					const key = String(arr?.[0]?.date || '');
-					if (!byDate.has(key)) byDate.set(key, []);
-					byDate.get(key).push(...arr);
-				});
-				localFiltered.forEach(s => {
-					const key = String(s.date || '');
-					if (!byDate.has(key)) byDate.set(key, []);
-					const exists = byDate.get(key).some(it => String(it.id) === String(s.id));
-					if (!exists) byDate.get(key).push(s);
-				});
-				const merged = Array.from(byDate.values()).filter(arr => arr.length > 0);
-				setGroupedSchedules(merged);
-			} catch {
-				setGroupedSchedules(filteredGroupedSchedules);
-			}
+			const arrOfArrays = Array.from(byDate.entries())
+				.sort((a, b) => new Date(a[0]) - new Date(b[0]))
+				.map(([, v]) => v);
+			setGroupedSchedules(arrOfArrays);
 		} catch (error) {
-			console.error('Error fetching grouped schedules:', error);
-			setGroupedSchedulesError(error.message);
-			try {
-				const localList = lsGet(LS_KEYS.schedules, []);
-				const localFiltered = (user && user.salon_id)
-					? localList.filter(s => String(s.salon_id) === String(user.salon_id))
-					: localList;
-				const byDate = new Map();
-				localFiltered.forEach(s => {
-					const key = String(s.date || '');
-					if (!byDate.has(key)) byDate.set(key, []);
-					byDate.get(key).push(s);
-				});
-				const merged = Array.from(byDate.values());
-				setGroupedSchedules(merged);
-			} catch {
-				setGroupedSchedules([]);
-			}
+			setGroupedSchedulesError(error.message || 'Jadval yuklanmadi');
+			setGroupedSchedules([]);
 		} finally {
 			setGroupedSchedulesLoading(false);
 		}
 	};
+
+
 
 	// Create new service
 	const createService = async (serviceData) => {
@@ -2239,6 +2352,156 @@ export const AppProvider = ({ children }) => {
 		const url = `${scheme}://${originHost}/api/ws/chat?token=${encodeURIComponent(getAuthToken() || '')}&receiver_id=${encodeURIComponent(receiverId || '')}&receiver_type=${encodeURIComponent(receiverType || '')}`;
 		try { console.log('WS buildUrl', { scheme, originHost, receiverId, receiverType, url }); } catch {}
 		return url;
+	};
+
+	const fetchMySchedules = async (dateStr) => {
+		setMySchedulesLoading(true);
+		setMySchedulesError(null);
+		try {
+			const token = getAuthToken();
+			const headers = {
+				'Content-Type': 'application/json',
+				...(token ? { 'Authorization': `Bearer ${token}` } : {})
+			};
+			const d = dateStr || new Date().toISOString().substring(0,10);
+			const uid = String(user?.employee_id || user?.id || '');
+			const candidates = [
+				`${mobileEmployeesMeSchedulesUrl}?${new URLSearchParams({ date: String(d), page: '1', limit: '100' }).toString()}`,
+				`${mobileEmployeesMeSchedulesUrl}?${new URLSearchParams({ date_str: String(d), page: '1', limit: '100' }).toString()}`,
+				`${mobileEmployeeMeWeeklyUrl}?${new URLSearchParams({ date: String(d), page: '1', limit: '100' }).toString()}`,
+				`${mobileEmployeeMeWeeklyUrl}?${new URLSearchParams({ date_str: String(d), page: '1', limit: '100' }).toString()}`,
+				...(uid ? [
+					`${scheduleGroupedUrl}?${new URLSearchParams({ employee_id: uid }).toString()}`
+				] : [])
+			];
+			try { console.log('fetchMySchedules start', { uid, date: d, candidates }); } catch {}
+			for (const u of candidates) {
+				try {
+					const r = await fetch(u, { method: 'GET', headers });
+					if (!r.ok) { try { console.log('fetchMySchedules candidate failed', { url: u, status: r.status }); } catch {} ; continue; }
+					const j = await r.json();
+					let arr = Array.isArray(j?.data) ? j.data : (Array.isArray(j) ? j : []);
+					if (Array.isArray(arr)) {
+						arr = arr.flatMap(v => Array.isArray(v) ? v : [v]);
+					} else if (j?.data && typeof j.data === 'object') {
+						const values = Object.values(j.data);
+						arr = values.flatMap(v => Array.isArray(v) ? v : [v]);
+					}
+					try { console.log('fetchMySchedules candidate ok', { url: u, count: Array.isArray(arr) ? arr.length : 0 }); } catch {}
+					if (arr && arr.length > 0) {
+						const normalized = arr.filter(s => {
+							const ids = [];
+							if (Array.isArray(s.employee_list)) ids.push(...s.employee_list.map(x => String(x)));
+							if (s.employee_id) ids.push(String(s.employee_id));
+							return !uid || ids.includes(uid);
+						}).sort((a, b) => new Date(String(a.date || '')) - new Date(String(b.date || '')));
+						setMySchedules(normalized);
+						try { console.log('fetchMySchedules set from candidate', { count: normalized.length }); } catch {}
+						return normalized;
+					}
+				} catch {}
+			}
+			const empIdsFromSchedule = (s) => {
+				const ids = [];
+				if (Array.isArray(s.employee_list)) ids.push(...s.employee_list);
+				if (Array.isArray(s.employees)) ids.push(...s.employees.map(e => {
+					if (e && typeof e === 'object') {
+						return e.id ?? e.employee_id ?? e;
+					}
+					return e;
+				}));
+				if (Array.isArray(s.employeeIds)) ids.push(...s.employeeIds);
+				if (s.employee_id) ids.push(s.employee_id);
+				return Array.from(new Set(ids.map(x => String(x))));
+			};
+			const fallback = (schedules || []).filter(s => {
+				const arr = empIdsFromSchedule(s);
+				return uid && arr.includes(uid);
+			}).sort((a, b) => new Date(String(a.date || '')) - new Date(String(b.date || '')));
+			let finalList = fallback;
+			if ((!finalList || finalList.length === 0) && Array.isArray(combinedAppointments)) {
+				const fromBookings = combinedAppointments
+					.filter(app => String(app.employee_id || '') === uid)
+					.map(app => ({
+						id: String(app.id),
+						date: String(app.date || d),
+						start_time: String((app.time || '').substring(0,5) || '00:00'),
+						end_time: String((app.end_time || '').substring(0,5) || '23:59'),
+						name: 'Booking',
+						title: 'Booking',
+						employee_list: [uid],
+						price: 0
+					}));
+				finalList = fromBookings;
+			}
+			setMySchedules(finalList);
+			try { console.log('fetchMySchedules set from fallback', { count: finalList.length }); } catch {}
+			return finalList;
+		} catch (e) {
+			setMySchedules([]);
+			setMySchedulesError(e?.message || 'Error');
+			throw e;
+		} finally {
+			setMySchedulesLoading(false);
+		}
+	};
+
+	const markEmployeeBusy = async (employeeId, date, startTime, endTime, note = '') => {
+		const isoTime = `${String(date)}T${String(startTime).substring(0,5)}:00`;
+		const bookingPayload = {
+			salon_id: String(user?.salon_id || ''),
+			full_name: String(note || 'Busy'),
+			phone: '000000000',
+			time: isoTime,
+			employee_id: String(employeeId)
+		};
+		const created = await createBooking(bookingPayload);
+		return { success: true, data: created };
+	};
+
+	const createEmployeeBusySlot = async (employeeId, dateStr, startTime, endTime, note = '') => {
+		const token = getAuthToken();
+		if (!token) throw new Error('Token topilmadi');
+		const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+		const isEmployee = String(user?.role || '').toLowerCase() === 'employee';
+		if (isEmployee) {
+			const body = JSON.stringify({
+				salon_id: String(user?.salon_id || ''),
+				date_str: String(dateStr),
+				start_time: String(startTime),
+				end_time: String(endTime),
+				name: String(note || 'Busy'),
+				title: String(note || 'Busy')
+			});
+			const url = `${mobileEmployeesMeSchedulesUrl}`;
+			const resp = await fetch(url, { method: 'POST', headers, body });
+			if (!resp.ok) {
+				let msg = `HTTP ${resp.status}`;
+				try { const j = await resp.json(); msg = j?.message || j?.detail || msg } catch { try { msg = await resp.text() } catch {} }
+				throw new Error(msg);
+			}
+			try { return await resp.json(); } catch { return { ok: true }; }
+		} else {
+			const scheduleData = {
+				salon_id: String(user?.salon_id || ''),
+				name: String(note || 'Busy'),
+				title: String(note || 'Busy'),
+				date: String(dateStr),
+				start_time: String(startTime),
+				end_time: String(endTime),
+				service_duration: 60,
+				repeat: false,
+				repeat_value: '',
+				whole_day: false,
+				employee_list: [String(employeeId)],
+				price: 0,
+				full_pay: 0,
+				deposit: 0,
+				is_active: true
+			};
+			const res = await createSchedule(scheduleData);
+			return res;
+		}
 	};
 
 	const buildWsUrlCandidates = (receiverId, receiverType) => {
@@ -3166,9 +3429,14 @@ export const AppProvider = ({ children }) => {
 		setEmployeesError(null);
 
 		try {
+			const token = getAuthToken();
+			if (!token) {
+				throw new Error('Not authenticated - no token found');
+			}
+
 			const headers = {
 				'Content-Type': 'application/json',
-				...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+				'Authorization': `Bearer ${token}`
 			};
 
 			// UUID formatni tekshirish (backend UUID talab qiladi)
@@ -3208,6 +3476,15 @@ export const AppProvider = ({ children }) => {
 					console.log('Employees loaded:', items.length);
 					success = true;
 					break;
+				}
+
+				if (response.status === 401) {
+					// Token invalid, clear auth state
+					localStorage.removeItem('authToken');
+					localStorage.removeItem('userData');
+					setUser(null);
+					setIsAuthenticated(false);
+					throw new Error('Authentication expired - please login again');
 				}
 
 				if (response.status === 404) {
@@ -3431,6 +3708,8 @@ export const AppProvider = ({ children }) => {
 				}
 				// Keyin xodimlarni yuklaymiz
 				await fetchEmployees();
+				// Sync local schedules pending
+				try { await syncPendingLocalSchedules(); } catch {}
 				// Zarurat bo'lsa quyidagilarni ham ketma-ket chaqiramiz
 				// await fetchAppointments(user.salon_id);
 				// await fetchSchedules();
@@ -3714,10 +3993,11 @@ export const AppProvider = ({ children }) => {
             return fallback;
         }
     };
-	const language = localStorage.getItem("i18nextLng")
+	const language = localStorage.getItem("i18nextLng") || 'uz'
 	const handleChange = (event) => {
 		const selectedLang = event.target.value;
 		i18n.changeLanguage(selectedLang);
+		localStorage.setItem('i18nextLng', selectedLang);
 		localStorage.setItem('language', selectedLang);
 	}
 
@@ -3774,8 +4054,21 @@ export const AppProvider = ({ children }) => {
 
 	// GET bookings by salon_id
 	const fetchBookings = async (salonId) => {
-		if (!salonId) {
+		const id = salonId || user?.salon_id;
+		if (!isAuthenticated || !user || !['admin','employee'].includes(String(user.role || '').toLowerCase())) {
+			setBookingsError('Faqat admin yoki xodim ko‘ra oladi');
+			console.warn('Unauthorized role for fetching bookings:', user?.role);
+			return;
+		}
+		if (!id) {
+			setBookingsError('Salon ID topilmadi');
 			console.error('Salon ID is required to fetch bookings');
+			return;
+		}
+		const isValidUUID = (v) => typeof v === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v);
+		if (!isValidUUID(String(id))) {
+			setBookingsError('Noto‘g‘ri salon ID');
+			console.warn('Invalid salon_id format for bookings:', id);
 			return;
 		}
 
@@ -3785,11 +4078,11 @@ export const AppProvider = ({ children }) => {
 		try {
 			const token = getAuthToken();
 			const response = await fetch(
-				`${bookingsUrl}?salon_id=${salonId}`,
+				`${bookingsUrl}?salon_id=${encodeURIComponent(String(id))}`,
 				{
 					method: 'GET',
 					headers: {
-						'Authorization': `Bearer ${token}`,
+						'Authorization': token ? `Bearer ${token}` : '',
 						'Content-Type': 'application/json',
 					},
 				}
@@ -3801,8 +4094,16 @@ export const AppProvider = ({ children }) => {
 				setBookings(data.data || data || []);
 				return data;
 			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to fetch bookings');
+				let msg = `HTTP ${response.status}`;
+				try {
+					const j = await response.json();
+					msg = j?.detail || j?.message || j?.error || msg;
+				} catch {
+					try { msg = await response.text(); } catch {}
+				}
+				// 401/403 holatida ham foydalanuvchini avtomatik chiqarmaymiz;
+				// UI xabarini ko'rsatib, keyinroq qayta uriniladi
+				throw new Error(msg || 'Failed to fetch bookings');
 			}
 		} catch (error) {
 			console.error('❌ Error fetching bookings:', error);
@@ -4939,7 +5240,7 @@ export const AppProvider = ({ children }) => {
 
 
 	return (
-        <AppContext.Provider value={{
+		<AppContext.Provider value={{
             t, ts, handleChange, language,
 			lightImg, darkImg, selectedIcon,
 			selectedElement, setSelectedElement, isRightSidebarOpen,
@@ -4980,6 +5281,8 @@ export const AppProvider = ({ children }) => {
 			schedules, schedulesLoading, schedulesError, fetchSchedules, createSchedule,
 			// Grouped schedules state va funksiyalari
 			groupedSchedules, groupedSchedulesLoading, groupedSchedulesError, fetchGroupedSchedules,
+			mySchedules, mySchedulesLoading, mySchedulesError, fetchMySchedules,
+			markEmployeeBusy,
 			// Employees state va funksiyalari
 			employees, employeesBySalon, employeesLoading, employeesError, fetchEmployees, createEmployee,
 			// Services state va funksiyalari
@@ -5054,6 +5357,7 @@ export const AppProvider = ({ children }) => {
 			fetchEmployeeBusySlots,
 			calculateAvailableSlots,
 			checkEmployeeBusyInterval,
+			createEmployeeBusySlot,
 
 		}}>
 			{children}

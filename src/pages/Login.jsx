@@ -52,19 +52,46 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     if (!username || !password) {
         setErrorMessage('Username va password kiritish majburiy!');
         return;
     }
-    
+
     setLoading(true);
     setErrorMessage('');
     setCheckPsw(true);
-    
+
     try {
         const result = await login(username, password);
-        
+
+        console.log('✅ Login successful, result:', result);
+        console.log('✅ Token in localStorage:', localStorage.getItem('authToken'));
+        console.log('✅ UserData in localStorage:', localStorage.getItem('userData'));
+
+        // Decode token to verify role
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                console.log('✅ Decoded token payload:', payload);
+                console.log('✅ Token role:', payload.role);
+                console.log('✅ UserData role:', result.user?.role);
+
+                if (payload.role !== result.user?.role) {
+                    console.error('❌ WARNING: Token role does not match user role!');
+                    console.error('❌ Token role:', payload.role);
+                    console.error('❌ User role:', result.user?.role);
+                    throw new Error(`Role mismatch: You logged in as "${payload.role}" but trying to access "${result.user?.role}" pages. Please use correct admin credentials.`);
+                }
+            } catch (decodeError) {
+                if (decodeError.message.includes('Role mismatch')) {
+                    throw decodeError;
+                }
+                console.warn('Could not decode token:', decodeError);
+            }
+        }
+
         // Role'ga qarab yo'naltirish
         if (result.role === 'employee') {
             navigate('/employee-chat');
@@ -205,9 +232,9 @@ const Login = () => {
         <div className="login-btm">
           <h3>{t('loginQuest')}</h3>
           <div>
-            <a href="tel:+998901234567">+998901234567</a>
-            <a href="tel:+998901234567">+998901234567</a>
-            <a href="mailto:freyacom@email.com">freyacom@email.com</a>
+            <a href="tel:+998977503792">+998977503792</a>
+            <a href="tel:+998974043419">+998974043419</a>
+            <a href="mailto:freyaitsolution@gmail.com">freyaitsolution@gmail.com</a>
           </div>
         </div>
       </div>

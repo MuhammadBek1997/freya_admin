@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { UseGlobalContext } from '../Context'
+import { UseGlobalContext } from '../Context.jsx'
 
 const Sidebar = () => {
   let { t, user } = UseGlobalContext();

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import '../styles/ChatStyles.css'
 import '../styles/AdminChatOverrides.css'
 import i18next from 'i18next';
-import { UseGlobalContext, getAuthToken } from '../Context';
+import { UseGlobalContext, getAuthToken } from '../Context.jsx';
 import { scheduleGroupedUrl, mobileEmployeesMeSchedulesUrl } from '../apiUrls';
 import AddScheduleModal from '../components/AddScheduleModal';
 import BookScheduleModal from '../components/BookScheduleModal';
@@ -42,6 +42,9 @@ const EmployeeChatPage = () => {
     sendWsMarkRead,
     waitWsOpenFor,
     appendLocalMessage,
+    schedules,
+    mySchedules,
+    fetchMySchedules,
   } = UseGlobalContext();
 
   const handleBack = () => {
@@ -229,6 +232,25 @@ const EmployeeChatPage = () => {
     }
   }, [addSched, selectedPageEmployee, user]);
 
+  useEffect(() => {
+    if (selectedPageEmployee === 'schedule' && user) {
+      fetchGroupedSchedules();
+    }
+  }, [schedules?.length, selectedPageEmployee, user]);
+
+  useEffect(() => {
+    if (selectedPageEmployee === 'schedule' && user) {
+      const d = new Date().toISOString().substring(0,10);
+      fetchMySchedules(d).catch(()=>{});
+    }
+  }, [selectedPageEmployee, user]);
+
+  useEffect(() => {
+    if (selectedPageEmployee === 'schedule' && user) {
+      fetchGroupedSchedules();
+    }
+  }, [mySchedules?.length, selectedPageEmployee, user]);
+
   
 
   const fetchGroupedSchedules = async () => {
@@ -236,7 +258,7 @@ const EmployeeChatPage = () => {
     setSchedulesError(null);
 
     try {
-      const uid = String(user?.id || user?.employee_id || '');
+      const uid = String(user?.employee_id || user?.id || '');
       const qs = uid ? `?employee_id=${encodeURIComponent(uid)}` : '';
       const response = await fetch(
         `${scheduleGroupedUrl}${qs}`,
@@ -254,15 +276,24 @@ const EmployeeChatPage = () => {
 
       const data = await response.json();
       const raw = data?.data ?? data;
-      // Normalize: backend may return object keyed by date or array of schedules
       let normalized = {};
       if (Array.isArray(raw)) {
-        // Array of schedules → group by schedule.date
-        for (const item of raw) {
-          const dateKey = String(item?.date || '').substring(0, 10);
-          if (!dateKey) continue;
-          if (!normalized[dateKey]) normalized[dateKey] = [];
-          normalized[dateKey].push(item);
+        const isArrayOfArrays = raw.every(it => Array.isArray(it));
+        if (isArrayOfArrays) {
+          for (const arr of raw) {
+            const first = arr.find(s => s && s.date);
+            const dateKey = String(first?.date || '').substring(0, 10);
+            if (!dateKey) continue;
+            if (!normalized[dateKey]) normalized[dateKey] = [];
+            normalized[dateKey].push(...arr);
+          }
+        } else {
+          for (const item of raw) {
+            const dateKey = String(item?.date || '').substring(0, 10);
+            if (!dateKey) continue;
+            if (!normalized[dateKey]) normalized[dateKey] = [];
+            normalized[dateKey].push(item);
+          }
         }
       } else if (raw && typeof raw === 'object') {
         normalized = raw;
@@ -280,7 +311,9 @@ const EmployeeChatPage = () => {
               const sEmpList = Array.isArray(schedule?.employee_list)
                 ? schedule.employee_list.map(id => String(id))
                 : [];
-              return (uid && String(sEmpId) === uid) || (uid && sEmpList.includes(uid));
+              const employeesArr = Array.isArray(schedule?.employees) ? schedule.employees : [];
+              const employeesIds = employeesArr.map(e => String(e?.id ?? e?.employee_id ?? e));
+              return (uid && String(sEmpId) === uid) || (uid && sEmpList.includes(uid)) || (uid && employeesIds.includes(uid));
             })
           : list;
         if (employeeSchedules.length > 0) {
@@ -288,58 +321,39 @@ const EmployeeChatPage = () => {
         }
       });
 
-      // If employee and nothing found, fallback to mobile employee daily API for next 7 days
-      if (user.role === 'employee' && Object.keys(filteredSchedules).length === 0) {
-        const makeDate = (d) => {
-          const yyyy = d.getFullYear();
-          const mm = String(d.getMonth() + 1).padStart(2, '0');
-          const dd = String(d.getDate()).padStart(2, '0');
-          return `${yyyy}-${mm}-${dd}`;
-        };
-        const now = new Date();
-        const headers = {
-          'Content-Type': 'application/json',
-          ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
-        };
-        const promises = Array.from({ length: 7 }).map((_, i) => {
-          const day = new Date(now);
-          day.setDate(now.getDate() + i);
-          const dateStr = makeDate(day);
-          return fetch(`${mobileEmployeesMeSchedulesUrl}/${dateStr}`, { headers })
-            .then(resp => resp.ok ? resp.json() : null)
-            .then(j => {
-              const items = Array.isArray(j?.data) ? j.data : [];
-              const converted = items.map(it => {
-                const parts = String(it.time || '').split('-');
-                const st = parts[0] || '';
-                const en = parts[1] || '';
-                return {
-                  date: dateStr,
-                  name: it.service_name || it.direction || it.title || 'Schedule',
-                  employee_id: it.employee_id,
-                  employee_name: it.employee_name,
-                  start_time: st,
-                  end_time: en,
-                  is_private: it.is_private,
-                };
-              });
-              return { dateStr, converted };
-            })
-            .catch(() => null);
+      try {
+        const uid2 = String(user?.employee_id || user?.id || '');
+        const localList = Array.isArray(schedules) ? schedules : [];
+        const localFiltered = localList.filter(s => {
+          const ids = [];
+          if (Array.isArray(s.employee_list)) ids.push(...s.employee_list.map(x => String(x)));
+          if (Array.isArray(s.employees)) ids.push(...s.employees.map(e => String(e?.id ?? e?.employee_id ?? e)));
+          if (s.employee_id) ids.push(String(s.employee_id));
+          const matchEmp = uid2 ? ids.includes(uid2) : true;
+          const matchSalon = user?.salon_id ? String(s.salon_id) === String(user.salon_id) : true;
+          return matchEmp && matchSalon;
         });
-        const results = await Promise.allSettled(promises);
-        results.forEach(r => {
-          const val = r?.value;
-          if (val && Array.isArray(val.converted) && val.converted.length > 0) {
-            filteredSchedules[val.dateStr] = val.converted;
-          }
-        });
-      }
+        for (const s of localFiltered) {
+          const dateKey = String(s?.date || '').substring(0, 10);
+          if (!dateKey) continue;
+          if (!filteredSchedules[dateKey]) filteredSchedules[dateKey] = [];
+          const exists = filteredSchedules[dateKey].some(it => String(it.id) === String(s.id));
+          if (!exists) filteredSchedules[dateKey].push(s);
+        }
+        const myList = Array.isArray(mySchedules) ? mySchedules : [];
+        for (const s of myList) {
+          const dateKey = String(s?.date || '').substring(0, 10);
+          if (!dateKey) continue;
+          if (!filteredSchedules[dateKey]) filteredSchedules[dateKey] = [];
+          const exists = filteredSchedules[dateKey].some(it => String(it.id) === String(s.id));
+          if (!exists) filteredSchedules[dateKey].push(s);
+        }
+      } catch {}
 
       setGroupedSchedules(filteredSchedules);
 
       const dates = Object.keys(filteredSchedules).sort();
-      if (dates.length > 0 && !selectedDate) {
+      if (dates.length > 0 && (!selectedDate || !dates.includes(selectedDate))) {
         setSelectedDate(dates[0]);
       }
 
@@ -1086,20 +1100,22 @@ const EmployeeChatPage = () => {
                   <img src="/images/arrowLeft.png" alt="" />
                 </button>
                 <p>{t('schedHT')}</p>
-                <button
-                  onClick={() => setAddSched(true)}
-                  style={{
-                    marginLeft: 'auto',
-                    padding: '8px 12px',
-                    backgroundColor: '#9C2BFF',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {t('schedule.add') || 'Добавить'}
-                </button>
+                {String(user?.role || '').toLowerCase() !== 'employee' && (
+                  <button
+                    onClick={() => setAddSched(true)}
+                    style={{
+                      marginLeft: 'auto',
+                      padding: '8px 12px',
+                      backgroundColor: '#9C2BFF',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {t('schedule.add') || 'Добавить'}
+                  </button>
+                )}
               </div>
 
               {schedulesLoading ? (

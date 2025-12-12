@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useMemo } from 'react';
-import { UseGlobalContext } from '../Context'
+import { UseGlobalContext } from '../Context.jsx'
 import AddScheduleModal from '../components/AddScheduleModal';
 import EditScheduleModal from '../components/EditScheduleModal';
 import BookScheduleModal from '../components/BookScheduleModal';
@@ -59,6 +59,9 @@ const Schedule = () => {
 
   // Component yuklanganda schedules ni fetch qilish
   useEffect(() => {
+    console.log('🔵 Schedule page mounted');
+    console.log('🔵 Token in localStorage:', localStorage.getItem('authToken'));
+    console.log('🔵 UserData in localStorage:', localStorage.getItem('userData'));
     fetchSchedules();
   }, []);
 

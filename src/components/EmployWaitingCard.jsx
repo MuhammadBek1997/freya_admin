@@ -1,5 +1,5 @@
 import React from 'react'
-import { UseGlobalContext } from '../Context'
+import { UseGlobalContext } from '../Context.jsx'
 
 const EmployWaitingCard = ({ 
     id, name, spec, isMenuOpen, setIsMenuOpen, bio, is_verified, 

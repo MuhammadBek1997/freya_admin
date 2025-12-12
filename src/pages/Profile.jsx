@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { Formik, Form, Field, ErrorMessage } from 'formik'
 import * as Yup from 'yup'
-import { UseGlobalContext } from '../Context'
+import { UseGlobalContext } from '../Context.jsx'
 import YandexMap from '../components/YandexMap'
 import ReadMoreReact from 'read-more-react';
 import { smsUrl } from '../apiUrls';

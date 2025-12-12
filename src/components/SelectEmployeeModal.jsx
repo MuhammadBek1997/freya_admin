@@ -14,7 +14,9 @@ const SelectEmployeeModal = ({ setSelectEmploy, onEmployeeSelect, date, start_ti
     if (Array.isArray(initialSelected) && initialSelected.length > 0) {
       setSelectedEmployees(initialSelected.map(id => String(id)))
     }
-  }, [initialSelected])
+    // initialize only once to avoid parent-child update loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (user?.salon_id) {
@@ -130,10 +132,15 @@ const SelectEmployeeModal = ({ setSelectEmploy, onEmployeeSelect, date, start_ti
       const next = prev.includes(key)
         ? prev.filter(id => id !== key)
         : [...prev, key]
-      if (onEmployeeSelect) onEmployeeSelect(next)
       return next
     })
   }
+
+  useEffect(() => {
+    if (onEmployeeSelect) {
+      onEmployeeSelect(selectedEmployees)
+    }
+  }, [selectedEmployees])
 
   const handleConfirmSelection = () => {
     if (onEmployeeSelect) {

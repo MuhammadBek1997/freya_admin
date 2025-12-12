@@ -1,5 +1,5 @@
 import React from 'react'
-import { UseGlobalContext } from '../Context';
+import { UseGlobalContext } from '../Context.jsx';
 
 const AppointCard = (props) => {
     const {
