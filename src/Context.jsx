@@ -1240,7 +1240,8 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Not authenticated - no token found');
 			}
 
-			const response = await fetch(schedulesUrl, {
+			const getUrl = schedulesUrl.replace(/^http:\/\//, 'https://');
+			const response = await fetch(getUrl, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -1323,9 +1324,10 @@ export const AppProvider = ({ children }) => {
 						repeat_value: dataToSend.repeat_value ? String(dataToSend.repeat_value) : null,
 						is_active: true,
 					};
-					console.log('🔷 Employee POST to:', mobileEmployeesMeSchedulesUrl);
+					const empUrl = mobileEmployeesMeSchedulesUrl.replace(/^http:\/\//, 'https://');
+					console.log('🔷 Employee POST to:', empUrl);
 					console.log('🔷 Token (first 20 chars):', tok?.substring(0, 20));
-					return fetch(mobileEmployeesMeSchedulesUrl, {
+					return fetch(empUrl, {
 						method: 'POST',
 						headers: {
 							'Authorization': `Bearer ${tok}`,
@@ -1334,13 +1336,14 @@ export const AppProvider = ({ children }) => {
 						body: JSON.stringify(mobilePayload),
 					});
 				}
-				console.log('🔶 Admin POST to:', schedulesUrl);
+				const admUrl = schedulesUrl.replace(/^http:\/\//, 'https://');
+				console.log('🔶 Admin POST to:', admUrl);
 				console.log('🔶 Token (first 20 chars):', tok?.substring(0, 20));
 				console.log('🔶 Headers:', {
 					'Authorization': `Bearer ${tok?.substring(0, 20)}...`,
 					'Content-Type': 'application/json',
 				});
-				return fetch(schedulesUrl, {
+				return fetch(admUrl, {
 					method: 'POST',
 					headers: {
 						'Authorization': `Bearer ${tok}`,
