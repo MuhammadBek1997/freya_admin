@@ -56,6 +56,7 @@ function App() {
     return (
       <div style={{ width: '100%', height: '100vh' }}>
         <Routes>
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/employee-chat" element={<EmployeeChatPage />} />
           <Route path="*" element={<Navigate to="/employee-chat" replace />} />
         </Routes>
@@ -75,6 +76,7 @@ function App() {
             <Route path='/schedule' element={<Schedule />} />
             <Route path='/employees' element={<Employees />} />
             <Route path='/profile' element={<Profile />} />
+            <Route path='/privacy' element={<Privacy />} />
             <Route path='*' element={<Navigate to='/' replace />} />
           </Routes>
         </div>
@@ -94,6 +96,7 @@ function App() {
             <Route path='/schedule' element={<Schedule />} />
             <Route path='/profile' element={<Profile />} />
             <Route path='/chat' element={<EmployeeChatPage />} />
+            <Route path='/privacy' element={<Privacy />} />
             <Route path='/employees' element={<Navigate to='/' replace />} />
             <Route path='*' element={<Navigate to='/' replace />} />
           </Routes>
@@ -115,6 +118,7 @@ function App() {
             <Route path='/employees' element={<Employees />} />
             <Route path='/chat' element={<EmployeeChatPage />} />
             <Route path='/profile' element={<Profile />} />
+            <Route path='/privacy' element={<Privacy />} />
             <Route path='*' element={<Navigate to='/' replace />} />
           </Routes>
         </div>
