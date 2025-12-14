@@ -1305,8 +1305,25 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Salon ID topilmadi');
 			}
 
-			console.log('📮 Context.jsx - yuborilayotgan data:', dataToSend)
-			console.log('📮 JSON stringify:', JSON.stringify(dataToSend, null, 2))
+			// Backend faqat belgilangan fieldlarni qabul qiladi - whole_day va service_duration ni o'chirish kerak
+			const cleanPayload = {
+				salon_id: dataToSend.salon_id,
+				name: dataToSend.name,
+				title: dataToSend.title || null,
+				date: dataToSend.date,
+				start_time: dataToSend.start_time,
+				end_time: dataToSend.end_time,
+				repeat: dataToSend.repeat || false,
+				repeat_value: dataToSend.repeat_value || null,
+				employee_list: dataToSend.employee_list || [],
+				price: dataToSend.price,
+				full_pay: dataToSend.full_pay || 0,
+				deposit: dataToSend.deposit || 0,
+				is_active: dataToSend.is_active !== undefined ? dataToSend.is_active : true
+			};
+
+			console.log('📮 Context.jsx - yuborilayotgan data:', cleanPayload)
+			console.log('📮 JSON stringify:', JSON.stringify(cleanPayload, null, 2))
 
 			let response;
 			const makeRequest = async (tok) => {
@@ -1349,7 +1366,7 @@ export const AppProvider = ({ children }) => {
 						'Authorization': `Bearer ${tok}`,
 						'Content-Type': 'application/json',
 					},
-					body: JSON.stringify(dataToSend),
+					body: JSON.stringify(cleanPayload),
 				});
 			};
 

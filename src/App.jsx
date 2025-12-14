@@ -13,6 +13,7 @@ import Schedule from './pages/Schedule'
 import Employees from './pages/Employees'
 import EmployeeChatPage from './pages/EmployeeChatPage'
 import Profile from './pages/Profile'
+import Privacy from './pages/Privacy'
 
 import { UseGlobalContext } from './Context.jsx'
 import "react-datepicker/dist/react-datepicker.css";
@@ -37,9 +38,16 @@ function App() {
     );
   }
 
-  // Agar foydalanuvchi tizimga kirmagan bo'lsa, faqat Login sahifasini ko'rsatamiz
+  // Agar foydalanuvchi tizimga kirmagan bo'lsa, Login va public sahifalarni ko'rsatamiz
   if (!isAuthenticated) {
-    return <Login />;
+    return (
+      <div style={{ width: '100%', height: '100vh' }}>
+        <Routes>
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="*" element={<Login />} />
+        </Routes>
+      </div>
+    );
   }
 
   // EMPLOYEE ROLE - faqat employee-chat sahifasi

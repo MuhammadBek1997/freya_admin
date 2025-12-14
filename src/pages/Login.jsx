@@ -235,6 +235,7 @@ const Login = () => {
             <a href="tel:+998977503792">+998977503792</a>
             <a href="tel:+998974043419">+998974043419</a>
             <a href="mailto:freyaitsolution@gmail.com">freyaitsolution@gmail.com</a>
+            <a href="/privacy" style={{ marginLeft: '1vw' }}>{t('privacyLink')}</a>
           </div>
         </div>
       </div>
