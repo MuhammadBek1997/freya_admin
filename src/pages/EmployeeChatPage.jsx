@@ -261,7 +261,7 @@ const EmployeeChatPage = () => {
       const uid = String(user?.employee_id || user?.id || '');
       const qs = uid ? `?employee_id=${encodeURIComponent(uid)}` : '';
       const response = await fetch(
-        `${scheduleGroupedUrl}${qs}`,
+        `${scheduleGroupedUrl.replace(/^http:\/\//, 'https://')}${qs}`,
         {
           headers: {
             'Content-Type': 'application/json',

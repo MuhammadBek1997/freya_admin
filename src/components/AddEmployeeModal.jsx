@@ -5,16 +5,10 @@ import * as Yup from 'yup';
 import '../styles/AddEmployeeModal.css';
 
 const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
-  const { t, createEmployee, user } = UseGlobalContext();
-  
-  const professionOptions = [
-    { value: 'Стилист', label: t('profession.stylist', { defaultValue: 'Stilist' }) },
-    { value: 'Косметолог', label: t('profession.cosmetologist', { defaultValue: 'Kosmetolog' }) },
-    { value: 'Визажист', label: t('profession.makeup', { defaultValue: 'Vizajist' }) },
-    { value: 'Бровист', label: t('profession.brow', { defaultValue: 'Brovist' }) },
-    { value: 'Лэшмейкер', label: t('profession.lash', { defaultValue: 'Lashmaker' }) },
-    { value: 'Массажист', label: t('profession.masseur', { defaultValue: 'Massajchi' }) }
-  ];
+  const { t, createEmployee, user, professions } = UseGlobalContext();
+
+  // Use professions from Context
+  const professionOptions = professions || [];
 
   const validationSchema = Yup.object({
     employee_name: Yup.string()

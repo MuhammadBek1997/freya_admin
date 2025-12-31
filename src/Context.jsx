@@ -225,6 +225,20 @@ export const AppProvider = ({ children }) => {
 	const [servicesLoading, setServicesLoading] = useState(false);
 	const [servicesError, setServicesError] = useState(null);
 
+	// Professions state
+	const defaultProfessions = [
+		{ value: 'Стилист', label: 'Stilist' },
+		{ value: 'Косметолог', label: 'Kosmetolog' },
+		{ value: 'Визажист', label: 'Vizajist' },
+		{ value: 'Бровист', label: 'Brovist' },
+		{ value: 'Лэшмейкер', label: 'Lashmaker' },
+		{ value: 'Массажист', label: 'Massajchi' }
+	];
+	const [professions, setProfessions] = useState(() => {
+		const stored = localStorage.getItem('professions');
+		return stored ? JSON.parse(stored) : defaultProfessions;
+	});
+
 	// Chat state
 	const [conversations, setConversations] = useState([]);
 	const [conversationsLoading, setConversationsLoading] = useState(false);
@@ -1240,44 +1254,63 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Not authenticated - no token found');
 			}
 
-			const getUrl = schedulesUrl.replace(/^http:\/\//, 'https://');
-			const response = await fetch(getUrl, {
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${token}`
-				},
-			});
+			const getUrl = (schedulesUrl.replace(/^http:\/\//, 'https://').endsWith('/') ? schedulesUrl.replace(/^http:\/\//, 'https://') : `${schedulesUrl.replace(/^http:\/\//, 'https://')}/`);
 
-			if (response.ok) {
-				const data = await response.json();
-				console.log('Schedules fetched:', data);
+			// Timeout controller - 30 seconds
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-				// Filter schedules by salon_id if user has salon_id
-				let filteredSchedules = data.data || [];
-				if (user && user.salon_id) {
-					const target = String(user.salon_id);
-					filteredSchedules = (Array.isArray(filteredSchedules) ? filteredSchedules : []).filter(schedule => {
-						const sid = schedule?.salon_id ?? schedule?.salonId ?? (schedule?.salon && schedule.salon.id);
-						return sid && String(sid) === target;
-					});
+			try {
+				const response = await fetch(getUrl, {
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
+					},
+					signal: controller.signal
+				});
+
+				clearTimeout(timeoutId);
+
+				if (response.ok) {
+					const data = await response.json();
+					console.log('Schedules fetched:', data);
+
+					// Filter schedules by salon_id if user has salon_id
+					let filteredSchedules = data.data || [];
+					if (user && user.salon_id) {
+						const target = String(user.salon_id);
+						filteredSchedules = (Array.isArray(filteredSchedules) ? filteredSchedules : []).filter(schedule => {
+							const sid = schedule?.salon_id ?? schedule?.salonId ?? (schedule?.salon && schedule.salon.id);
+							return sid && String(sid) === target;
+						});
+					}
+
+					setSchedules(filteredSchedules);
+				} else if (response.status === 401) {
+					// Token invalid, clear auth state
+					localStorage.removeItem('authToken');
+					localStorage.removeItem('userData');
+					setUser(null);
+					setIsAuthenticated(false);
+					throw new Error('Authentication expired - please login again');
+				} else {
+					const errorData = await response.json();
+					throw new Error(errorData.message || 'Failed to fetch schedules');
 				}
-
-				setSchedules(filteredSchedules);
-			} else if (response.status === 401) {
-				// Token invalid, clear auth state
-				localStorage.removeItem('authToken');
-				localStorage.removeItem('userData');
-				setUser(null);
-				setIsAuthenticated(false);
-				throw new Error('Authentication expired - please login again');
-			} else {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to fetch schedules');
+			} catch (fetchError) {
+				clearTimeout(timeoutId);
+				if (fetchError.name === 'AbortError') {
+					console.warn('⚠️ Schedule fetch timeout - server is slow');
+					setSchedulesError('Server javob bermayapti. Iltimos, qayta urinib ko\'ring.');
+					setSchedules([]);
+				} else {
+					throw fetchError;
+				}
 			}
 		} catch (error) {
 			console.error('Error fetching schedules:', error);
-			setSchedulesError(error.message);
+			setSchedulesError(error.message || 'Schedulelarni yuklashda xatolik');
 			setSchedules([]);
 		} finally {
 			setSchedulesLoading(false);
@@ -1305,7 +1338,7 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Salon ID topilmadi');
 			}
 
-			// Backend faqat belgilangan fieldlarni qabul qiladi - whole_day va service_duration ni o'chirish kerak
+			// Backend faqat belgilangan fieldlarni qabul qiladi
 			const cleanPayload = {
 				salon_id: dataToSend.salon_id,
 				name: dataToSend.name,
@@ -1319,14 +1352,16 @@ export const AppProvider = ({ children }) => {
 				price: dataToSend.price,
 				full_pay: dataToSend.full_pay || 0,
 				deposit: dataToSend.deposit || 0,
-				is_active: dataToSend.is_active !== undefined ? dataToSend.is_active : true
+				is_active: dataToSend.is_active !== undefined ? dataToSend.is_active : true,
+				whole_day: dataToSend.whole_day || false,
+				service_duration: dataToSend.service_duration || 60
 			};
 
 			console.log('📮 Context.jsx - yuborilayotgan data:', cleanPayload)
 			console.log('📮 JSON stringify:', JSON.stringify(cleanPayload, null, 2))
 
 			let response;
-			const makeRequest = async (tok) => {
+			const makeRequest = async (tok, signal) => {
 				if (String(user?.role || '').toLowerCase() === 'employee') {
 					const st = String(dataToSend.start_time || '00:00').substring(0, 5);
 					const en = String(dataToSend.end_time || '23:59').substring(0, 5);
@@ -1351,6 +1386,7 @@ export const AppProvider = ({ children }) => {
 							'Content-Type': 'application/json',
 						},
 						body: JSON.stringify(mobilePayload),
+						signal: signal
 					});
 				}
 				const admUrl = schedulesUrl.replace(/^http:\/\//, 'https://');
@@ -1367,26 +1403,40 @@ export const AppProvider = ({ children }) => {
 						'Content-Type': 'application/json',
 					},
 					body: JSON.stringify(cleanPayload),
+					signal: signal
 				});
 			};
 
-			response = await makeRequest(token);
-			// Server xatolarida tez-tez qayta urinish
-			if (!response.ok && response.status >= 500) {
-				await sleep(500);
-				response = await makeRequest(getAuthToken());
-			}
-			// Auth xatolarida tokenni yangilab, bir marta qayta urinish
-			if (!response.ok && (response.status === 401 || response.status === 403) && String(user?.role || '').toLowerCase() === 'user') {
-				try {
-					const refreshed = await refreshAuthToken();
-					response = await makeRequest(refreshed);
-				} catch (e) {
-					// refresh muvaffaqiyatsiz bo'lsa, pastda xato tashlanadi
-				}
-			}
+			// Timeout controller - 45 seconds for POST (longer than GET)
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-			console.log('Response status:', response.status);
+			try {
+				response = await makeRequest(token, controller.signal);
+				clearTimeout(timeoutId);
+
+				// Server xatolarida tez-tez qayta urinish
+				if (!response.ok && response.status >= 500) {
+					await sleep(500);
+					const retryController = new AbortController();
+					const retryTimeoutId = setTimeout(() => retryController.abort(), 45000);
+					response = await makeRequest(getAuthToken(), retryController.signal);
+					clearTimeout(retryTimeoutId);
+				}
+				// Auth xatolarida tokenni yangilab, bir marta qayta urinish
+				if (!response.ok && (response.status === 401 || response.status === 403) && String(user?.role || '').toLowerCase() === 'user') {
+					try {
+						const refreshed = await refreshAuthToken();
+						const authRetryController = new AbortController();
+						const authRetryTimeoutId = setTimeout(() => authRetryController.abort(), 45000);
+						response = await makeRequest(refreshed, authRetryController.signal);
+						clearTimeout(authRetryTimeoutId);
+					} catch (e) {
+						// refresh muvaffaqiyatsiz bo'lsa, pastda xato tashlanadi
+					}
+				}
+
+				console.log('Response status:', response.status);
 
 			if (!response.ok) {
 				const contentType = response.headers.get('content-type');
@@ -1463,13 +1513,22 @@ export const AppProvider = ({ children }) => {
 				}
 			} catch {}
 
-			await fetchSchedules();
-			await fetchGroupedSchedules();
+				await fetchSchedules();
+				await fetchGroupedSchedules();
 
-			return data;
+				return data;
+			} catch (fetchError) {
+				clearTimeout(timeoutId);
+				if (fetchError.name === 'AbortError') {
+					console.warn('⚠️ Schedule create timeout - server is slow');
+					throw new Error('Server javob bermayapti. Iltimos, sahifani yangilab qayta urinib ko\'ring.');
+				} else {
+					throw fetchError;
+				}
+			}
 		} catch (error) {
 			console.error('❌ Schedule yaratishda xatolik:', error);
-			setSchedulesError(error.message);
+			setSchedulesError(error.message || 'Schedule yaratishda xatolik');
 			throw error;
 		} finally {
 			setSchedulesLoading(false);
@@ -3684,6 +3743,38 @@ export const AppProvider = ({ children }) => {
 		}
 	};
 
+	// Profession management functions
+	const addProfession = async (professionName) => {
+		try {
+			const newProfession = {
+				value: professionName,
+				label: professionName
+			};
+
+			const updatedProfessions = [...professions, newProfession];
+			setProfessions(updatedProfessions);
+			localStorage.setItem('professions', JSON.stringify(updatedProfessions));
+
+			return { success: true };
+		} catch (error) {
+			console.error('❌ Kasb qo\'shishda xatolik:', error);
+			throw error;
+		}
+	};
+
+	const removeProfession = async (professionValue) => {
+		try {
+			const updatedProfessions = professions.filter(p => p.value !== professionValue);
+			setProfessions(updatedProfessions);
+			localStorage.setItem('professions', JSON.stringify(updatedProfessions));
+
+			return { success: true };
+		} catch (error) {
+			console.error('❌ Kasb o\'chirishda xatolik:', error);
+			throw error;
+		}
+	};
+
 	// Fetch services - all services from production server
 	const fetchServices = async () => {
 		setServicesLoading(true);
@@ -5336,6 +5427,10 @@ export const AppProvider = ({ children }) => {
 			getAppointmentById,
 			// Extended employee functions
 			getEmployeeById, updateEmployee, deleteEmployee,
+			// Profession management
+			professions,
+			addProfession,
+			removeProfession,
 			// Extended salon functions
 			getSalonById, createSalon, deleteSalon,
 			// Extended service functions

@@ -29,7 +29,7 @@ const RightSidebar = () => {
             setScheduleLoading(true);
             try {
                 const response = await fetch(
-                    `${schedulesUrl}/${selectedElement.schedule_id}`,
+                    `${schedulesUrl.replace(/^http:\/\//, 'https://')}/${selectedElement.schedule_id}`,
                     {
                         method: 'GET',
                         headers: {

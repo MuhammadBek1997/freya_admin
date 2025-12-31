@@ -1,0 +1,203 @@
+.add-profession-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.add-profession-modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.add-profession-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.add-profession-modal .modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.add-profession-modal .close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #999;
+  transition: color 0.2s;
+}
+
+.add-profession-modal .close-btn:hover {
+  color: #333;
+}
+
+.add-profession-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.add-profession-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.add-profession-form label {
+  font-weight: 500;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.add-profession-form .form-input {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.add-profession-form .form-input:focus {
+  outline: none;
+  border-color: #8B5CF6;
+}
+
+.add-profession-form .form-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.add-profession-modal .error-message {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.add-profession-form .form-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.add-profession-form .submit-btn,
+.add-profession-form .cancel-btn {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-profession-form .submit-btn {
+  background-color: #8B5CF6;
+  color: white;
+}
+
+.add-profession-form .submit-btn:hover:not(:disabled) {
+  background-color: #7C3AED;
+}
+
+.add-profession-form .submit-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.add-profession-form .cancel-btn {
+  background-color: #f0f0f0;
+  color: #555;
+}
+
+.add-profession-form .cancel-btn:hover:not(:disabled) {
+  background-color: #e0e0e0;
+}
+
+.existing-professions {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e5e5;
+}
+
+.existing-professions h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #555;
+}
+
+.professions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profession-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.profession-item:hover {
+  background-color: #f0f0f0;
+}
+
+.profession-item span {
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.delete-profession-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 1.5rem;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.delete-profession-btn:hover:not(:disabled) {
+  background-color: #fee;
+  color: #c33;
+}
+
+.delete-profession-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

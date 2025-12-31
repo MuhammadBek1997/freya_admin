@@ -308,6 +308,10 @@ const AddScheduleModal = () => {
                         <option value={60}>60 {t('minutes') || 'daqiqa'}</option>
                         <option value={90}>90 {t('minutes') || 'daqiqa'}</option>
                         <option value={120}>120 {t('minutes') || 'daqiqa'}</option>
+                        <option value={150}>150 {t('minutes') || 'daqiqa'}</option>
+                        <option value={180}>180 {t('minutes') || 'daqiqa'}</option>
+                        <option value={210}>210 {t('minutes') || 'daqiqa'}</option>
+                        <option value={240}>240 {t('minutes') || 'daqiqa'}</option>
                     </select>
                     {!formData.whole_day && (
                         <input

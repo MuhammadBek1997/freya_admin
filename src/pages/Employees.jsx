@@ -6,6 +6,7 @@ import EditEmployeeBar from '../components/EditEmployeeBar';
 import AboutEmployeeBar from '../components/AboutEmployeeBar';
 import EmployWaitingCard from '../components/EmployWaitingCard';
 import AddEmployeeModal from '../components/AddEmployeeModal';
+import AddProfessionModal from '../components/AddProfessionModal';
 
 const Employees = () => {
   const { t, waitingEmp, setWaitingEmp, employees, employeesBySalon, handleAddWaitingEmp, handleRemoveWaitingEmp, isCheckedItem, setIsCheckedItem, fetchEmployees, employeesLoading, user, mySchedules, mySchedulesLoading, mySchedulesError, fetchMySchedules, markEmployeeBusy } = UseGlobalContext();
@@ -13,6 +14,7 @@ const Employees = () => {
   const [isMenuOpen, setIsMenuOpen] = useState({ menu: null, cardId: null });
   const [showWait, setShowWait] = useState(false);
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  const [showAddProfessionModal, setShowAddProfessionModal] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingEmployeeId, setBookingEmployeeId] = useState(null);
   const [showBusyModal, setShowBusyModal] = useState(false);
@@ -210,10 +212,16 @@ const Employees = () => {
                 {t('employSendWait')}
               </button>
               {user && user.role === 'admin' && (
-                <button className="employ-filter-add" onClick={() => setShowAddEmployeeModal(true)}>
-                  <img src="/images/+.png" alt="" />
-                  {t('employAddBtn')}
-                </button>
+                <>
+                  <button className="employ-filter-add" onClick={() => setShowAddProfessionModal(true)}>
+                    <img src="/images/+.png" alt="" />
+                    {t('profession.addButton', { defaultValue: 'Добавить профессию' })}
+                  </button>
+                  <button className="employ-filter-add" onClick={() => setShowAddEmployeeModal(true)}>
+                    <img src="/images/+.png" alt="" />
+                    {t('employAddBtn')}
+                  </button>
+                </>
               )}
             </>
           )}
@@ -389,6 +397,18 @@ const Employees = () => {
           setEditModal={(v) => { if (!v) closeBookingModal() }}
         />
       ) : null}
+
+      {showAddProfessionModal && (
+        <AddProfessionModal
+          onClose={() => setShowAddProfessionModal(false)}
+          onProfessionAdded={() => {
+            // Refresh employees list to show updated professions
+            if (user?.salon_id) {
+              fetchEmployees(user.salon_id);
+            }
+          }}
+        />
+      )}
     </section>
   );
 };
