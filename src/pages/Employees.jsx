@@ -29,10 +29,6 @@ const Employees = () => {
   
   // Sahifa ochilganda va salon o'zgarganda xodimlarni yuklash
   useEffect(() => {
-    console.log('🟢 Employees page mounted');
-    console.log('🟢 Token in localStorage:', localStorage.getItem('authToken'));
-    console.log('🟢 UserData in localStorage:', localStorage.getItem('userData'));
-    console.log('🟢 Current user:', user);
     if (user?.salon_id) {
       fetchEmployees(user.salon_id);
     } else {

@@ -52,7 +52,6 @@ function App() {
 
   // EMPLOYEE ROLE - faqat employee-chat sahifasi
   if (user?.role === 'employee') {
-    console.log('🟢 EMPLOYEE ROLE: Showing employee chat page');
     return (
       <div style={{ width: '100%', height: '100vh' }}>
         <Routes>
@@ -66,7 +65,6 @@ function App() {
 
   // SALON ADMIN ROLE - barcha admin sahifalari
   if (user?.role === 'admin' || user?.role === 'salon_admin') {
-    console.log('🟢 SALON ADMIN ROLE: Showing admin pages with sidebar');
     return (
       <div style={{ display: 'flex', width: '100%', height: '100vh' }}>
         <Sidebar />
@@ -107,7 +105,6 @@ function App() {
 
   // SUPERADMIN ROLE - barcha sahifalar
   if (user?.role === 'superadmin') {
-    console.log('🔴 SUPERADMIN ROLE: Showing all pages');
     return (
       <div style={{ display: 'flex', width: '100%', height: '100vh' }}>
         <Sidebar />
@@ -127,7 +124,6 @@ function App() {
   }
 
   // Agar role aniqlanmagan bo'lsa, login sahifasiga yo'naltirish
-  console.log('❌ UNKNOWN ROLE: Redirecting to login');
   return <Login />;
 
 }

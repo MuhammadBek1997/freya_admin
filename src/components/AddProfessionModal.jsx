@@ -56,7 +56,6 @@ const AddProfessionModal = ({ onClose, onProfessionAdded }) => {
       alert(t('alerts.professionAdded', { defaultValue: 'Kasb muvaffaqiyatli qo\'shildi!' }));
       onClose();
     } catch (error) {
-      console.error('Kasb qo\'shishda xatolik:', error);
       setError(error.message || t('errors.professionAddFailed', { defaultValue: 'Kasb qo\'shishda xatolik yuz berdi' }));
     } finally {
       setLoading(false);
@@ -83,7 +82,6 @@ const AddProfessionModal = ({ onClose, onProfessionAdded }) => {
       if (onProfessionAdded) onProfessionAdded();
       alert(t('alerts.professionDeleted', { defaultValue: 'Kasb o\'chirildi!' }));
     } catch (error) {
-      console.error('Kasb o\'chirishda xatolik:', error);
       setError(error.message || t('errors.professionDeleteFailed', { defaultValue: 'Kasb o\'chirishda xatolik yuz berdi' }));
     } finally {
       setLoading(false);

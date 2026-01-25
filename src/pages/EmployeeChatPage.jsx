@@ -190,7 +190,6 @@ const EmployeeChatPage = () => {
         const count = await getUnreadCount();
         setUnreadCount(count);
       } catch (error) {
-        console.error('Error loading unread count:', error);
       }
     };
 
@@ -358,7 +357,6 @@ const EmployeeChatPage = () => {
       }
 
     } catch (error) {
-      console.error('Error fetching grouped schedules:', error);
       setSchedulesError(error.message);
       setGroupedSchedules({});
     } finally {
@@ -381,7 +379,6 @@ const EmployeeChatPage = () => {
     setIsMobileChatOpen(true);
 
     try {
-      console.log('📞 Opening conversation with user:', userId);
       
       // 1. WS ulanishni ochish
       const connected = connectChatWs(userId, 'user');
@@ -391,7 +388,6 @@ const EmployeeChatPage = () => {
         const wsOpened = await waitWsOpenFor(userId, 'user', 3000);
         
         if (wsOpened) {
-          console.log('✅ WS opened, history will be loaded via WS');
           // ❌ fetchMessages ni CHAQIRMASLIK! WS history avtomatik keladi
           
           // 3. Mark as read
@@ -401,13 +397,11 @@ const EmployeeChatPage = () => {
           }
         } else {
           // WS ochilmasa, fallback: REST API
-          console.warn('⚠️ WS failed to open, falling back to REST API');
           await fetchMessages(userId);
           await markConversationAsRead(userId);
         }
       } else {
         // WS ulanish bo'lmasa, REST API
-        console.warn('⚠️ WS connection failed, using REST API');
         await fetchMessages(userId);
         await markConversationAsRead(userId);
       }
@@ -417,12 +411,10 @@ const EmployeeChatPage = () => {
       setUnreadCount(count);
       
     } catch (error) {
-      console.error('❌ Error loading conversation:', error);
       // Fallback: REST API
       try {
         await fetchMessages(userId);
       } catch (e) {
-        console.error('❌ Failed to load messages:', e);
       }
     }
   };
@@ -433,12 +425,10 @@ const EmployeeChatPage = () => {
     // Input tozalash va tekshirish
     const trimmedMessage = newMessage.trim();
     if (!trimmedMessage || trimmedMessage.length === 0) {
-      console.warn('⚠️ Empty message, skipping');
       return;
     }
     
     if (!selectedUser || !selectedUser.id) {
-      console.warn('⚠️ No selected user, skipping');
       return;
     }
 
@@ -464,13 +454,11 @@ const EmployeeChatPage = () => {
       setMessages(prev => [...(Array.isArray(prev) ? prev : []), optimisticMessage]);
       setNewMessage(''); // Input tozalash
       
-      console.log('📤 Sending message via WS...', { messageText, receiverId: selectedUser.id });
       
       // 2. WS ochilganligini ta'minlash
       const wsOpened = await waitWsOpenFor(selectedUser.id, 'user', 5000);
       
       if (!wsOpened) {
-        console.error('❌ WS failed to open');
         setMessages(prev => prev.filter(m => m.id !== tempId));
         alert(t('messageSendError') || 'Xabar yuborishda xatolik: WebSocket ulanmadi!');
         return;
@@ -481,11 +469,9 @@ const EmployeeChatPage = () => {
         for (let i = 0; i <= retries; i++) {
           const sent = sendWsMessage(messageText, 'text');
           if (sent) {
-            console.log('✅ Message sent via WS');
             return true;
           }
           if (i < retries) {
-            console.warn(`⚠️ WS send failed, retry ${i + 1}/${retries}`);
             await new Promise(r => setTimeout(r, 500));
           }
         }
@@ -504,7 +490,6 @@ const EmployeeChatPage = () => {
       // (Context.jsx dagi onmessage handler dublikatni tekshiradi)
       
     } catch (error) {
-      console.error('❌ Error sending message:', error);
       
       // Optimistic xabarni o'chirish
       setMessages(prev => prev.filter(m => m.id !== tempId));
@@ -568,7 +553,6 @@ const EmployeeChatPage = () => {
       }
       // Backend echo kelganda optimistic xabar almashtiriladi
     } catch (err) {
-      console.error('Error sending image:', err);
       alert(t('messageSendError') || 'Xabar yuborishda xatolik yuz berdi!');
     } finally {
       if (imageInputRef.current) imageInputRef.current.value = '';
@@ -686,9 +670,7 @@ const EmployeeChatPage = () => {
     try {
       const employeeId = user?.id || user?.employee_id;
       const avatarUrl = await updateEmployeeAvatar(employeeId, file);
-      console.log('✅ Avatar muvaffaqiyatli yangilandi:', avatarUrl);
     } catch (error) {
-      console.error('Avatar yuklashda xatolik:', error);
       setAvatarError(error.message);
       alert(error.message);
     } finally {
@@ -828,7 +810,6 @@ const EmployeeChatPage = () => {
                   const userAvatar = participant.avatar_url || conversation.other_user_avatar || conversation.user_avatar_url || conversation.avatar || "ChatAvatar.svg";
 
                   if (!userId) {
-                    console.warn('⚠️ Conversation without userId:', conversation);
                     return null;
                   }
 

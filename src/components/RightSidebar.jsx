@@ -43,10 +43,8 @@ const RightSidebar = () => {
                     const data = await response.json();
                     setScheduleData(data?.data || data);
                 } else {
-                    console.error('Schedule yuklanmadi');
                 }
             } catch (error) {
-                console.error('Schedule yuklashda xato:', error);
             } finally {
                 setScheduleLoading(false);
             }
@@ -72,7 +70,6 @@ const RightSidebar = () => {
             }
             closeRightSidebar();
         } catch (error) {
-            console.error('Bekor qilishda xato:', error);
             alert(error.message);
         }
     };
@@ -86,7 +83,6 @@ const RightSidebar = () => {
             await updateAppointmentStatus(selectedElement.id, 'accepted');
             closeRightSidebar();
         } catch (error) {
-            console.error('Keldi statusini o\'zgartirishda xato:', error);
             alert(error.message);
         }
     };

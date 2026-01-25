@@ -24,7 +24,6 @@ const Login = () => {
 
   // Test funksiyalari
   const testEmployeeCredentials = async () => {
-    console.log('🧪 Testing different employee credentials...');
     
     const credentials = [
       { username: 'employee1_1', password: 'employee123' },
@@ -34,12 +33,9 @@ const Login = () => {
     ];
 
     for (const cred of credentials) {
-      console.log(`🧪 Testing ${cred.username}/${cred.password}...`);
       try {
         const result = await loginEmployee(cred.username, cred.password);
-        console.log(`✅ ${cred.username} login successful:`, result);
       } catch (error) {
-        console.log(`❌ ${cred.username} login failed:`, error.message);
       }
     }
   };
@@ -65,30 +61,20 @@ const Login = () => {
     try {
         const result = await login(username, password);
 
-        console.log('✅ Login successful, result:', result);
-        console.log('✅ Token in localStorage:', localStorage.getItem('authToken'));
-        console.log('✅ UserData in localStorage:', localStorage.getItem('userData'));
 
         // Decode token to verify role
         const token = localStorage.getItem('authToken');
         if (token) {
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
-                console.log('✅ Decoded token payload:', payload);
-                console.log('✅ Token role:', payload.role);
-                console.log('✅ UserData role:', result.user?.role);
 
                 if (payload.role !== result.user?.role) {
-                    console.error('❌ WARNING: Token role does not match user role!');
-                    console.error('❌ Token role:', payload.role);
-                    console.error('❌ User role:', result.user?.role);
                     throw new Error(`Role mismatch: You logged in as "${payload.role}" but trying to access "${result.user?.role}" pages. Please use correct admin credentials.`);
                 }
             } catch (decodeError) {
                 if (decodeError.message.includes('Role mismatch')) {
                     throw decodeError;
                 }
-                console.warn('Could not decode token:', decodeError);
             }
         }
 
@@ -99,7 +85,6 @@ const Login = () => {
             navigate('/');
         }
     } catch (error) {
-        console.error('Login xato:', error);
         setErrorMessage(error.message || 'Login muvaffaqiyatsiz');
         setCheckPsw(false);
     } finally {

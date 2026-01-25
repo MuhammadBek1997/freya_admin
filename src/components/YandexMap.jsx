@@ -40,7 +40,6 @@ const YandexMap = ({ lat, long, lng, editable = false, onSelect }) => {
     const inputLng = (typeof lng !== 'undefined' && lng !== null) ? lng : long;
     const validLong = (inputLng && !isNaN(inputLng) && inputLng !== null && inputLng !== undefined) ? parseFloat(inputLng) : defaultLong;
 
-    console.log('YandexMap coordinates:', { 
         original: { lat, long, lng }, 
         valid: { validLat, validLong },
         isLatValid: !isNaN(validLat),
@@ -107,7 +106,6 @@ const YandexMap = ({ lat, long, lng, editable = false, onSelect }) => {
                 });
             })
             .catch((error) => {
-                console.error('Yandex Maps API yuklanmadi:', error);
             });
 
         // Tozalash: komponent o‘chirilganda xarita va markerlarni yo‘q qilish

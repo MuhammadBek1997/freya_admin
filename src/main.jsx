@@ -18,7 +18,6 @@ if (typeof window !== 'undefined') {
       sessionStorage.clear()
     }
   } catch (e) {
-    console.error('Storage tozalashda xatolik:', e)
   }
 }
 

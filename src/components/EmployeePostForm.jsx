@@ -43,7 +43,6 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
                 }
             });
         } catch (error) {
-            console.warn('Post limits prefetch o‘tkazildi (prod barqarorligi uchun).', error?.message || error);
         }
     };
 
@@ -117,10 +116,8 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
             // 1. Avval media fayllarni yuklash
             let mediaUrls = [];
             if (pendingMedia.length > 0) {
-                console.log('📤 Uploading', pendingMedia.length, 'media files...');
                 const files = pendingMedia.map(m => m.file);
                 mediaUrls = await uploadPhotosToServer(files);
-                console.log('✅ Media uploaded:', mediaUrls);
             }
 
             // 2. Post yaratish
@@ -130,7 +127,6 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
                 media_files: mediaUrls
             };
 
-            console.log('📤 Creating post:', postPayload);
 
             const response = await axios.post(
                 `${employeesUrl}/${employeeId}/posts`,
@@ -144,7 +140,6 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
             );
 
             if (response.data.success) {
-                console.log('✅ Post created successfully');
                 
                 // Preview URLlarni tozalash
                 pendingMedia.forEach(m => {
@@ -157,7 +152,6 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
                 fetchPostLimits();
             }
         } catch (error) {
-            console.error('❌ Post yaratishda xatolik:', error);
             
             if (error.response?.status === 403) {
                 setShowPayment(true);

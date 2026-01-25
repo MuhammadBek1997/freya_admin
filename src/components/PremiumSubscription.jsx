@@ -20,7 +20,6 @@ const PremiumSubscription = ({ onClose }) => {
             // Bu yerda backendga tegmasdan barqaror GET chaqiruvini o‘tkazib qo‘yamiz.
             setSubscriptionStatus(null);
         } catch (error) {
-            console.error('Subscription status olishda xatolik:', error);
         }
     };
 

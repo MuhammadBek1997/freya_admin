@@ -87,7 +87,6 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
       resetForm();
       onClose();
     } catch (error) {
-      console.error('Xodim yaratishda xatolik:', error);
       setError(error.message || t('errors.employeeCreateFailed', { defaultValue: 'Xodim yaratishda xatolik yuz berdi' }));
     } finally {
       setLoading(false);

@@ -276,7 +276,6 @@ const BookScheduleModal = (props) => {
       alert(t('bookingSuccess') || 'Бронирование успешно создано!')
       if (typeof setEditModal === 'function') setEditModal(false)
     } catch (e) {
-      console.error('❌ Xatolik:', e)
       setError(e.message || t('savingError') || 'Saqlashda xatolik yuz berdi')
     } finally {
       setLoading(false)

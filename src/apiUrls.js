@@ -1,12 +1,12 @@
-// Base URL: use env in dev/prod; default to production API
-const RAW_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.freyapp.uz/api";
+// Base URL: use env in dev/prod; default to production API (Heroku)
+const RAW_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://freya-2aff07996d13.herokuapp.com/api";
 let BASE_URL = RAW_BASE_URL;
 // Force production if a relative '/api' or localhost base is provided
 if (BASE_URL.startsWith('/')) {
-  BASE_URL = "https://api.freyapp.uz/api";
+  BASE_URL = "https://freya-2aff07996d13.herokuapp.com/api";
 }
 if (/localhost|127\.0\.0\.1/i.test(BASE_URL)) {
-  BASE_URL = "https://api.freyapp.uz/api";
+  BASE_URL = "https://freya-2aff07996d13.herokuapp.com/api";
 }
 // Upgrade to HTTPS for non-local hosts if mistakenly set to http
 if (/^http:\/\//i.test(BASE_URL) && !/localhost|127\.0\.0\.1/i.test(BASE_URL)) {

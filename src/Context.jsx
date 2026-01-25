@@ -39,8 +39,8 @@ import i18n from "./i18n";
 	} from "./apiUrls"
 
 
-// API base URL configuration - Python backend URL
-const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.freyapp.uz/api";
+// API base URL configuration - Python backend URL (Heroku)
+const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://freya-2aff07996d13.herokuapp.com/api";
 let API_BASE_URL = RAW_API_BASE_URL.replace(/^http:\/\//, 'https://');
 const WS_HOST = (() => {
 	try {
@@ -49,9 +49,9 @@ const WS_HOST = (() => {
 		if (h && h.includes('.')) return h;
 		const loc = typeof window !== 'undefined' ? window.location : null;
 		const lh = loc ? loc.host : '';
-		if (!lh || lh.includes('localhost') || lh.includes('127.0.0.1')) return 'api.freyapp.uz';
+		if (!lh || lh.includes('localhost') || lh.includes('127.0.0.1')) return 'freya-2aff07996d13.herokuapp.com';
 		return lh;
-	} catch { return 'api.freyapp.uz'; }
+	} catch { return 'freya-2aff07996d13.herokuapp.com'; }
 })();
 
 // Force a specific salon ID when provided (disabled by default)
@@ -337,7 +337,6 @@ export const AppProvider = ({ children }) => {
 
 				// Role mavjudligini tekshirish
 				if (!parsedUser.role) {
-					console.error('❌ ERROR: User role is missing! Clearing localStorage...');
 					localStorage.removeItem('authToken');
 					localStorage.removeItem('userData');
 					setAuthLoading(false);
@@ -347,7 +346,6 @@ export const AppProvider = ({ children }) => {
 				setUser(parsedUser);
 				setIsAuthenticated(true);
 			} catch (error) {
-				console.error('Error parsing user data:', error);
 				localStorage.removeItem('authToken');
 				localStorage.removeItem('userData');
 			}
@@ -405,14 +403,12 @@ export const AppProvider = ({ children }) => {
 				} catch {
 					try { msg = await resp.text(); } catch { }
 				}
-				console.warn('[getStatistics] request failed:', msg);
 				return { data: {}, message: msg };
 			}
 
 			const data = await resp.json();
 			return data?.data ? data : { data };
 		} catch (error) {
-			console.error('[getStatistics] unexpected error:', error);
 			return { data: {} };
 		}
 	};
@@ -462,14 +458,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Salons fetched:', data);
 				setSalons(data.data || []);
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch salons');
 			}
 		} catch (error) {
-			console.error('Error fetching salons:', error);
 			setSalonsError(error.message);
 			setSalons([]);
 		} finally {
@@ -507,16 +501,12 @@ export const AppProvider = ({ children }) => {
 
 	const updateSalon = async (salonId, updateData) => {
 		try {
-			console.log('=== updateSalon START ===');
-			console.log('Salon ID:', salonId);
 			console.log('Update Data:', JSON.stringify(updateData, null, 2));
 
 			const token = getAuthToken();
 			const role = user?.role;
 			const allowedRoles = ['admin', 'super_admin', 'superadmin', 'private_admin', 'private_salon_admin'];
 
-			console.log('User role:', role);
-			console.log('Token exists:', !!token);
 
 			if (!role || !allowedRoles.includes(role)) {
 				throw new Error('Admin huquqi talab qilinadi');
@@ -527,8 +517,6 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const targetId = salonId || (salonProfile && salonProfile.id) || user?.salon_id;  // Fixed: Added null-check for salonProfile
-			console.log('Target ID:', targetId);
-			console.log('URL:', `${salonsUrl}/${targetId}`);
 
 			const rawLang = i18n?.language || 'uz';
 			const languageHeader = ['uz', 'ru', 'en'].includes(rawLang)
@@ -643,31 +631,24 @@ export const AppProvider = ({ children }) => {
 				body: JSON.stringify(normalizedPayload),
 			});
 
-			console.log('Response status:', response.status);
-			console.log('Response ok:', response.ok);
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Success response:', data);
 
 				// State'ni yangilash
 				const serverSalon = data?.data || {};
 				setSalonProfile(prev => {
 					if (!prev || prev.id !== targetId) return prev;
 					const updated = { ...prev, ...updateData, ...serverSalon };
-					console.log('Updated salon profile:', updated);
 					return updated;
 				});
 
 				return data;
 			} else {
 				const errorText = await response.text();
-				console.error('Error response:', errorText);
 				throw new Error(`HTTP ${response.status}: ${errorText}`);
 			}
 		} catch (error) {
-			console.error('=== updateSalon ERROR ===');
-			console.error('Error:', error);
 			throw error;
 		}
 	};
@@ -703,7 +684,6 @@ export const AppProvider = ({ children }) => {
 			const formData = new FormData();
 			formData.append('file', file);
 
-			console.log(`📤 Uploading file ${i + 1}/${files.length}:`, file.name);
 
 			try {
 				const response = await fetch(photoUploadUrl, {
@@ -763,7 +743,6 @@ export const AppProvider = ({ children }) => {
 	// Logo ni alohida yuklash
 	const uploadSalonLogo = async (salonId, logoFile) => {
 		try {
-			console.log('=== UPLOAD SALON LOGO START ===');
 
 			const targetSalonId = salonId || salonProfile?.id || user?.salon_id;
 			if (!targetSalonId) throw new Error('Salon ID topilmadi');
@@ -775,7 +754,6 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const logoUrl = urls[0];
-			console.log('✅ Logo uploaded:', logoUrl);
 
 			const token = getAuthToken();
 			const updatePayload = {
@@ -813,8 +791,6 @@ export const AppProvider = ({ children }) => {
 			return logoUrl;
 
 		} catch (error) {
-			console.error('=== UPLOAD SALON LOGO ERROR ===');
-			console.error('Error:', error);
 			throw error;
 		}
 	};
@@ -822,7 +798,6 @@ export const AppProvider = ({ children }) => {
 	// Photos ni alohida yuklash (logosiz)
 	const uploadSalonPhotos = async (salonId, files) => {
 		try {
-			console.log('=== UPLOAD SALON PHOTOS START ===');
 
 			const targetSalonId = salonId || salonProfile?.id || user?.salon_id;
 			if (!targetSalonId) throw new Error('Salon ID topilmadi');
@@ -831,17 +806,14 @@ export const AppProvider = ({ children }) => {
 
 			for (let i = 0; i < files.length; i++) {
 				const file = files[i];
-				console.log(`📤 Uploading file ${i + 1}/${files.length}:`, file.name);
 
 				try {
 					const urls = await uploadPhotosToServer([file]);
 
 					if (urls && urls.length > 0) {
 						uploadedUrls.push(urls[0]);
-						console.log(`✅ File ${i + 1} uploaded:`, urls[0]);
 					}
 				} catch (fileError) {
-					console.error(`❌ Error uploading file ${i + 1}:`, fileError);
 					throw fileError;
 				}
 			}
@@ -850,7 +822,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Hech qanday rasm yuklanmadi');
 			}
 
-			console.log('✅ All uploaded URLs:', uploadedUrls);
 
 			const currentPhotos = Array.isArray(salonProfile?.salon_photos)
 				? salonProfile.salon_photos
@@ -866,7 +837,6 @@ export const AppProvider = ({ children }) => {
 			};
 
 			const token = getAuthToken();
-			console.log('📤 Updating salon with photos...');
 
 			const response = await fetch(`${salonsUrl}/${targetSalonId}`, {
 				method: 'PUT',
@@ -898,8 +868,6 @@ export const AppProvider = ({ children }) => {
 			return nextPhotos;
 
 		} catch (error) {
-			console.error('=== UPLOAD SALON PHOTOS ERROR ===');
-			console.error('Error:', error);
 			throw error;
 		}
 	};
@@ -958,7 +926,6 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const data = await response.json();
-			console.log('✅ Rasm o\'chirildi va salon yangilandi:', data);
 
 			// State'ni yangilash
 			setSalonProfile(prev => {
@@ -974,7 +941,6 @@ export const AppProvider = ({ children }) => {
 
 			return { photos: currentPhotos };
 		} catch (error) {
-			console.error('Rasm o\'chirishda xatolik:', error);
 			throw error;
 		}
 	};
@@ -1095,11 +1061,9 @@ export const AppProvider = ({ children }) => {
 	// Universal login function - avval admin, keyin employee
 	const login = async (username, password) => {
 		try {
-			console.log('🔐 Attempting login for:', username);
 
 			// 1. Avval admin login'ni sinab ko'ramiz
 			try {
-				console.log('🔍 Trying admin login...');
 				const response = await fetch(adminLoginUrl, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -1115,8 +1079,6 @@ export const AppProvider = ({ children }) => {
 				}
 
 				if (response.ok) {
-					console.log('✅ Admin login successful');
-					console.log('✅ Backend response:', data);
 
 					// Verify token payload matches user role
 					const userData = {
@@ -1128,8 +1090,6 @@ export const AppProvider = ({ children }) => {
 						salon_id: data.user.salon_id || null
 					};
 
-					console.log('✅ Admin userData to save:', userData);
-					console.log('✅ Token to save:', data.token);
 
 					localStorage.setItem('authToken', data.token);
 					localStorage.setItem('userData', JSON.stringify(userData));
@@ -1144,7 +1104,6 @@ export const AppProvider = ({ children }) => {
 					throw new Error('Admin login failed');
 				}
 			} catch (adminError) {
-				console.log('⚠️ Admin login failed, trying employee login...');
 
 				// 2. Employee login'ni sinab ko'ramiz
 				const response = await fetch(employeeLoginUrl, {
@@ -1162,7 +1121,6 @@ export const AppProvider = ({ children }) => {
 				}
 
 				if (response.ok) {
-					console.log('✅ Employee login successful');
 					const userData = {
 						id: data.user.id,
 						username: data.user.username || data.user.name,
@@ -1187,7 +1145,6 @@ export const AppProvider = ({ children }) => {
 				}
 			}
 		} catch (error) {
-			console.error('❌ Login error:', error);
 			throw error;
 		}
 	};
@@ -1209,7 +1166,6 @@ export const AppProvider = ({ children }) => {
 	// Fetch appointments by salon ID using the new filter endpoint
 	const fetchAppointments = async (salonId) => {
 		if (!salonId) {
-			console.error('Salon ID is required to fetch appointments');
 			return;
 		}
 
@@ -1227,14 +1183,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Salon appointments fetched:', data);
 				setAppointments(data.data || []);
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch salon appointments');
 			}
 		} catch (error) {
-			console.error('Error fetching salon appointments:', error);
 			setAppointmentsError(error.message);
 			setAppointments([]);
 		} finally {
@@ -1274,7 +1228,6 @@ export const AppProvider = ({ children }) => {
 
 				if (response.ok) {
 					const data = await response.json();
-					console.log('Schedules fetched:', data);
 
 					// Filter schedules by salon_id if user has salon_id
 					let filteredSchedules = data.data || [];
@@ -1301,7 +1254,6 @@ export const AppProvider = ({ children }) => {
 			} catch (fetchError) {
 				clearTimeout(timeoutId);
 				if (fetchError.name === 'AbortError') {
-					console.warn('⚠️ Schedule fetch timeout - server is slow');
 					setSchedulesError('Server javob bermayapti. Iltimos, qayta urinib ko\'ring.');
 					setSchedules([]);
 				} else {
@@ -1309,7 +1261,6 @@ export const AppProvider = ({ children }) => {
 				}
 			}
 		} catch (error) {
-			console.error('Error fetching schedules:', error);
 			setSchedulesError(error.message || 'Schedulelarni yuklashda xatolik');
 			setSchedules([]);
 		} finally {
@@ -1377,7 +1328,6 @@ export const AppProvider = ({ children }) => {
 						is_active: true,
 					};
 					const empUrl = mobileEmployeesMeSchedulesUrl.replace(/^http:\/\//, 'https://');
-					console.log('🔷 Employee POST to:', empUrl);
 					console.log('🔷 Token (first 20 chars):', tok?.substring(0, 20));
 					return fetch(empUrl, {
 						method: 'POST',
@@ -1390,7 +1340,6 @@ export const AppProvider = ({ children }) => {
 					});
 				}
 				const admUrl = schedulesUrl.replace(/^http:\/\//, 'https://');
-				console.log('🔶 Admin POST to:', admUrl);
 				console.log('🔶 Token (first 20 chars):', tok?.substring(0, 20));
 				console.log('🔶 Headers:', {
 					'Authorization': `Bearer ${tok?.substring(0, 20)}...`,
@@ -1436,7 +1385,6 @@ export const AppProvider = ({ children }) => {
 					}
 				}
 
-				console.log('Response status:', response.status);
 
 			if (!response.ok) {
 				const contentType = response.headers.get('content-type');
@@ -1454,7 +1402,6 @@ export const AppProvider = ({ children }) => {
 							return `[${idx}] Field: ${field}, Error: ${msg}, Input: ${JSON.stringify(inputValue)}`;
 						}).join('\n');
 
-						console.error('Validation errors:\n', detailedErrors);
 						errorMessage = errorData.detail[0]?.msg || errorMessage;
 					} else if (typeof errorData?.detail === 'string') {
 						errorMessage = errorData.detail;
@@ -1473,7 +1420,6 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const data = await response.json();
-			console.log('✅ Schedule yaratildi:', data);
 
 			let newSchedule = data?.data || data;
 			if (String(user?.role || '').toLowerCase() === 'employee') {
@@ -1520,14 +1466,12 @@ export const AppProvider = ({ children }) => {
 			} catch (fetchError) {
 				clearTimeout(timeoutId);
 				if (fetchError.name === 'AbortError') {
-					console.warn('⚠️ Schedule create timeout - server is slow');
 					throw new Error('Server javob bermayapti. Iltimos, sahifani yangilab qayta urinib ko\'ring.');
 				} else {
 					throw fetchError;
 				}
 			}
 		} catch (error) {
-			console.error('❌ Schedule yaratishda xatolik:', error);
 			setSchedulesError(error.message || 'Schedule yaratishda xatolik');
 			throw error;
 		} finally {
@@ -1615,7 +1559,6 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Service created:', data);
 
 				// Add new service to existing services
 				setServices(prevServices => [...prevServices, data]);
@@ -1629,7 +1572,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error(errorData.message || 'Failed to create service');
 			}
 		} catch (error) {
-			console.error('Error creating service:', error);
 			setServicesError(error.message);
 			throw error;
 		} finally {
@@ -1652,14 +1594,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('All users fetched:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch all users');
 			}
 		} catch (error) {
-			console.error('Error fetching all users:', error);
 			throw error;
 		}
 	};
@@ -1678,14 +1618,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('User fetched by ID:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch user by ID');
 			}
 		} catch (error) {
-			console.error('Error fetching user by ID:', error);
 			throw error;
 		}
 	};
@@ -1708,14 +1646,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Payment created:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to create payment');
 			}
 		} catch (error) {
-			console.error('Error creating payment:', error);
 			throw error;
 		}
 	};
@@ -1734,14 +1670,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Payment verified:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to verify payment');
 			}
 		} catch (error) {
-			console.error('Error verifying payment:', error);
 			throw error;
 		}
 	};
@@ -1760,14 +1694,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Payment status:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to get payment status');
 			}
 		} catch (error) {
-			console.error('Error getting payment status:', error);
 			throw error;
 		}
 	};
@@ -1789,14 +1721,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('SMS sent:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to send SMS');
 			}
 		} catch (error) {
-			console.error('Error sending SMS:', error);
 			throw error;
 		}
 	};
@@ -1815,14 +1745,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('SMS status:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to get SMS status');
 			}
 		} catch (error) {
-			console.error('Error getting SMS status:', error);
 			throw error;
 		}
 	};
@@ -1842,14 +1770,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Text translated:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to translate text');
 			}
 		} catch (error) {
-			console.error('Error translating text:', error);
 			throw error;
 		}
 	};
@@ -1866,14 +1792,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Supported languages:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to get supported languages');
 			}
 		} catch (error) {
-			console.error('Error getting supported languages:', error);
 			throw error;
 		}
 	};
@@ -1894,14 +1818,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Appointment fetched:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch appointment');
 			}
 		} catch (error) {
-			console.error('Error fetching appointment:', error);
 			throw error;
 		}
 	};
@@ -1915,7 +1837,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Tizimga kirish tokeni topilmadi');
 			}
 
-			console.log(`📤 Updating appointment ${appointmentId} to status: ${status}`);
 
 			const response = await fetch(`${appointmentsUrl}/${appointmentId}/status`, {
 				method: 'PATCH',
@@ -1926,16 +1847,13 @@ export const AppProvider = ({ children }) => {
 				body: JSON.stringify({ status }),
 			});
 
-			console.log('📥 Response status:', response.status);
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				console.error('❌ Error response:', errorData);
 				throw new Error(errorData.message || errorData.detail || 'Status o\'zgartirishda xatolik');
 			}
 
 			const data = await response.json();
-			console.log('✅ Status o\'zgartirildi:', data);
 
 			// Appointments ro'yxatini yangilash
 			setAppointments(prev =>
@@ -1962,7 +1880,6 @@ export const AppProvider = ({ children }) => {
 
 			return data;
 		} catch (error) {
-			console.error('❌ Status o\'zgartirishda xatolik:', error);
 			throw error;
 		}
 	};
@@ -1976,7 +1893,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Tizimga kirish tokeni topilmadi');
 			}
 
-			console.log(`📤 Cancelling appointment ${appointmentId}`);
 
 			const response = await fetch(`${appointmentsUrl}/${appointmentId}/cancel`, {
 				method: 'PATCH',
@@ -1987,16 +1903,13 @@ export const AppProvider = ({ children }) => {
 				body: JSON.stringify({ cancellation_reason: cancellationReason }),
 			});
 
-			console.log('📥 Response status:', response.status);
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				console.error('❌ Error response:', errorData);
 				throw new Error(errorData.message || errorData.detail || 'Bekor qilishda xatolik');
 			}
 
 			const data = await response.json();
-			console.log('✅ Appointment bekor qilindi:', data);
 
 			// Appointments ro'yxatini yangilash
 			setAppointments(prev =>
@@ -2035,7 +1948,6 @@ export const AppProvider = ({ children }) => {
 
 			return data;
 		} catch (error) {
-			console.error('❌ Bekor qilishda xatolik:', error);
 			throw error;
 		}
 	};
@@ -2054,14 +1966,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Employee fetched:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch employee');
 			}
 		} catch (error) {
-			console.error('Error fetching employee:', error);
 			throw error;
 		}
 	};
@@ -2088,7 +1998,6 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Employee updated:', data);
                 await fetchEmployees(); // Refresh employees
                 return data;
             } else {
@@ -2096,7 +2005,6 @@ export const AppProvider = ({ children }) => {
                 throw new Error(errorData.message || 'Failed to update employee');
             }
         } catch (error) {
-            console.error('Error updating employee:', error);
             throw error;
         }
     };
@@ -2114,7 +2022,6 @@ export const AppProvider = ({ children }) => {
 			});
 
 			if (response.ok) {
-				console.log('Employee deleted successfully');
 				await fetchEmployees(); // Refresh employees
 				return true;
 			} else {
@@ -2122,7 +2029,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error(errorData.message || 'Failed to delete employee');
 			}
 		} catch (error) {
-			console.error('Error deleting employee:', error);
 			throw error;
 		}
 	};
@@ -2141,14 +2047,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Salon fetched:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch salon');
 			}
 		} catch (error) {
-			console.error('Error fetching salon:', error);
 			throw error;
 		}
 	};
@@ -2168,7 +2072,6 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Salon created:', data);
 				await fetchSalons(); // Refresh salons
 				return data;
 			} else {
@@ -2176,7 +2079,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error(errorData.message || 'Failed to create salon');
 			}
 		} catch (error) {
-			console.error('Error creating salon:', error);
 			throw error;
 		}
 	};
@@ -2194,7 +2096,6 @@ export const AppProvider = ({ children }) => {
 			});
 
 			if (response.ok) {
-				console.log('Salon deleted successfully');
 				await fetchSalons(); // Refresh salons
 				return true;
 			} else {
@@ -2202,7 +2103,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error(errorData.message || 'Failed to delete salon');
 			}
 		} catch (error) {
-			console.error('Error deleting salon:', error);
 			throw error;
 		}
 	};
@@ -2223,14 +2123,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Service fetched:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch service');
 			}
 		} catch (error) {
-			console.error('Error fetching service:', error);
 			throw error;
 		}
 	};
@@ -2250,7 +2148,6 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Service updated:', data);
 				await fetchServices(); // Refresh services
 				return data;
 			} else {
@@ -2258,7 +2155,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error(errorData.message || 'Failed to update service');
 			}
 		} catch (error) {
-			console.error('Error updating service:', error);
 			throw error;
 		}
 	};
@@ -2276,7 +2172,6 @@ export const AppProvider = ({ children }) => {
 			});
 
 			if (response.ok) {
-				console.log('Service deleted successfully');
 				await fetchServices(); // Refresh services
 				return true;
 			} else {
@@ -2284,7 +2179,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error(errorData.message || 'Failed to delete service');
 			}
 		} catch (error) {
-			console.error('Error deleting service:', error);
 			throw error;
 		}
 	};
@@ -2298,7 +2192,6 @@ export const AppProvider = ({ children }) => {
 		try {
 			const token = getAuthToken();
 
-			console.log('📤 Updating schedule with ID:', scheduleId);
 			console.log('📤 Schedule data:', JSON.stringify(scheduleData, null, 2));
 
 			const response = await fetch(`${schedulesUrl}/${scheduleId}`, {
@@ -2310,7 +2203,6 @@ export const AppProvider = ({ children }) => {
 				body: JSON.stringify(scheduleData),
 			});
 
-			console.log('📥 Response status:', response.status);
 
 			if (!response.ok) {
 				const contentType = response.headers.get('content-type');
@@ -2329,7 +2221,6 @@ export const AppProvider = ({ children }) => {
 							return `[${idx}] Field: ${field}, Error: ${msg}, Input: ${JSON.stringify(inputValue)}`;
 						}).join('\n');
 
-						console.error('❌ Validation errors:\n', detailedErrors);
 						errorMessage = errorData.detail[0]?.msg || errorMessage;
 					} else if (typeof errorData?.detail === 'string') {
 						errorMessage = errorData.detail;
@@ -2338,7 +2229,6 @@ export const AppProvider = ({ children }) => {
 					}
 				} else {
 					const errorText = await response.text();
-					console.error('❌ Error text:', errorText);
 					errorMessage = errorText || errorMessage;
 				}
 
@@ -2346,12 +2236,10 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const data = await response.json();
-			console.log('✅ Schedule updated:', data);
 			await fetchSchedules();
 			await fetchGroupedSchedules();
 			return data;
 		} catch (error) {
-			console.error('❌ Error updating schedule:', error);
 			throw error;
 		}
 	};
@@ -2369,7 +2257,6 @@ export const AppProvider = ({ children }) => {
 			});
 
 			if (response.ok) {
-				console.log('Schedule deleted successfully');
 				await fetchSchedules(); // Refresh schedules
 				await fetchGroupedSchedules(); // Grouped schedules ham yangilansin
 				return true;
@@ -2378,7 +2265,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error(errorData.message || 'Failed to delete schedule');
 			}
 		} catch (error) {
-			console.error('Error deleting schedule:', error);
 			throw error;
 		}
 	};
@@ -2397,14 +2283,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Schedule fetched:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch schedule');
 			}
 		} catch (error) {
-			console.error('Error fetching schedule:', error);
 			throw error;
 		}
 	};
@@ -2900,7 +2784,6 @@ export const AppProvider = ({ children }) => {
 						try {
 							const nextUrl = candidates[nextIdx];
 							if (wsRetryCountRef.current === 0) {
-								console.warn('WS retry with alternate URL');
 							}
 							const nws = new WebSocket(nextUrl);
 							wsRef.current = nws;
@@ -2943,7 +2826,6 @@ export const AppProvider = ({ children }) => {
 						try {
 							const nextUrl = candidates[nextIdx];
 							if (wsRetryCountRef.current === 0) {
-								console.warn('WS close fallback connect');
 							}
 							const nws = new WebSocket(nextUrl);
 							wsRef.current = nws;
@@ -3129,7 +3011,6 @@ export const AppProvider = ({ children }) => {
 	// Fetch conversations for employee/admin (salon)
 	const fetchConversations = async () => {
 		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
-			console.error('Only employees and admins can fetch conversations');
 			return;
 		}
 
@@ -3138,7 +3019,6 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			console.log('📤 Fetching conversations for user:', user.id, 'Role:', user.role);
 
 			// ✅ Employee uchun /employee, Admin uchun /admin endpoint
 			const isEmployee = user.role === 'employee';
@@ -3150,11 +3030,9 @@ export const AppProvider = ({ children }) => {
 				},
 			});
 
-			console.log('📥 Conversations response status:', response.status);
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('✅ Conversations fetched:', data);
 
 				// Backend dan kelgan ma'lumotlarni normalize qilish
 				const conversationsList = data.data || data || [];
@@ -3178,7 +3056,6 @@ export const AppProvider = ({ children }) => {
 					};
 				});
 
-				console.log('📊 Normalized conversations:', normalizedConversations);
 				setConversations(normalizedConversations);
 			} else {
 				const contentType = response.headers.get('content-type');
@@ -3186,7 +3063,6 @@ export const AppProvider = ({ children }) => {
 
 				if (contentType?.includes('application/json')) {
 					const errorData = await response.json();
-					console.error('❌ Error response:', errorData);
 
 					if (typeof errorData?.detail === 'string') {
 						errorMessage = errorData.detail;
@@ -3195,14 +3071,12 @@ export const AppProvider = ({ children }) => {
 					}
 				} else {
 					const errorText = await response.text();
-					console.error('❌ Error text:', errorText);
 					errorMessage = errorText || errorMessage;
 				}
 
 				throw new Error(errorMessage);
 			}
 		} catch (error) {
-			console.error('❌ Error fetching conversations:', error);
 			setConversationsError(error.message);
 			setConversations([]);
 		} finally {
@@ -3214,13 +3088,11 @@ export const AppProvider = ({ children }) => {
 	const fetchMessages = async (userId) => {
 		// ✅ userId tekshirish
 		if (!userId) {
-			console.error('❌ fetchMessages: userId is required');
 			setMessagesError('User ID topilmadi');
 			return;
 		}
 
 		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
-			console.error('Only employees and admins can fetch messages');
 			return;
 		}
 
@@ -3236,7 +3108,6 @@ export const AppProvider = ({ children }) => {
 		try {
 			const token = getAuthToken();
 
-			console.log('📤 Fetching messages for user:', userId);
 
 			const isEmployee = user.role === 'employee';
 			const ts = Date.now();
@@ -3249,15 +3120,12 @@ export const AppProvider = ({ children }) => {
 				},
 			});
 
-			console.log('📥 Messages response status:', response.status);
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('✅ Messages fetched:', data);
 
 				const messagesList = data.data?.messages || data.messages || data.data || data || [];
 				currentChatIdRef.current = data.data?.chat_id || data.chat_id || currentChatIdRef.current;
-				console.log('📊 Messages list length:', messagesList.length);
 
                 const normalized = (Array.isArray(messagesList) ? messagesList : []).map(m => ({
                     ...m,
@@ -3289,7 +3157,6 @@ export const AppProvider = ({ children }) => {
 
 				if (contentType?.includes('application/json')) {
 					const errorData = await response.json();
-					console.error('❌ Error response:', errorData);
 
 					if (Array.isArray(errorData?.detail)) {
 						errorMessage = errorData.detail.map(err => err.msg || JSON.stringify(err)).join(', ');
@@ -3300,14 +3167,12 @@ export const AppProvider = ({ children }) => {
 					}
 				} else {
 					const errorText = await response.text();
-					console.error('❌ Error text:', errorText);
 					errorMessage = errorText || errorMessage;
 				}
 
 				throw new Error(errorMessage);
 			}
 		} catch (error) {
-			console.error('❌ Error fetching messages:', error);
 			setMessagesError(error.message);
 			setMessages([]);
 		} finally {
@@ -3318,7 +3183,6 @@ export const AppProvider = ({ children }) => {
 	// Send message from employee/admin - URL ni o'zgartirish
     const sendMessage = async (receiverId, messageText, messageType = 'text', fileUrl = null) => {
 		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
-			console.error('Only employees or admins can send messages');
 			return;
 		}
 
@@ -3342,7 +3206,6 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Message sent:', data);
 
                 if (currentConversation === receiverId) {
                     const isEmployeeSender = user.role === 'employee';
@@ -3366,7 +3229,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error(errorData.message || 'Failed to send message');
 			}
 		} catch (error) {
-			console.error('Error sending message:', error);
 			throw error;
 		}
 	};
@@ -3375,19 +3237,16 @@ export const AppProvider = ({ children }) => {
 	const markConversationAsRead = async (userId) => {
 		// ✅ userId tekshirish
 		if (!userId) {
-			console.error('❌ markConversationAsRead: userId is required');
 			return;
 		}
 
 		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
-			console.error('Only employees and admins can mark conversation as read');
 			return;
 		}
 
 		try {
 			const token = getAuthToken();
 
-			console.log('📤 Marking conversation as read for user:', userId);
 
 			const isEmployee = user.role === 'employee';
 			const response = await fetch(`${messagesUrl}/${isEmployee ? 'employee' : 'admin'}/conversation/${userId}/mark-read`, {
@@ -3398,11 +3257,9 @@ export const AppProvider = ({ children }) => {
 				},
 			});
 
-			console.log('📥 Mark read response status:', response.status);
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('✅ Conversation marked as read:', data);
 
 				// ✅ Conversations ro'yxatini yangilash
 				setConversations(prevConversations =>
@@ -3421,7 +3278,6 @@ export const AppProvider = ({ children }) => {
 
 				if (contentType?.includes('application/json')) {
 					const errorData = await response.json();
-					console.error('❌ Error response:', errorData);
 
 					if (typeof errorData?.detail === 'string') {
 						errorMessage = errorData.detail;
@@ -3430,14 +3286,12 @@ export const AppProvider = ({ children }) => {
 					}
 				} else {
 					const errorText = await response.text();
-					console.error('❌ Error text:', errorText);
 					errorMessage = errorText || errorMessage;
 				}
 
 				throw new Error(errorMessage);
 			}
 		} catch (error) {
-			console.error('❌ Error marking conversation as read:', error);
 			// ✅ Xatolikni throw qilmaslik - faqat log
 			// throw error;
 		}
@@ -3447,7 +3301,6 @@ export const AppProvider = ({ children }) => {
 	// Get unread messages count
 	const getUnreadCount = async () => {
 		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
-			console.error('Only employees and admin2 can get unread count');
 			return 0;
 		}
 
@@ -3461,7 +3314,6 @@ export const AppProvider = ({ children }) => {
 			}
 			return 0;
 		} catch (error) {
-			console.error('Error getting unread count:', error);
 			return 0;
 		}
 	};
@@ -3469,7 +3321,6 @@ export const AppProvider = ({ children }) => {
 	// Mark messages as read
 	const markMessagesAsRead = async (userId) => {
 		if (!user || user.role !== 'employee') {
-			console.error('Only employees can mark messages as read');
 			return;
 		}
 
@@ -3488,14 +3339,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Messages marked as read:', data);
 				return data;
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to mark messages as read');
 			}
 		} catch (error) {
-			console.error('Error marking messages as read:', error);
 			throw error;
 		}
 	};
@@ -3536,12 +3385,10 @@ export const AppProvider = ({ children }) => {
 			let lastErrorMessage = '';
 			for (let i = 0; i < urlVariants.length; i++) {
 				const url = urlVariants[i];
-				console.log('Fetching employees from:', url);
 				const response = await fetch(url, { method: 'GET', headers });
 
 				if (response.ok) {
 					const responseData = await response.json();
-					console.log('Employees response:', responseData);
 
 					let items = responseData?.data ?? responseData ?? [];
 					if (idToUse) {
@@ -3552,7 +3399,6 @@ export const AppProvider = ({ children }) => {
 						});
 					}
 					setEmployees(items);
-					console.log('Employees loaded:', items.length);
 					success = true;
 					break;
 				}
@@ -3569,7 +3415,6 @@ export const AppProvider = ({ children }) => {
 				if (response.status === 404) {
 					let errJson = {};
 					try { errJson = await response.json(); } catch { }
-					console.warn('Employees endpoint 404, trying next variant:', errJson);
 					continue;
 				}
 
@@ -3579,7 +3424,6 @@ export const AppProvider = ({ children }) => {
 					? errorData.detail.map(d => (typeof d === 'string' ? d : (d?.msg || d?.message || JSON.stringify(d)))).join('; ')
 					: (typeof errorData?.detail === 'string' ? errorData.detail : (errorData?.detail ? JSON.stringify(errorData.detail) : ''));
 				lastErrorMessage = errorData?.message || errorData?.error || detailText || `HTTP ${response.status}`;
-				console.error('Employees endpoint error, trying next variant:', { status: response.status, error: lastErrorMessage });
 				// Continue to next variant instead of throwing immediately
 			}
 
@@ -3588,14 +3432,11 @@ export const AppProvider = ({ children }) => {
 				// If we had an error message, surface it; otherwise keep silent
 				if (lastErrorMessage) {
 					setEmployeesError(lastErrorMessage);
-					console.warn('Employees fetch failed on all variants:', lastErrorMessage);
 				} else {
 					setEmployeesError(null);
-					console.warn('No employees found for salon or endpoint; returned empty list.');
 				}
 			}
 		} catch (error) {
-			console.error('Error fetching employees:', error);
 			setEmployeesError(error.message);
 			setEmployees([]);
 
@@ -3666,8 +3507,6 @@ export const AppProvider = ({ children }) => {
 				work_end_time: employeeData.work_end_time
 			};
 
-			console.log('📤 Yuborilayotgan ma\'lumot:', dataToSend);
-			console.log('🔗 URL:', employeesUrl);
 
 			let response = await fetch(employeesUrl, {
 				method: 'POST',
@@ -3678,7 +3517,6 @@ export const AppProvider = ({ children }) => {
 				body: JSON.stringify(dataToSend),
 			});
 
-			console.log('📥 Response status:', response.status);
 
 			if (!response.ok) {
 				const contentType = response.headers.get('content-type');
@@ -3686,7 +3524,6 @@ export const AppProvider = ({ children }) => {
 
 				if (contentType?.includes('application/json')) {
 					const errorData = await response.json();
-					console.error('❌ Error response:', errorData);
 
 					// FastAPI validation errors
 					if (Array.isArray(errorData?.detail)) {
@@ -3701,7 +3538,6 @@ export const AppProvider = ({ children }) => {
 					}
 				} else {
 					const errorText = await response.text();
-					console.error('❌ Error text:', errorText);
 					errorMessage = errorText || errorMessage;
 				}
 
@@ -3726,7 +3562,6 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const data = await response.json();
-			console.log('✅ Xodim yaratildi:', data);
 
 			// Ro'yxatni faqat backenddan qayta yuklaymiz — optimistik qo'shish yo'q
 			try {
@@ -3735,7 +3570,6 @@ export const AppProvider = ({ children }) => {
 
 			return data;
 		} catch (error) {
-			console.error('❌ Xodim yaratishda xatolik:', error);
 			setEmployeesError(error.message);
 			throw error;
 		} finally {
@@ -3757,7 +3591,6 @@ export const AppProvider = ({ children }) => {
 
 			return { success: true };
 		} catch (error) {
-			console.error('❌ Kasb qo\'shishda xatolik:', error);
 			throw error;
 		}
 	};
@@ -3770,7 +3603,6 @@ export const AppProvider = ({ children }) => {
 
 			return { success: true };
 		} catch (error) {
-			console.error('❌ Kasb o\'chirishda xatolik:', error);
 			throw error;
 		}
 	};
@@ -3792,14 +3624,12 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('Services fetched:', data);
 				setServices(data.data || []);
 			} else {
 				const errorData = await response.json();
 				throw new Error(errorData.message || 'Failed to fetch services');
 			}
 		} catch (error) {
-			console.error('Error fetching services:', error);
 			setServicesError(error.message);
 			setServices([]);
 		} finally {
@@ -3815,7 +3645,6 @@ export const AppProvider = ({ children }) => {
 				try {
 					await fetchAdminSalon();
 				} catch (e) {
-					console.warn('Admin my-salon fetch failed, continue loading others:', e?.message || e);
 				}
 				// Keyin xodimlarni yuklaymiz
 				await fetchEmployees();
@@ -3835,7 +3664,6 @@ export const AppProvider = ({ children }) => {
 			await updateAppointmentStatus(selectedElement.id, 'confirmed');
 			closeRightSidebar();
 		} catch (error) {
-			console.error('Status o\'zgartirishda xato:', error);
 			alert(error.message);
 		}
 	};
@@ -3889,7 +3717,6 @@ export const AppProvider = ({ children }) => {
 
 			// 1) Avvalo /admin/my-salon orqali aniq admin biriktirilgan salonni olishga urinamiz
 			if (token) {
-				console.log('[fetchAdminSalon] Trying GET /admin/my-salon');
 				const mySalonResp = await fetch(adminMySalonUrl, {
 					method: 'GET',
 					headers: {
@@ -3910,14 +3737,12 @@ export const AppProvider = ({ children }) => {
 							const merged = normalizeSalonForProfile(mergedRaw);
 							setSalonProfile(merged);
 							currentSalonIdRef.current = merged.id;
-							console.log('✅ Admin my-salon + detail merged:', merged.id);
 							return merged;
 						} catch (e) {
 							// Agar detail olishda xato bo'lsa, my-salon obyektidan foydalanamiz
 							const normalized = normalizeSalonForProfile(salonObj);
 							setSalonProfile(normalized);
 							currentSalonIdRef.current = normalized.id;
-							console.warn('[fetchAdminSalon] Detail fetch failed, using my-salon object:', e?.message || e);
 							return normalized;
 						}
 					}
@@ -3932,7 +3757,6 @@ export const AppProvider = ({ children }) => {
 					} catch {
 						try { mySalonMsg = await mySalonResp.text(); } catch { }
 					}
-					console.warn('[fetchAdminSalon] /admin/my-salon failed:', mySalonMsg);
 					// Tushunarli xabar bo'lishi uchun xatoni state'ga yozamiz, lekin ID orqali fallback qilamiz
 					if (mySalonResp.status === 404) {
 						setAdminSalonError('Admin uchun salon topilmadi');
@@ -3948,7 +3772,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Salon ID topilmadi. Iltimos, admin foydalanuvchiga salon biriktiring yoki ID kiriting.');
 			}
 
-			console.log('[fetchAdminSalon] Fallback GET /salons/:id id=', targetId);
 			const detailResponse = await fetch(`${salonDetailUrl}/${targetId}`, {
 				method: 'GET',
 				headers: {
@@ -3966,7 +3789,6 @@ export const AppProvider = ({ children }) => {
 				const normalizedById = normalizeSalonForProfile(salonObj);
 				setSalonProfile(normalizedById);
 				currentSalonIdRef.current = normalizedById.id;
-				console.log('✅ Salon fetched by ID:', normalizedById.id);
 				return normalizedById;
 			} else {
 				let message = `Failed to fetch salon by ID (HTTP ${detailResponse.status})`;
@@ -3989,7 +3811,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error(message);
 			}
 		} catch (error) {
-			console.error('❌ Error fetching salon by ID:', error);
 			setAdminSalonError(error.message);
 			setSalonProfile(null);
 			throw error;
@@ -4026,7 +3847,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error(msg);
 			}
 
-			console.log('✅ Backend muvaffaqiyatli yangilandi');
 
 			// State'larni yangilash
 			setEmployees((prev) =>
@@ -4043,9 +3863,7 @@ export const AppProvider = ({ children }) => {
 			});
 
 			setIsCheckedItem([]);
-			console.log('✅ Xodimlar waiting holatiga o\'tkazildi:', ids);
 		} catch (error) {
-			console.error('❌ Xato:', error);
 			alert(`Xatolik: ${error.message}`);
 		}
 	};
@@ -4168,18 +3986,15 @@ export const AppProvider = ({ children }) => {
 		const id = salonId || user?.salon_id;
 		if (!isAuthenticated || !user || !['admin','employee'].includes(String(user.role || '').toLowerCase())) {
 			setBookingsError('Faqat admin yoki xodim ko‘ra oladi');
-			console.warn('Unauthorized role for fetching bookings:', user?.role);
 			return;
 		}
 		if (!id) {
 			setBookingsError('Salon ID topilmadi');
-			console.error('Salon ID is required to fetch bookings');
 			return;
 		}
 		const isValidUUID = (v) => typeof v === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v);
 		if (!isValidUUID(String(id))) {
 			setBookingsError('Noto‘g‘ri salon ID');
-			console.warn('Invalid salon_id format for bookings:', id);
 			return;
 		}
 
@@ -4201,7 +4016,6 @@ export const AppProvider = ({ children }) => {
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log('✅ Bookings fetched:', data);
 				setBookings(data.data || data || []);
 				return data;
 			} else {
@@ -4217,7 +4031,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error(msg || 'Failed to fetch bookings');
 			}
 		} catch (error) {
-			console.error('❌ Error fetching bookings:', error);
 			setBookingsError(error.message);
 			setBookings([]);
 		} finally {
@@ -4251,7 +4064,6 @@ export const AppProvider = ({ children }) => {
 				employee_id: bookingData.employee_id
 			};
 
-			console.log('📤 Creating booking:', dataToSend);
 
 			const response = await fetch(
 				bookingsUrl,
@@ -4265,11 +4077,9 @@ export const AppProvider = ({ children }) => {
 				}
 			);
 
-			console.log('📥 Response status:', response.status);
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				console.error('❌ Error response:', errorData);
 
 				let errorMessage = 'Booking yaratishda xatolik';
 				if (Array.isArray(errorData?.detail)) {
@@ -4287,7 +4097,6 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const data = await response.json();
-			console.log('✅ Booking created:', data);
 
 			// State'ni yangilash
 			const newBooking = data?.data || data;
@@ -4300,7 +4109,6 @@ export const AppProvider = ({ children }) => {
 
 			return data;
 		} catch (error) {
-			console.error('❌ Booking yaratishda xatolik:', error);
 			setBookingsError(error.message);
 			throw error;
 		} finally {
@@ -4331,7 +4139,6 @@ export const AppProvider = ({ children }) => {
 			setCombinedAppointments(prev => (prev || []).filter(a => String(a.id) !== String(bookingNumber)));
 			return true;
 		} catch (error) {
-			console.error('❌ Bookingni o\'chirishda xatolik:', error);
 			setBookingsError(error.message);
 			throw error;
 		} finally {
@@ -4346,7 +4153,6 @@ export const AppProvider = ({ children }) => {
 	// Appointments va Bookings ni birlashtirish va sanaga ko'ra saralash
 	const fetchCombinedAppointments = async (salonId) => {
 		if (!salonId) {
-			console.error('Salon ID is required');
 			return;
 		}
 
@@ -4415,10 +4221,8 @@ export const AppProvider = ({ children }) => {
 			});
 
 			setCombinedAppointments(sorted);
-			console.log('✅ Combined appointments:', sorted.length);
 			return sorted;
 		} catch (error) {
-			console.error('❌ Error fetching combined appointments:', error);
 			return [];
 		}
 	};
@@ -4662,7 +4466,6 @@ export const AppProvider = ({ children }) => {
 						setDefaultWhiteBoxPosition();
 					}
 				} catch (error) {
-					console.error('Error parsing saved data:', error);
 					setDefaultWhiteBoxPosition();
 				}
 			} else {
@@ -4743,7 +4546,6 @@ export const AppProvider = ({ children }) => {
 						setDefaultWhiteBoxPosition();
 					}
 				} catch (error) {
-					console.error('Error parsing saved data:', error);
 					setDefaultWhiteBoxPosition();
 				}
 			} else {
@@ -4789,7 +4591,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Tizimga kirish tokeni topilmadi');
 			}
 
-			console.log('📤 Creating employee post:', { employeeId, postData });
 
 			const response = await fetch(`${employeesUrl}/${employeeId}/posts`, {
 				method: 'POST',
@@ -4800,7 +4601,6 @@ export const AppProvider = ({ children }) => {
 				body: JSON.stringify(postData),
 			});
 
-			console.log('📥 Response status:', response.status);
 
 			if (!response.ok) {
 				const contentType = response.headers.get('content-type');
@@ -4808,7 +4608,6 @@ export const AppProvider = ({ children }) => {
 
 				if (contentType?.includes('application/json')) {
 					const errorData = await response.json();
-					console.error('❌ Error response:', errorData);
 
 					// FastAPI validation errors
 					if (Array.isArray(errorData?.detail)) {
@@ -4823,7 +4622,6 @@ export const AppProvider = ({ children }) => {
 					}
 				} else {
 					const errorText = await response.text();
-					console.error('❌ Error text:', errorText);
 					errorMessage = errorText || errorMessage;
 				}
 
@@ -4831,11 +4629,9 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const data = await response.json();
-			console.log('✅ Employee post created:', data);
 
 			return data;
 		} catch (error) {
-			console.error('❌ Employee post yaratishda xatolik:', error);
 			throw error;
 		}
 	};
@@ -4849,7 +4645,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Tizimga kirish tokeni topilmadi');
 			}
 
-			console.log('📤 Fetching employee posts:', { employeeId, page, limit });
 
 			const response = await fetch(
 				`${employeesUrl}/${employeeId}/posts?page=${page}&limit=${limit}`,
@@ -4862,7 +4657,6 @@ export const AppProvider = ({ children }) => {
 				}
 			);
 
-			console.log('📥 Response status:', response.status);
 
 			if (!response.ok) {
 				const contentType = response.headers.get('content-type');
@@ -4870,7 +4664,6 @@ export const AppProvider = ({ children }) => {
 
 				if (contentType?.includes('application/json')) {
 					const errorData = await response.json();
-					console.error('❌ Error response:', errorData);
 
 					if (Array.isArray(errorData?.detail)) {
 						errorMessage = errorData.detail.map(err => {
@@ -4884,7 +4677,6 @@ export const AppProvider = ({ children }) => {
 					}
 				} else {
 					const errorText = await response.text();
-					console.error('❌ Error text:', errorText);
 					errorMessage = errorText || errorMessage;
 				}
 
@@ -4892,11 +4684,9 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const data = await response.json();
-			console.log('✅ Employee posts fetched:', data);
 
 			return data.data || data || [];
 		} catch (error) {
-			console.error('❌ Employee postlarni olishda xatolik:', error);
 			throw error;
 		}
 	};
@@ -4910,7 +4700,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Tizimga kirish tokeni topilmadi');
 			}
 
-			console.log('📤 Updating employee post:', { employeeId, postId, postData });
 
 			const response = await fetch(`${employeesUrl}/${employeeId}/posts/${postId}`, {
 				method: 'PUT',
@@ -4921,7 +4710,6 @@ export const AppProvider = ({ children }) => {
 				body: JSON.stringify(postData),
 			});
 
-			console.log('📥 Response status:', response.status);
 
 			if (!response.ok) {
 				const contentType = response.headers.get('content-type');
@@ -4929,7 +4717,6 @@ export const AppProvider = ({ children }) => {
 
 				if (contentType?.includes('application/json')) {
 					const errorData = await response.json();
-					console.error('❌ Error response:', errorData);
 
 					if (Array.isArray(errorData?.detail)) {
 						errorMessage = errorData.detail.map(err => {
@@ -4943,7 +4730,6 @@ export const AppProvider = ({ children }) => {
 					}
 				} else {
 					const errorText = await response.text();
-					console.error('❌ Error text:', errorText);
 					errorMessage = errorText || errorMessage;
 				}
 
@@ -4951,11 +4737,9 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const data = await response.json();
-			console.log('✅ Employee post updated:', data);
 
 			return data;
 		} catch (error) {
-			console.error('❌ Employee post yangilashda xatolik:', error);
 			throw error;
 		}
 	};
@@ -4969,7 +4753,6 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Tizimga kirish tokeni topilmadi');
 			}
 
-			console.log('📤 Deleting employee post:', { employeeId, postId });
 
 			const response = await fetch(`${employeesUrl}/${employeeId}/posts/${postId}`, {
 				method: 'DELETE',
@@ -4979,7 +4762,6 @@ export const AppProvider = ({ children }) => {
 				},
 			});
 
-			console.log('📥 Response status:', response.status);
 
 			if (!response.ok) {
 				const contentType = response.headers.get('content-type');
@@ -4987,7 +4769,6 @@ export const AppProvider = ({ children }) => {
 
 				if (contentType?.includes('application/json')) {
 					const errorData = await response.json();
-					console.error('❌ Error response:', errorData);
 
 					if (typeof errorData?.detail === 'string') {
 						errorMessage = errorData.detail;
@@ -4996,17 +4777,14 @@ export const AppProvider = ({ children }) => {
 					}
 				} else {
 					const errorText = await response.text();
-					console.error('❌ Error text:', errorText);
 					errorMessage = errorText || errorMessage;
 				}
 
 				throw new Error(errorMessage);
 			}
 
-			console.log('✅ Employee post deleted successfully');
 			return true;
 		} catch (error) {
-			console.error('❌ Employee post o\'chirishda xatolik:', error);
 			throw error;
 		}
 	};
@@ -5016,7 +4794,6 @@ export const AppProvider = ({ children }) => {
 		try {
 			const token = getAuthToken();
 
-			console.log('📤 Fetching employee comments:', { employeeId, page, limit });
 
 			const response = await fetch(
 				`${employeesUrl}/${employeeId}/comments?page=${page}&limit=${limit}`,
@@ -5029,7 +4806,6 @@ export const AppProvider = ({ children }) => {
 				}
 			);
 
-			console.log('📥 Response status:', response.status);
 
 			if (!response.ok) {
 				const contentType = response.headers.get('content-type');
@@ -5037,7 +4813,6 @@ export const AppProvider = ({ children }) => {
 
 				if (contentType?.includes('application/json')) {
 					const errorData = await response.json();
-					console.error('❌ Error response:', errorData);
 
 					if (Array.isArray(errorData?.detail)) {
 						errorMessage = errorData.detail.map(err => {
@@ -5051,7 +4826,6 @@ export const AppProvider = ({ children }) => {
 					}
 				} else {
 					const errorText = await response.text();
-					console.error('❌ Error text:', errorText);
 					errorMessage = errorText || errorMessage;
 				}
 
@@ -5059,7 +4833,6 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const data = await response.json();
-			console.log('✅ Employee comments fetched:', data);
 
 			return {
 				comments: data.data || [],
@@ -5067,7 +4840,6 @@ export const AppProvider = ({ children }) => {
 				avg_rating: data.avg_rating || 0
 			};
 		} catch (error) {
-			console.error('❌ Employee commentlarni olishda xatolik:', error);
 			throw error;
 		}
 	};
@@ -5077,7 +4849,6 @@ export const AppProvider = ({ children }) => {
 	// Employee avatarini yangilash funksiyasi
     const updateEmployeeAvatar = async (employeeId, avatarFile) => {
         try {
-            console.log('=== UPDATE EMPLOYEE AVATAR START ===');
 
 			const token = getAuthToken();
 			if (!token) {
@@ -5099,7 +4870,6 @@ export const AppProvider = ({ children }) => {
 			}
 
 			// 1️⃣ BIRINCHI: Rasmni uploadPhotosToServer orqali yuklash
-			console.log('📤 Step 1: Uploading avatar file...');
             const uploadedUrls = await uploadPhotosToServer([avatarFile]);
 
 			if (!uploadedUrls || uploadedUrls.length === 0) {
@@ -5107,10 +4877,8 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const avatarUrl = uploadedUrls[0];
-			console.log('✅ Avatar uploaded successfully:', avatarUrl);
 
 			// 2️⃣ IKKINCHI: Employee ma'lumotlarini yangilash (avatar_url ga saqlash)
-			console.log('📤 Step 2: Updating employee data with avatar URL...');
             const updateData = {
                 avatar_url: avatarUrl,
                 avatar: avatarUrl,
@@ -5145,7 +4913,6 @@ export const AppProvider = ({ children }) => {
                 });
             }
 
-			console.log('📥 Update response status:', updateResponse.status);
 
 			if (!updateResponse.ok) {
 				let errorMessage = `HTTP ${updateResponse.status}`;
@@ -5153,7 +4920,6 @@ export const AppProvider = ({ children }) => {
 
 				if (contentType?.includes('application/json')) {
 					const errorData = await updateResponse.json();
-					console.error('❌ Error response:', errorData);
 
 					if (Array.isArray(errorData?.detail)) {
 						errorMessage = errorData.detail.map(err => {
@@ -5167,7 +4933,6 @@ export const AppProvider = ({ children }) => {
 					}
 				} else {
 					const errorText = await updateResponse.text();
-					console.error('❌ Error text:', errorText);
 					errorMessage = errorText || errorMessage;
 				}
 
@@ -5175,7 +4940,6 @@ export const AppProvider = ({ children }) => {
 			}
 
 			const updatedData = await updateResponse.json();
-			console.log('✅ Employee updated successfully:', updatedData);
 
 			// 3️⃣ UCHINCHI: Local state'ni yangilash
 			// User state ni yangilash (agar current user o'zi bo'lsa)
@@ -5214,12 +4978,9 @@ export const AppProvider = ({ children }) => {
                 await fetchEmployees(sid);
             } catch (_) {}
 
-			console.log('✅ Employee avatar fully updated:', avatarUrl);
 			return avatarUrl;
 
 		} catch (error) {
-			console.error('=== UPDATE EMPLOYEE AVATAR ERROR ===');
-			console.error('Error:', error);
 			throw error;
 		}
 	};

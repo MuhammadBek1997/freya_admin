@@ -255,8 +255,6 @@ const Profile = () => {
     const salonId = salonProfile.id;
     const updateData = {};
 
-    console.log('=== FORMIK SUBMIT START ===');
-    console.log('Values:', values);
     console.log('Edit states:', {
       editDescription,
       editAdditionals,
@@ -269,7 +267,6 @@ const Profile = () => {
     if (values.salon_name && values.salon_name !== getSalonData(salonProfile, 'salon_name')) {
       updateData['salon_name'] = values.salon_name;
       updateData[`salon_name_${language}`] = values.salon_name;
-      console.log('✅ Salon name changed');
     }
 
     // 2️⃣ Work schedule
@@ -281,7 +278,6 @@ const Profile = () => {
         hours: values.work_hours || '',
         dates: values.work_dates || ''
       };
-      console.log('✅ Work schedule changed');
     }
 
     // 3️⃣ Salon type
@@ -293,14 +289,12 @@ const Profile = () => {
           selected: t.type === values.salon_type
         }));
         updateData['salon_types'] = updatedTypes;
-        console.log('✅ Salon type changed');
       }
     }
 
     // 4️⃣ Salon format
     if (values.salon_format && values.salon_format !== salonProfile?.salon_format?.format) {
       updateData['salon_format'] = { selected: true, format: values.salon_format };
-      console.log('✅ Salon format changed');
     }
 
     // 5️⃣ Description
@@ -313,7 +307,6 @@ const Profile = () => {
     
     if (editDescription && editDescription.trim() !== '' && editDescription !== currentDescription) {
       updateData[`description_${language}`] = editDescription;
-      console.log('✅ Description changed');
     }
 
     // 6️⃣ Contacts
@@ -331,7 +324,6 @@ const Profile = () => {
       const normalized1 = editContacts.phone1.replace(/\s/g, '').replace(/\D/g, '');
       if (normalized1 && normalized1 !== currentPhone1.replace(/\D/g, '')) {
         updateData['salon_phone'] = normalized1;
-        console.log('✅ Phone1 changed');
       }
     }
     
@@ -339,7 +331,6 @@ const Profile = () => {
       const normalized2 = editContacts.phone2.replace(/\s/g, '').replace(/\D/g, '');
       if (normalized2 && normalized2 !== currentPhone2.replace(/\D/g, '')) {
         updateData['salon_add_phone'] = normalized2;
-        console.log('✅ Phone2 changed');
       }
     }
 
@@ -348,7 +339,6 @@ const Profile = () => {
       const currentIg = salonProfile?.salon_instagram || '';
       if (ig && ig !== currentIg) {
         updateData['salon_instagram'] = ig;
-        console.log('✅ Instagram changed');
       }
     }
 
@@ -362,7 +352,6 @@ const Profile = () => {
     
     if (editAdditionals && editAdditionals.trim() !== '' && editAdditionals !== currentGenericDesc) {
       updateData['salon_description'] = editAdditionals;
-      console.log('✅ salon_description updated from additionals');
     }
 
     // 8️⃣ Comfort
@@ -377,7 +366,6 @@ const Profile = () => {
       
       if (currentComfort !== newComfort) {
         updateData['salon_comfort'] = editComfort;
-        console.log('✅ Comfort changed');
       }
     }
 
@@ -400,14 +388,12 @@ const Profile = () => {
           amount: editSale.amount || '',
           date: editSale.date || ''
         };
-        console.log('✅ Sale changed');
       }
     }
 
     // Map-selected location and multilingual address/orientation
     if (editLocation?.lat && editLocation?.lng) {
       updateData['location'] = { lat: editLocation.lat, lng: editLocation.lng };
-      console.log('✅ Location selected on map');
     }
     if (editAddress?.uz || editAddress?.en || editAddress?.ru || addressExtra) {
       const uzCombined = appendExtra(editAddress.uz, addressExtra)
@@ -425,16 +411,12 @@ const Profile = () => {
       console.log('✅ Orientation (UZ/EN/RU) prepared');
     }
 
-    console.log('=== FINAL UPDATE DATA ===');
     console.log(JSON.stringify(updateData, null, 2));
 
     // 🔟 Matn ma'lumotlarini yangilash
     if (Object.keys(updateData).length > 0) {
-      console.log('📤 Sending update request...');
       const result = await updateSalon(salonId, updateData);
-      console.log('✅ Update successful:', result);
     } else {
-      console.log('⚠️ No changes detected');
     }
 
     const maxBytes = 4 * 1024 * 1024;
@@ -446,7 +428,6 @@ const Profile = () => {
         setSubmitting(false);
         return;
       }
-      console.log('📤 Uploading logo...');
       await uploadSalonLogo(salonId, pendingLogo.file);
       if (pendingLogo?.preview) URL.revokeObjectURL(pendingLogo.preview);
       setPendingLogo(null);
@@ -457,7 +438,6 @@ const Profile = () => {
       const validImages = pendingImages.filter(img => img?.file && img.file.size <= maxBytes);
       if (validImages.length > 0) {
         const photoFiles = validImages.map(img => img.file);
-        console.log('📤 Uploading', photoFiles.length, 'photos...');
         await uploadSalonPhotos(salonId, photoFiles);
         pendingImages.forEach(img => img?.preview && URL.revokeObjectURL(img.preview));
         setPendingImages([]);
@@ -478,8 +458,6 @@ const Profile = () => {
     alert(t('salonUpdated') || 'Salon muvaffaqiyatli yangilandi!');
 
   } catch (error) {
-    console.error('=== UPDATE ERROR ===');
-    console.error('Error:', error);
     alert(t('updateError') || `Xatolik: ${error.message}`);
   } finally {
     setSubmitting(false);
@@ -501,7 +479,6 @@ const Profile = () => {
       try {
         await fetchAdminSalon();
       } catch (error) {
-        console.error('Failed to load admin salon:', error);
       }
     };
 
@@ -711,7 +688,6 @@ const Profile = () => {
       try {
         // Serverdan o'chirish (index ni yuborish)
         const result = await deleteSalonPhoto(salonId, index);
-        console.log('Photo deleted successfully:', result);
 
         // Local state ni yangilash (server javobidan)
         const deletedImages = result?.photos || result?.salon_photos || [];
@@ -719,7 +695,6 @@ const Profile = () => {
 
         alert(t('imageDeleted'));
       } catch (error) {
-        console.error('Error deleting photo:', error);
         alert(t('imageDeleteError') + error.message);
       }
     } else {
@@ -883,7 +858,6 @@ const Profile = () => {
         setIsSmsVerified(true)
 
         // Avtomatik save - karta allaqachon API orqali saqlangan
-        console.log('Card automatically saved:', data.card_data);
 
         // State'larni tozalash
         setSmsCode('')
@@ -975,7 +949,6 @@ const Profile = () => {
 
   let salonComments = commentsArr.filter(item => item.salon == salonProfile?.id)
 
-  console.log(salonProfile);
 
 
   if (!changeMode) {
@@ -1661,7 +1634,6 @@ const Profile = () => {
                         });
                         e.target.value = '';
                       } catch (err) {
-                        console.error('Logo tayyorlashda xatolik:', err);
                         alert(t('logoPrepareError'));
                         e.target.value = '';
                       }

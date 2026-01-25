@@ -62,7 +62,6 @@ const EditEmployeeBar = ({ employee, onClose }) => {
       onClose();
 
     } catch (err) {
-      console.error('❌ Error updating employee:', err);
       setError(err.message || t('updateError') || 'Xatolik yuz berdi');
     } finally {
       setLoading(false);

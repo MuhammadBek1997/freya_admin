@@ -24,9 +24,7 @@ const AboutEmployeeBar = ({ id, employee, onClose, avg_rating, comment_count }) 
       const result = await fetchEmployeeComments(employee.id, 1, 10);
       setComments(result.comments);
       setAvgRating(result.avg_rating);
-      console.log('Comments loaded:', result);
     } catch (error) {
-      console.error('Error loading comments:', error);
     } finally {
       setCommentsLoading(false);
     }
@@ -40,7 +38,6 @@ const AboutEmployeeBar = ({ id, employee, onClose, avg_rating, comment_count }) 
   useEffect(() => {
     const loadAboutPosts = async () => {
       if (!employee.id) {
-        console.error('Employee ID topilmadi');
         return;
       }
 
@@ -49,17 +46,13 @@ const AboutEmployeeBar = ({ id, employee, onClose, avg_rating, comment_count }) 
       
       try {
         const employeeIdToUse = employee.id;
-        console.log('📤 Fetching posts for employee:', employeeIdToUse);
         
         const data = await fetchEmployeePosts(employeeIdToUse, 1, 10);
-        console.log('📥 Posts data received:', data);
         
         const list = data?.data || data || [];
-        console.log('📋 Posts list:', list);
         
         setAboutEmployeePosts(list);
       } catch (e) {
-        console.error('❌ Error fetching posts:', e);
         setAboutPostsError(e?.message || 'Postlarni olishda xatolik');
       } finally {
         setAboutPostsLoading(false);

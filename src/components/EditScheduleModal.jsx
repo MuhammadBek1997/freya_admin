@@ -135,7 +135,6 @@ const EditScheduleModal = (props) => {
                 setEditModal(false);
             }
         } catch (error) {
-            console.error('❌ Jadval yangilashda xatolik:', error);
             setError(error.message || t('errors.scheduleCreateFailed') || 'Jadval yangilashda xatolik yuz berdi');
         } finally {
             setLoading(false);

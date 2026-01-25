@@ -48,10 +48,8 @@ const handleAvatarUpload = async (event) => {
       // ✅ Faqat updateEmployeeAvatar chaqiriladi
       const avatarUrl = await updateEmployeeAvatar(employeeId, file);
       
-      console.log('✅ Avatar muvaffaqiyatli yangilandi:', avatarUrl);
 
     } catch (error) {
-      console.error('Avatar yuklashda xatolik:', error);
       setAvatarError(error.message);
       alert(error.message);
     } finally {
@@ -80,7 +78,6 @@ const handleAvatarUpload = async (event) => {
         setEmployeeComments(data?.comments || []);
         setAvgRating(data?.avg_rating || 0);
       } catch (error) {
-        console.error('Comments olishda xatolik:', error);
       } finally {
         setCommentsLoading(false);
       }
@@ -102,7 +99,6 @@ const handleAvatarUpload = async (event) => {
         const data = await fetchEmployeePosts(employeeId, 1, 100);
         setEmployeePosts(data?.data || data || []);
       } catch (error) {
-        console.error('Posts olishda xatolik:', error);
       }
     };
 

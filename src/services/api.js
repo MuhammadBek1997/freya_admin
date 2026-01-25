@@ -35,7 +35,6 @@ client.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Token is invalid or expired, clear it
-      console.warn('401 Unauthorized - clearing auth token');
       localStorage.removeItem('authToken');
       localStorage.removeItem('userData');
       // Redirect to login if not already there

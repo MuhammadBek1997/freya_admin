@@ -12,7 +12,7 @@ export default defineConfig({
     // Devda CORS muammosini oldini olish uchun backendga proxy qilamiz
     proxy: {
       '/api': {
-        target: 'https://api.freyapp.uz',
+        target: 'https://freya-2aff07996d13.herokuapp.com',
         changeOrigin: true,
         secure: true,
         ws: true,

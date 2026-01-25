@@ -59,9 +59,6 @@ const Schedule = () => {
 
   // Component yuklanganda schedules ni fetch qilish
   useEffect(() => {
-    console.log('🔵 Schedule page mounted');
-    console.log('🔵 Token in localStorage:', localStorage.getItem('authToken'));
-    console.log('🔵 UserData in localStorage:', localStorage.getItem('userData'));
     fetchSchedules();
   }, []);
 
