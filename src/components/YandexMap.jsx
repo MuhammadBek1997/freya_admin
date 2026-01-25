@@ -40,12 +40,6 @@ const YandexMap = ({ lat, long, lng, editable = false, onSelect }) => {
     const inputLng = (typeof lng !== 'undefined' && lng !== null) ? lng : long;
     const validLong = (inputLng && !isNaN(inputLng) && inputLng !== null && inputLng !== undefined) ? parseFloat(inputLng) : defaultLong;
 
-        original: { lat, long, lng }, 
-        valid: { validLat, validLong },
-        isLatValid: !isNaN(validLat),
-        isLongValid: !isNaN(validLong)
-    });
-
     useEffect(() => {
         loadYandexMapScript()
             .then((ymaps) => {
