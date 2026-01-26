@@ -46,7 +46,7 @@ const Profile = () => {
   const getAdditionalsOrDescriptionBullets = (salon) => {
     const add = Array.isArray(salon?.salon_additionals) ? salon.salon_additionals : [];
     if (add.length > 0) return add;
-    const desc = getSalonData(salon, 'salon_description');
+    const desc = salon?.note || getSalonData(salon, 'salon_description');
     return extractBulletsFromText(desc);
   };
 
@@ -230,8 +230,8 @@ const Profile = () => {
       ? (types.find(t => t?.selected)?.type || types[0]?.type || '')
       : ''
     const format = sp?.salon_format?.format || 'corporative'
-    const hours = sp?.work_schedule?.hours ?? sp?.work_schedule?.working_hours ?? ''
-    const dates = sp?.work_schedule?.dates ?? sp?.work_schedule?.working_days ?? ''
+    const hours = sp?.work_hours ?? sp?.work_schedule?.hours ?? sp?.work_schedule?.working_hours ?? ''
+    const dates = sp?.work_days ?? sp?.work_schedule?.dates ?? sp?.work_schedule?.working_days ?? ''
     const name = getSalonData(sp, 'salon_name') || sp?.name || ''
     return {
       salon_name: name,
@@ -269,15 +269,15 @@ const Profile = () => {
       updateData[`salon_name_${language}`] = values.salon_name;
     }
 
-    // 2️⃣ Work schedule
-    const currentHours = salonProfile?.work_schedule?.hours || salonProfile?.work_schedule?.working_hours || '';
-    const currentDates = salonProfile?.work_schedule?.dates || salonProfile?.work_schedule?.working_days || '';
-    
-    if (values.work_hours !== currentHours || values.work_dates !== currentDates) {
-      updateData['work_schedule'] = {
-        hours: values.work_hours || '',
-        dates: values.work_dates || ''
-      };
+    // 2️⃣ Work schedule - to'g'ridan-to'g'ri maydonlar
+    const currentHours = salonProfile?.work_hours || salonProfile?.work_schedule?.hours || '';
+    const currentDates = salonProfile?.work_days || salonProfile?.work_schedule?.dates || '';
+
+    if (values.work_hours !== currentHours) {
+      updateData['work_hours'] = values.work_hours || '';
+    }
+    if (values.work_dates !== currentDates) {
+      updateData['work_days'] = values.work_dates || '';
     }
 
     // 3️⃣ Salon type
@@ -342,16 +342,16 @@ const Profile = () => {
       }
     }
 
-    // 7️⃣ Additionals (maps to generic salon_description)
-    const currentGenericDesc = salonProfile?.salon_description || '';
-    console.log('Additionals->salon_description comparison:', { 
-      current: currentGenericDesc, 
+    // 7️⃣ Additionals (maps to note field)
+    const currentNote = salonProfile?.note || salonProfile?.salon_description || '';
+    console.log('Additionals->note comparison:', {
+      current: currentNote,
       edit: editAdditionals,
-      changed: editAdditionals && editAdditionals !== currentGenericDesc 
+      changed: editAdditionals && editAdditionals !== currentNote
     });
-    
-    if (editAdditionals && editAdditionals.trim() !== '' && editAdditionals !== currentGenericDesc) {
-      updateData['salon_description'] = editAdditionals;
+
+    if (editAdditionals && editAdditionals.trim() !== '' && editAdditionals !== currentNote) {
+      updateData['note'] = editAdditionals;
     }
 
     // 8️⃣ Comfort
@@ -504,13 +504,12 @@ const Profile = () => {
   useEffect(() => {
   if (changeMode && salonProfile) {
     const currentDescription = getSalonData(salonProfile, `description_${language}`);
-    const currentAdditionals = salonProfile?.salon_description || '';
+    const currentAdditionals = salonProfile?.note || salonProfile?.salon_description || '';
     const currentComfort = salonProfile?.salon_comfort || [];
     const currentSaleData = salonProfile?.salon_sale || { amount: '', date: '' };
 
     // Asosiy maydonlarni edit uchun to'ldirish
     const currentName = getSalonData(salonProfile, 'salon_name');
-    const currentSchedule = salonProfile?.work_schedule || {};
     const currentTypes = salonProfile?.salon_types || [];
     const selectedType = Array.isArray(currentTypes)
       ? (currentTypes.find(t => t.selected)?.type || '')
@@ -523,8 +522,8 @@ const Profile = () => {
     setEditSale({ ...currentSaleData });
 
     setEditSalonName(currentName || '');
-    setEditWorkHours(currentSchedule?.hours || currentSchedule?.working_hours || '');
-    setEditWorkDates(currentSchedule?.dates || currentSchedule?.working_days || '');
+    setEditWorkHours(salonProfile?.work_hours || salonProfile?.work_schedule?.hours || '');
+    setEditWorkDates(salonProfile?.work_days || salonProfile?.work_schedule?.dates || '');
     setEditSalonType(selectedType);
     setEditSalonFormat(currentFormat);
     
@@ -1247,7 +1246,7 @@ const Profile = () => {
                 <h3>
                   {t('profileNote')}
                 </h3>
-                <div className={(salonProfile?.salon_description && salonProfile.salon_description.trim() !== '') ? 'info' : 'empty'}>
+                <div className={((salonProfile?.note || salonProfile?.salon_description) && (salonProfile?.note || salonProfile?.salon_description).trim() !== '') ? 'info' : 'empty'}>
                   {changeMode ? (
                     <textarea
                       value={editAdditionals ?? ''}
@@ -1265,12 +1264,12 @@ const Profile = () => {
                       }}
                     />
                   ) : (
-                    (!salonProfile?.salon_description || salonProfile.salon_description.trim() === '')
+                    (!(salonProfile?.note || salonProfile?.salon_description) || (salonProfile?.note || salonProfile?.salon_description).trim() === '')
                       ?
                       t('profileEmpty')
                       :
                       <ReadMoreReact
-                        text={salonProfile.salon_description}
+                        text={salonProfile?.note || salonProfile?.salon_description}
                         min={120}
                         ideal={350}
                         max={770}
@@ -1543,8 +1542,8 @@ const Profile = () => {
                   setChangeMode(false)
                   // Matn maydonlari va selectlar uchun xavfsiz default qiymatlar
                   setEditSalonName(salonProfile?.salon_name ?? '')
-                  setEditWorkHours(salonProfile?.work_schedule?.working_hours ?? '')
-                  setEditWorkDates(salonProfile?.work_schedule?.working_days ?? '')
+                  setEditWorkHours(salonProfile?.work_hours ?? salonProfile?.work_schedule?.working_hours ?? '')
+                  setEditWorkDates(salonProfile?.work_days ?? salonProfile?.work_schedule?.working_days ?? '')
                   const initialType = (salonProfile?.salon_types?.find(t => t?.selected)?.type)
                     ?? (salonProfile?.salon_types?.[0]?.type)
                     ?? ''
@@ -1650,7 +1649,7 @@ const Profile = () => {
                 enableReinitialize
                 onSubmit={handleFormikSubmit}
               >
-                {({ isSubmitting }) => (
+                {({ isSubmitting, values, setFieldValue }) => (
                   <Form id='profile-edit-form'>
                     <h3 style={{ fontSize: "1vw", marginBottom: "0.3vw", marginLeft: "1vw", marginTop: "1vw" }}>
                       {t('salonName')}
@@ -1662,14 +1661,68 @@ const Profile = () => {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1vw", padding: "1vw" }}>
                       <div>
                         <h3>{t('workHours')}</h3>
-                        <Field name='work_hours' type="text" style={{ width: '100%', padding: '0.5vw 1vw', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="time"
+                            value={values.work_hours?.split(' - ')[0] || '08:00'}
+                            onChange={(e) => {
+                              const endTime = values.work_hours?.split(' - ')[1] || '22:00';
+                              setFieldValue('work_hours', `${e.target.value} - ${endTime}`);
+                            }}
+                            style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }}
+                          />
+                          <span>-</span>
+                          <input
+                            type="time"
+                            value={values.work_hours?.split(' - ')[1] || '22:00'}
+                            onChange={(e) => {
+                              const startTime = values.work_hours?.split(' - ')[0] || '08:00';
+                              setFieldValue('work_hours', `${startTime} - ${e.target.value}`);
+                            }}
+                            style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }}
+                          />
+                        </div>
                         <div style={{ color: '#d32f2f', fontSize: '0.8vw' }}>
                           <ErrorMessage name='work_hours' />
                         </div>
                       </div>
                       <div>
                         <h3>{t('workDates')}</h3>
-                        <Field name='work_dates' type="text" style={{ width: '100%', padding: '0.5vw 1vw', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <select
+                            value={values.work_dates?.split(' - ')[0] || 'Понедельник'}
+                            onChange={(e) => {
+                              const endDay = values.work_dates?.split(' - ')[1] || 'Суббота';
+                              setFieldValue('work_dates', `${e.target.value} - ${endDay}`);
+                            }}
+                            style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', flex: 1 }}
+                          >
+                            <option value="Понедельник">Понедельник</option>
+                            <option value="Вторник">Вторник</option>
+                            <option value="Среда">Среда</option>
+                            <option value="Четверг">Четверг</option>
+                            <option value="Пятница">Пятница</option>
+                            <option value="Суббота">Суббота</option>
+                            <option value="Воскресенье">Воскресенье</option>
+                          </select>
+                          <span>-</span>
+                          <select
+                            value={values.work_dates?.split(' - ')[1] || 'Суббота'}
+                            onChange={(e) => {
+                              const startDay = values.work_dates?.split(' - ')[0] || 'Понедельник';
+                              setFieldValue('work_dates', `${startDay} - ${e.target.value}`);
+                            }}
+                            style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', flex: 1 }}
+                          >
+                            <option value="Понедельник">Понедельник</option>
+                            <option value="Вторник">Вторник</option>
+                            <option value="Среда">Среда</option>
+                            <option value="Четверг">Четверг</option>
+                            <option value="Пятница">Пятница</option>
+                            <option value="Суббота">Суббота</option>
+                            <option value="Воскресенье">Воскресенье</option>
+                          </select>
+                        </div>
                         <div style={{ color: '#d32f2f', fontSize: '0.8vw' }}>
                           <ErrorMessage name='work_dates' />
                         </div>
@@ -1745,7 +1798,7 @@ const Profile = () => {
               <h3>
                 {t('profileNote')}
               </h3>
-              <div className={(salonProfile?.salon_description && salonProfile.salon_description.trim() !== '') ? 'info' : 'empty'}>
+              <div className={((salonProfile?.note || salonProfile?.salon_description) && (salonProfile?.note || salonProfile?.salon_description).trim() !== '') ? 'info' : 'empty'}>
                 {changeMode ? (
                   <textarea
                     value={editAdditionals ?? ''}
@@ -1763,12 +1816,12 @@ const Profile = () => {
                     }}
                   />
                 ) : (
-                  (!salonProfile?.salon_description || salonProfile.salon_description.trim() === '')
+                  (!(salonProfile?.note || salonProfile?.salon_description) || (salonProfile?.note || salonProfile?.salon_description).trim() === '')
                     ?
                     t('profileEmpty')
                     :
                     <ReadMoreReact
-                      text={salonProfile.salon_description}
+                      text={salonProfile?.note || salonProfile?.salon_description}
                       min={120}
                       ideal={350}
                       max={770}
