@@ -578,148 +578,396 @@
     font-size: 0.5vw;
 }
 
-/* Mobile overrides for employee schedule view */
-@media (max-width: 480px) {
+/* Mobile overrides for schedule view */
+@media (max-width: 650px) {
+  /* Schedule navigation */
+  .sched-nav {
+    height: auto;
+    min-height: 22vh;
+    padding-left: 4vw;
+    padding-right: 4vw;
+    padding-top: 2vh;
+    padding-bottom: 2vh;
+  }
+
+  .sched-nav-top img {
+    width: 7vw;
+    height: 7vw;
+  }
+
+  .sched-nav-top h2 {
+    font-size: 5vw;
+  }
+
+  .sched-nav-search {
+    height: auto;
+    flex-direction: column;
+    gap: 2vw;
+    padding-left: 0;
+    padding-top: 1.5vh;
+  }
+
+  .sched-nav-search img {
+    width: 5vw;
+    margin-right: -8vw;
+  }
+
+  .sched-nav-search input {
+    width: 100%;
+    height: 6vh;
+    font-size: 3.5vw;
+    padding-left: 10vw;
+    border-radius: 4vw;
+  }
+
+  .sched-add-btn {
+    width: 100%;
+    height: 10vw;
+    font-size: 3.5vw;
+    border-radius: 5vw;
+    gap: 3vw;
+    margin-left: 0;
+    padding: 0;
+  }
+
+  .sched-add-btn img {
+    width: 4vw;
+  }
+
+  .sched-dayList {
+    width: 100%;
+    height: auto;
+    padding: 1vh 0;
+  }
+
+  .sched-dayList-cont {
+    min-width: 100%;
+    gap: 2vw;
+    padding-right: 0;
+  }
+
+  .sched-dayList-item {
+    max-width: none;
+    min-width: auto;
+    font-size: 3vw;
+    padding: 2vw 3vw;
+    border-radius: 3vw;
+  }
+
+  .sum-of-orders {
+    width: 5vw;
+    height: 5vw;
+    font-size: 2.5vw;
+  }
+
+  .sched-dayList-btn {
+    display: none;
+  }
+
+  /* Schedule modals - mobile */
+  .schedule-modal-cont {
+    width: 94vw;
+    height: auto;
+    max-height: 90vh;
+    border-radius: 4vw;
+    padding-top: 3vh;
+    padding-bottom: 18vh;
+    gap: 2vh;
+  }
+
+  .schedule-modal-cont h4 {
+    font-size: 4.5vw;
+  }
+
+  .schedule-modal-form {
+    padding-left: 4vw;
+    padding-right: 4vw;
+    gap: 2vh;
+  }
+
+  .schedule-modal-form label {
+    font-size: 3.5vw;
+  }
+
+  .form-inputs {
+    height: 6vh;
+    font-size: 3.5vw;
+    padding-left: 4vw;
+    border-radius: 3vw;
+  }
+
+  .schedule-modal-addPersonal {
+    padding-left: 4vw;
+    padding-right: 4vw;
+    gap: 2vw;
+  }
+
+  .schedule-modal-addPersonal label {
+    font-size: 3.5vw;
+  }
+
+  .schedule-modal-addPersonal button {
+    width: 12vw;
+    height: 12vw;
+    font-size: 2.5vw;
+  }
+
+  .schedule-modal-addPersonal button img {
+    width: 4vw;
+  }
+
+  .schedule-modal-addPersonal input {
+    height: 6vh;
+    font-size: 3.5vw;
+    padding-left: 4vw;
+    border-radius: 3vw;
+  }
+
+  .schedule-modal-paymentType {
+    padding-left: 4vw;
+    padding-right: 4vw;
+    gap: 2vw;
+  }
+
+  .schedule-modal-paymentType label {
+    font-size: 3.5vw;
+  }
+
+  .schedule-modal-paymentType-cont {
+    height: 6vh;
+    gap: 2vw;
+  }
+
+  .schedule-modal-paymentType-cont input {
+    font-size: 3.5vw;
+    padding-left: 3vw;
+    border-radius: 3vw;
+  }
+
+  .schedule-modal-paymentType-cont button {
+    font-size: 3vw;
+    border-radius: 3vw;
+    border-width: 0.5vw;
+  }
+
+  .schedule-modal-btns {
+    width: 94vw;
+    height: 12vw;
+    left: 3vw;
+    bottom: 3vh;
+    padding: 2vw 3vw;
+    border-radius: 3vw;
+  }
+
+  .schedule-modal-btns button {
+    height: 8vw;
+    font-size: 3.5vw;
+    border-radius: 2vw;
+  }
+
+  /* Select employee modal - mobile */
+  .select-employModal-cont {
+    width: 94vw;
+    height: auto;
+    max-height: 85vh;
+    border-radius: 4vw;
+    padding-top: 3vw;
+    gap: 3vw;
+  }
+
+  .select-employModal-top {
+    padding-left: 4vw;
+    gap: 4vw;
+  }
+
+  .select-employModal-top button {
+    width: 8vw;
+    height: 8vw;
+  }
+
+  .select-employModal-top button img {
+    width: 6vw;
+  }
+
+  .select-employModal-top h3 {
+    font-size: 4.5vw;
+  }
+
+  .select-employModal-body {
+    grid-template-columns: 1fr;
+    gap: 3vw;
+    padding: 3vw 4vw;
+  }
+
+  .select-employModal-body-item {
+    width: 100%;
+    height: auto;
+    padding: 3vw;
+    border-radius: 4vw;
+  }
+
+  .select-employModal-body-item-top {
+    gap: 3vw;
+    margin-bottom: 2vw;
+  }
+
+  .select-employModal-body-item img {
+    width: 12vw;
+  }
+
+  .select-employModal-body-item-img {
+    width: 12vw;
+    height: 12vw;
+  }
+
+  .select-employModal-body-item h4 {
+    font-size: 4vw;
+  }
+
+  .select-employModal-body-item p {
+    font-size: 3.5vw;
+  }
+
+  .select-employModal-body-item-rating {
+    height: auto;
+    gap: 1.5vw;
+  }
+
+  .select-employModal-body-item-rating img {
+    width: 4vw;
+  }
+
+  .select-employModal-body-item-rating p {
+    font-size: 3vw;
+    margin-top: 0;
+  }
+
+  #select-employModal-body-item-btn {
+    width: 100%;
+    height: 8vw;
+    font-size: 3.5vw;
+    border-radius: 3vw;
+    margin-top: 2vw;
+  }
+
+  /* Edit schedule modal - mobile */
   .editSchedule-modal {
     background: #38383840;
     backdrop-filter: blur(1.5vw);
   }
 
   .editSchedule-modal-cont {
-    width: 92vw;
+    width: 94vw;
     height: auto;
     max-height: 88vh;
     border-radius: 4vw;
     padding-top: 3vh;
-    gap: 3vh;
+    gap: 2vh;
   }
-  .editSchedule-modal-cont h2{
-    font-size: 4.2vw;
+
+  .editSchedule-modal-cont h2 {
+    font-size: 4.5vw;
     font-weight: 600;
   }
 
-  .schedule-modal-form {
-    padding-left: 4vw;
-    padding-right: 4vw;
-    gap: 2.5vh;
-  }
-
-  .schedule-modal-form label {
-    font-size: 3.6vw;
-  }
-
-  .form-inputs {
-    height: 6.8vh;
-    font-size: 3.8vw;
-    padding-left: 4vw;
-    border-radius: 3.5vw;
-  }
-
-  .schedule-modal-btns {
-    width: 92vw;
-    height: 8vh;
-    left: 4vw;
-    bottom: 2vh;
-    padding: 2vw 3vw;
-    border-bottom-left-radius: 3vw;
-    border-bottom-right-radius: 3vw;
-    box-shadow: 0 2vw 4vw #00000015;
-  }
-
-  .schedule-modal-btns button {
-    height: 6.5vh;
-    font-size: 3.8vw;
-    border-radius: 3vw;
-  }
+  /* Schedule body - cards */
   .schedule-body {
+    padding: 4vw;
+    padding-top: 50vw;
     grid-template-columns: 1fr;
     gap: 4vw;
-    padding-top: 20vh;
   }
 
   .schedule-list-item {
-    width: 92vw;
+    width: 100%;
   }
 
   .schedule-list-item-btn {
-    width: 9vw;
-    height: 9vw;
+    width: 10vw;
+    height: 10vw;
     border-radius: 3vw;
     right: 3vw;
     top: 3vw;
   }
 
   .schedule-list-item img {
-    width: 4.2vw;
+    width: 4vw;
   }
 
   .schedule-item-top {
     border-radius: 4vw;
-    padding: 3vh 4vw;
+    padding: 4vw;
+  }
+
+  .schedule-order {
+    width: 100%;
   }
 
   .schedule-order-type {
     gap: 3vw;
-    align-items: flex-start;
+    flex-wrap: wrap;
   }
 
   .schedule-order-type h3 {
-    font-size: 4.6vw;
+    font-size: 4.5vw;
     font-weight: 600;
   }
 
   .order-title {
-    font-size: 3.3vw;
-    margin-top: 2vh;
+    font-size: 3.5vw;
+    margin-top: 2vw;
   }
 
   .schedule-order-pricebox {
-    gap: 4vw;
-    margin-top: 3vh;
+    flex-wrap: wrap;
+    gap: 2vw;
+    margin-top: 3vw;
+    height: auto;
   }
 
   .schedule-order-pricebox p {
-    font-size: 3.2vw;
+    font-size: 3vw;
+    width: 100%;
   }
 
   .schedule-order-pricebox div {
-    padding: 2vh 4vw;
-    font-size: 3.6vw;
-    border-radius: 6vw;
+    padding: 2vw 4vw;
+    font-size: 3.5vw;
+    border-radius: 5vw;
   }
 
   .schedule-order-pricebox span {
-    font-size: 3.8vw;
+    font-size: 3.5vw;
   }
 
   .schedule-item-masters {
     grid-template-columns: 1fr;
-    align-items: flex-start;
-    gap: 3vh;
-    padding: 2vh 0;
+    gap: 2vw;
+    padding: 3vw 0;
   }
 
   .schedule-master-card {
     gap: 3vw;
-    padding: 2vh 3vw;
+    padding: 3vw;
     border-radius: 3vw;
   }
 
   .schedule-master-card img {
     width: 10vw;
+    height: 10vw;
   }
 
   .schedule-master-card p {
-    font-size: 4.1vw;
+    font-size: 3.5vw;
   }
 
   .masters-time {
     width: auto;
-    padding: 1vh 2.5vw;
+    padding: 1.5vw 3vw;
     border-radius: 4vw;
   }
 
   .masters-time p {
-    font-size: 3.4vw;
+    font-size: 3vw;
   }
 }
