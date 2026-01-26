@@ -231,8 +231,142 @@
         justify-content: center;
         gap: 12px;
     }
+    /* Employee cards - tablet uchun 3 ustunli grid */
     .employ-body{
-        grid-template-columns: repeat(5,auto);
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2vw;
+        padding: 2vw;
+        padding-top: 28vh;
+    }
+
+    /* Employee card - tablet uchun kattaroq */
+    .employCard{
+        width: 100%;
+        min-width: 180px;
+        height: auto;
+        min-height: 280px;
+    }
+    .employCard h2{
+        font-size: 14px;
+    }
+    .employCard-img{
+        width: 60px;
+        height: 60px;
+    }
+    .employCard img{
+        width: 60px;
+    }
+    .employCard-masterJob{
+        min-width: 50px;
+        height: 24px;
+        margin-left: 2vw;
+    }
+    .employCard-masterJob p{
+        font-size: 10px;
+    }
+    .employCard-rating p{
+        font-size: 12px;
+    }
+    .employCard-rating img{
+        width: 14px;
+        height: 14px;
+    }
+    .employCard-bottom{
+        padding: 12px;
+    }
+    .employCard-email,
+    .employCard-number{
+        font-size: 11px;
+        gap: 8px;
+    }
+    .employCard-bottom img{
+        width: 14px;
+    }
+    .employCard-workedTimes h1{
+        font-size: 18px;
+    }
+    .employCard-workedTimes p{
+        font-size: 10px;
+    }
+    .employCard-workedTimes button{
+        width: 90%;
+        height: 28px;
+        font-size: 10px;
+    }
+    .employCard-menuBtn{
+        width: 30px;
+        height: 30px;
+    }
+    .employCard-menuBtn img{
+        width: 24px !important;
+    }
+    .employCard-menu{
+        width: 160px;
+        height: auto;
+        left: -100px;
+    }
+    .employCard-menu div{
+        height: 36px;
+        padding: 8px;
+        gap: 8px;
+    }
+    .employCard-menu div p{
+        font-size: 12px;
+    }
+    .employCard-menu div img{
+        width: 14px;
+    }
+
+    /* Employee nav - tablet uchun */
+    .employ-nav{
+        padding-left: 2vw;
+        height: 26vh;
+    }
+    .employ-nav-top h2{
+        font-size: 18px;
+    }
+    .employ-nav-top h5{
+        font-size: 12px;
+    }
+    .employ-nav-top img{
+        width: 28px;
+    }
+    .employ-nav-search{
+        gap: 1vw;
+        padding-left: 1vw;
+        flex-wrap: wrap;
+    }
+    .employ-nav-search input{
+        width: 25%;
+        min-width: 150px;
+        font-size: 12px;
+        padding-left: 36px;
+    }
+    .employ-nav-search-icon{
+        width: 20px;
+        margin-right: -32px;
+    }
+    .employ-filter-btn{
+        width: 40px;
+        height: 40px;
+    }
+    .employ-filter-btn img{
+        width: 18px;
+    }
+    .employ-filter-waiting,
+    .employ-filter-send,
+    .employ-filter-add{
+        width: auto;
+        min-width: 120px;
+        height: 40px;
+        font-size: 11px;
+        padding: 0 12px;
+        gap: 6px;
+    }
+    .employ-filter-waiting img,
+    .employ-filter-send img,
+    .employ-filter-add img{
+        width: 14px;
     }
     .profile-body{
         gap: 1vw;
@@ -266,6 +400,133 @@
     }
     .profile-nav-workTime div img{
         width: 1.5vw;
+    }
+
+    /* Modal styles - tablet uchun */
+    .add-employee-modal-content{
+        width: 85%;
+        max-width: 450px;
+        padding: 24px;
+        border-radius: 16px;
+    }
+    .modal-header h3{
+        font-size: 18px;
+    }
+    .close-btn{
+        font-size: 24px;
+        width: 36px;
+        height: 36px;
+    }
+    .form-group label{
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea{
+        font-size: 14px;
+        padding: 12px;
+        border-radius: 8px;
+    }
+    .form-row{
+        flex-direction: row;
+        gap: 12px;
+    }
+    .cancel-btn,
+    .submit-btn{
+        font-size: 14px;
+        padding: 12px 20px;
+        min-width: 100px;
+    }
+    .error-message,
+    .success-message{
+        font-size: 13px;
+        padding: 12px;
+    }
+
+    /* Edit employee sidebar - tablet uchun */
+    .editEmployeeBar{
+        width: 280px;
+        border-radius: 20px 0 0 20px;
+    }
+    .editEmployeeBar-cont{
+        width: 280px;
+        padding: 20px 16px;
+    }
+    .editEmployeeBar-cont-img{
+        width: 80px;
+        height: 80px;
+    }
+    .editEmployeeBar-cont-info label{
+        font-size: 13px;
+    }
+    .editEmployeeBar-cont-info input{
+        height: 40px;
+        font-size: 13px;
+        padding: 8px;
+        border-radius: 6px;
+    }
+    .editEmployeeBar-rating p{
+        font-size: 12px;
+    }
+    .editEmployeeBar-rating img{
+        width: 14px;
+    }
+    .editEmployeeBar-cont-bottom{
+        height: 70px;
+    }
+    .editEmployeeBar-cont-bottom-cancel,
+    .editEmployeeBar-cont-bottom-save{
+        font-size: 12px;
+        border-radius: 8px;
+    }
+
+    /* About employee sidebar - tablet uchun */
+    .aboutEmployeeBar{
+        width: 300px;
+        padding: 16px;
+        border-radius: 20px 0 0 20px;
+    }
+    .aboutEmployeeBar-cont-img{
+        width: 90px;
+        height: 90px;
+    }
+    .aboutEmployeeBar-masterJob{
+        font-size: 11px;
+        height: 26px;
+        min-width: 60px;
+    }
+    .aboutEmployeeBar-cont-info h3{
+        font-size: 16px;
+    }
+    .aboutEmployeeBar-cont-rating{
+        font-size: 12px;
+    }
+    .aboutEmployeeBar-cont-rating img{
+        width: 14px;
+    }
+    .aboutEmployeeBar-cont-selectinfo{
+        height: auto;
+    }
+    .aboutEmployeeBar-cont-selectinfo-item{
+        padding: 10px;
+        border-radius: 8px;
+    }
+    .aboutEmployeeBar-cont-selectinfo-item img{
+        width: 18px;
+    }
+    .aboutEmployeeBar-cont-selectinfo-item p{
+        font-size: 12px;
+    }
+    .aboutEmployeeBar-cont-close{
+        width: 24px;
+        height: 24px;
+        top: 12px;
+        left: 12px;
+    }
+    .aboutEmployeeBar-cont-close img{
+        width: 24px;
+        height: 24px;
     }
 }
 

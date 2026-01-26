@@ -199,7 +199,7 @@ const Login = () => {
               </button>
             </div>
 
-            <a href="https://t.me/muhammadallayev">{t('loginPswForgot')}</a>
+            <a href="">{t('loginPswForgot')}</a>
           </div>
           <button
             className="login-btn" 
