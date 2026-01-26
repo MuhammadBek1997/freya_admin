@@ -199,7 +199,7 @@ const Login = () => {
               </button>
             </div>
 
-            <a href="https://t.me/freya_adm1n_bot">{t('loginPswForgot')}</a>
+            <a href="https://t.me/freya_adm1n_bot" target='_blank'>{t('loginPswForgot')}</a>
           </div>
           <button
             className="login-btn" 
