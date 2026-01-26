@@ -1112,7 +1112,7 @@ const Profile = () => {
                 <div>
                   <img src="/images/workDateIcon.png" alt="" />
                   <h3>
-                    {salonProfile?.work_dates || t('profileWorkDays')}
+                    {salonProfile?.work_days || salonProfile?.work_dates || t('profileWorkDays')}
                   </h3>
                 </div>
               </div>
