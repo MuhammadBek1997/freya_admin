@@ -1058,54 +1058,11 @@ export const AppProvider = ({ children }) => {
 	// 	}
 	// };
 
-	// Universal login function - avval admin, keyin employee
+	// Universal login function - avval employee, keyin admin (employee prioritet)
 	const login = async (username, password) => {
 		try {
-
-			// 1. Avval admin login'ni sinab ko'ramiz
+			// 1. Avval employee login'ni sinab ko'ramiz (employee prioritet)
 			try {
-				const response = await fetch(adminLoginUrl, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ username, password }),
-				});
-
-				const responseText = await response.text();
-				let data;
-				try {
-					data = responseText ? JSON.parse(responseText) : {};
-				} catch {
-					throw new Error('Server response is not valid JSON');
-				}
-
-				if (response.ok) {
-
-					// Verify token payload matches user role
-					const userData = {
-						id: data.user.id,
-						username: data.user.username,
-						email: data.user.email,
-						full_name: data.user.full_name,
-						role: data.user.role,
-						salon_id: data.user.salon_id || null
-					};
-
-
-					localStorage.setItem('authToken', data.token);
-					localStorage.setItem('userData', JSON.stringify(userData));
-
-					setUser(userData);
-					setIsAuthenticated(true);
-
-
-					return { success: true, user: userData, role: data.user.role };
-				} else {
-					// Admin login failed, try employee
-					throw new Error('Admin login failed');
-				}
-			} catch (adminError) {
-
-				// 2. Employee login'ni sinab ko'ramiz
 				const response = await fetch(employeeLoginUrl, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -1137,8 +1094,44 @@ export const AppProvider = ({ children }) => {
 					setUser(userData);
 					setIsAuthenticated(true);
 
-
 					return { success: true, user: userData, role: 'employee' };
+				} else {
+					// Employee login failed, try admin
+					throw new Error('Employee login failed');
+				}
+			} catch (employeeError) {
+				// 2. Admin login'ni sinab ko'ramiz
+				const response = await fetch(adminLoginUrl, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ username, password }),
+				});
+
+				const responseText = await response.text();
+				let data;
+				try {
+					data = responseText ? JSON.parse(responseText) : {};
+				} catch {
+					throw new Error('Server response is not valid JSON');
+				}
+
+				if (response.ok) {
+					const userData = {
+						id: data.user.id,
+						username: data.user.username,
+						email: data.user.email,
+						full_name: data.user.full_name,
+						role: data.user.role,
+						salon_id: data.user.salon_id || null
+					};
+
+					localStorage.setItem('authToken', data.token);
+					localStorage.setItem('userData', JSON.stringify(userData));
+
+					setUser(userData);
+					setIsAuthenticated(true);
+
+					return { success: true, user: userData, role: data.user.role };
 				} else {
 					// Ikkalasi ham muvaffaqiyatsiz
 					throw new Error(data.detail || data.message || 'Username yoki parol noto\'g\'ri');
@@ -2673,10 +2666,12 @@ export const AppProvider = ({ children }) => {
                                 if (exists) { try { console.log('⚠️ Duplicate message by ID ignored:', norm.id); } catch {} ; return arr; }
                             }
                             // mineId va peerId allaqachon yuqorida e'lon qilingan
+                            // Faqat optimistic xabarlarni almashtirish (vaqt bo'yicha emas)
                             const dupIdx = arr.findIndex(m => (
+                                // Optimistic xabar - bir xil sender, receiver, type, text
                                 (m._isOptimistic && String(m.sender_id) === String(mineId) && String(m.receiver_id) === String(peerId) && m.message_type === norm.message_type && m.message_text === norm.message_text) ||
-                                (m.message_text === norm.message_text && Math.abs(new Date(m.created_at) - new Date(norm.created_at)) < 2000) ||
-                                (norm.message_type === 'image' && m.file_url && norm.file_url && String(m.file_url) === String(norm.file_url))
+                                // Rasm uchun - file_url bo'yicha
+                                (norm.message_type === 'image' && m._isOptimistic && m.file_url && norm.file_url && String(m.file_url) === String(norm.file_url))
                             ));
                             if (dupIdx >= 0) {
                                 try { console.log('⚠️ Replacing optimistic with real'); } catch {}
@@ -2687,15 +2682,8 @@ export const AppProvider = ({ children }) => {
                             try { console.log('✅ Adding new message to state'); } catch {}
                             return [...arr, norm];
                         });
-                        // Throttled resync with server to ensure UI consistency
-                        try {
-                            const nowTs = Date.now();
-                            if (peerId && (nowTs - wsLastFetchTsRef.current > 600)) {
-                                wsLastFetchTsRef.current = nowTs;
-                                fetchMessages(peerId);
-                            }
-                        } catch {}
-							const incoming = String(msg?.receiver_id) === String(mineId);
+                        // REST resync o'chirildi - WS xabarlari yetarli
+                        const incoming = String(msg?.receiver_id) === String(mineId);
 							const targetId = incoming ? (msg?.sender_id || msg?.user_id || msg?.senderId) : (msg?.receiver_id);
 							if (targetId) {
 								setConversations(prev => {
@@ -2726,16 +2714,10 @@ export const AppProvider = ({ children }) => {
                         wsRoomIdRef.current = payload?.room_id || wsRoomIdRef.current;
                         }
                         if (ev === 'notification') {
-                            const peerId = wsReceiverRef.current?.id;
-                            const toEmp = payload?.to_employee_id;
-                            const toUser = payload?.to_user_id;
-                            const pRoomId = payload?.room_id;
-                            const nowTs = Date.now();
-                            if ((String(toUser) === String(peerId) || String(toEmp) === String(user?.employee_id) || (pRoomId && String(pRoomId) === String(wsRoomIdRef.current || currentChatIdRef.current || ''))) && nowTs - wsLastFetchTsRef.current > 800) {
-                                wsLastFetchTsRef.current = nowTs;
-                                try { fetchMessages(peerId); } catch {}
-                            }
-                        } if (ev === 'read') {
+                            // Notification - faqat unread_count yangilash, REST resync o'chirildi
+                            // WS message eventi allaqachon xabarlarni qo'shadi
+                        }
+                        if (ev === 'read') {
 						// Mark local messages addressed to current user as read
 						const byUserId = payload?.by_user_id;
 						setMessages(prev => prev.map(m => {

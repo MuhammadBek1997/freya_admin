@@ -421,20 +421,20 @@ const EmployeeChatPage = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    
+
     // Input tozalash va tekshirish
     const trimmedMessage = newMessage.trim();
     if (!trimmedMessage || trimmedMessage.length === 0) {
       return;
     }
-    
+
     if (!selectedUser || !selectedUser.id) {
       return;
     }
 
     const messageText = trimmedMessage;
     const tempId = `temp-${Date.now()}-${Math.random()}`;
-    
+
     // Optimistic UI: darhol ko'rsatish
     const optimisticMessage = {
       id: tempId,
@@ -449,51 +449,47 @@ const EmployeeChatPage = () => {
       _isOptimistic: true // Optimistic flag
     };
 
+    // 1. Darhol UI ga qo'shish va input tozalash
+    setMessages(prev => [...(Array.isArray(prev) ? prev : []), optimisticMessage]);
+    setNewMessage(''); // Input tozalash
+
     try {
-      // 1. Darhol UI ga qo'shish va input tozalash
-      setMessages(prev => [...(Array.isArray(prev) ? prev : []), optimisticMessage]);
-      setNewMessage(''); // Input tozalash
-      
-      
-      // 2. WS ochilganligini ta'minlash
-      const wsOpened = await waitWsOpenFor(selectedUser.id, 'user', 5000);
-      
-      if (!wsOpened) {
-        setMessages(prev => prev.filter(m => m.id !== tempId));
-        alert(t('messageSendError') || 'Xabar yuborishda xatolik: WebSocket ulanmadi!');
-        return;
+      // 2. WS orqali yuborishga harakat qilish
+      let sent = false;
+
+      // WS ochiq bo'lsa, darhol yuborish
+      if (wsStatus === 'connected') {
+        sent = sendWsMessage(messageText, 'text');
       }
-      
-      // 3. WS orqali yuborish (retry bilan)
-      const sendWithRetry = async (retries = 3) => {
-        for (let i = 0; i <= retries; i++) {
-          const sent = sendWsMessage(messageText, 'text');
-          if (sent) {
-            return true;
-          }
-          if (i < retries) {
-            await new Promise(r => setTimeout(r, 500));
+
+      // WS ochiq emas yoki yuborilmasa, WS ochilishini kutish
+      if (!sent) {
+        const wsOpened = await waitWsOpenFor(selectedUser.id, 'user', 3000);
+        if (wsOpened) {
+          // Retry bilan yuborish
+          for (let i = 0; i < 3 && !sent; i++) {
+            sent = sendWsMessage(messageText, 'text');
+            if (!sent && i < 2) await new Promise(r => setTimeout(r, 300));
           }
         }
-        return false;
-      };
-      
-      const sent = await sendWithRetry();
-      
-      if (!sent) {
-        // Yuborilmasa optimistic xabarni o'chirish
-        setMessages(prev => prev.filter(m => m.id !== tempId));
-        throw new Error('WS send failed after retries');
       }
-      
-      // Backend echo xabar kelganda optimistic xabar o'rniga qo'yiladi
-      // (Context.jsx dagi onmessage handler dublikatni tekshiradi)
-      
+
+      // 3. WS ishlamasa, REST API fallback
+      if (!sent) {
+        try {
+          await sendMessage(selectedUser.id, messageText, 'text', null);
+          // REST orqali yuborildi, xabarlarni yangilash
+          setTimeout(() => fetchMessages(selectedUser.id), 500);
+        } catch (restError) {
+          // REST ham ishlamasa, xabarni o'chirish
+          setMessages(prev => prev.filter(m => m.id !== tempId));
+          alert(t('messageSendError') || 'Xabar yuborishda xatolik yuz berdi!');
+        }
+      }
+
     } catch (error) {
-      
-      // Optimistic xabarni o'chirish
+      // Xatolik bo'lsa optimistic xabarni o'chirish
       setMessages(prev => prev.filter(m => m.id !== tempId));
-      
       alert(t('messageSendError') || 'Xabar yuborishda xatolik yuz berdi!');
     }
   };
@@ -1359,7 +1355,8 @@ const EmployeeChatPage = () => {
                     const currentIndex = postSlideIndex[post.id] || 0;
                     const currentFile = files[currentIndex];
                     const isVideo = typeof currentFile === 'string' && /\.(mp4|webm|ogg)$/i.test(currentFile);
-
+                    console.log(employeePosts);
+                    
                     return (
                       <div key={post.id} style={{
                         width: "100%",
