@@ -1077,22 +1077,20 @@ const EmployeeChatPage = () => {
                   <img src="/images/arrowLeft.png" alt="" />
                 </button>
                 <p>{t('schedHT')}</p>
-                {String(user?.role || '').toLowerCase() !== 'employee' && (
-                  <button
-                    onClick={() => setAddSched(true)}
-                    style={{
-                      marginLeft: 'auto',
-                      padding: '8px 12px',
-                      backgroundColor: '#9C2BFF',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {t('schedule.add') || 'Добавить'}
-                  </button>
-                )}
+                <button
+                  onClick={() => setAddSched(true)}
+                  style={{
+                    marginLeft: 'auto',
+                    padding: '8px 12px',
+                    backgroundColor: '#9C2BFF',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {t('schedule.add') || 'Добавить'}
+                </button>
               </div>
 
               {schedulesLoading ? (
