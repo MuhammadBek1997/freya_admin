@@ -45,11 +45,6 @@ const Employees = () => {
         }
         const d = new Date().toISOString().substring(0,10);
         try {
-          await fetchSchedules();
-        } catch (e) {
-          try { console.log('Employees: fetchSchedules error', e?.message); } catch {}
-        }
-        try {
           const res = await fetchMySchedules(d);
           try { console.log('Employees: fetchMySchedules result', { count: Array.isArray(res) ? res.length : 0 }); } catch {}
         } catch (e) {

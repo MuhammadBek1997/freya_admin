@@ -1166,11 +1166,12 @@ export const AppProvider = ({ children }) => {
 		setAppointmentsError(null);
 
 		try {
+			const token = getAuthToken();
 			const response = await fetch(`${appointmentsUrl}/salon/${salonId}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
-					...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+					...(token ? { Authorization: `Bearer ${token}` } : {})
 				},
 			});
 
@@ -3494,7 +3495,7 @@ export const AppProvider = ({ children }) => {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+					...(token ? { Authorization: `Bearer ${token}` } : {})
 				},
 				body: JSON.stringify(dataToSend),
 			});
@@ -3531,7 +3532,7 @@ export const AppProvider = ({ children }) => {
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json',
-							...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {})
+							...(token ? { Authorization: `Bearer ${token}` } : {})
 						},
 						body: JSON.stringify(dataToSend),
 					});
