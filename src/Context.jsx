@@ -128,8 +128,26 @@ const seedLocalData = () => {
 // Top-level helpers for headers and auth
 export const getAuthToken = () => {
 	const token = localStorage.getItem('authToken');
-	console.log('🔑 getAuthToken called, token:', token ? `${token.substring(0, 20)}...` : 'NULL');
+	// console.log('🔑 getAuthToken called, token:', token ? `${token.substring(0, 20)}...` : 'NULL');
 	return token;
+};
+
+// API request logging utility
+const logApiRequest = (method, url, data = null, responseStatus = null) => {
+	const urlPath = url.replace(/https?:\/\/[^\/]+/, ''); // Remove domain
+	const emoji = method === 'GET' ? '📥' : method === 'POST' ? '📤' : method === 'PUT' ? '✏️' : method === 'DELETE' ? '🗑️' : '🔄';
+
+	let logMessage = `${emoji} ${method} ${urlPath}`;
+	if (data && method !== 'GET') {
+		const dataPreview = typeof data === 'string' ? data.substring(0, 100) : JSON.stringify(data).substring(0, 100);
+		logMessage += ` | Data: ${dataPreview}`;
+	}
+	if (responseStatus) {
+		const statusEmoji = responseStatus >= 200 && responseStatus < 300 ? '✅' : '❌';
+		logMessage += ` | ${statusEmoji} ${responseStatus}`;
+	}
+
+	console.log(logMessage);
 };
 
 const refreshAuthToken = async () => {
@@ -1167,13 +1185,18 @@ export const AppProvider = ({ children }) => {
 
 		try {
 			const token = getAuthToken();
-			const response = await fetch(`${appointmentsUrl}/salon/${salonId}`, {
+			const url = `${appointmentsUrl}/salon/${salonId}`;
+			logApiRequest('GET', url);
+
+			const response = await fetch(url, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
 					...(token ? { Authorization: `Bearer ${token}` } : {})
 				},
 			});
+
+			logApiRequest('GET', url, null, response.status);
 
 			if (response.ok) {
 				const data = await response.json();

@@ -39,16 +39,14 @@ const Employees = () => {
   useEffect(() => {
     (async () => {
       if (user && String(user.role || '').toLowerCase() === 'employee') {
-        try { console.log('Employees: user info', { role: user.role, id: user.id, employee_id: user.employee_id, salon_id: user.salon_id }); } catch {}
         if (user?.salon_id) {
           fetchEmployees(user.salon_id);
         }
         const d = new Date().toISOString().substring(0,10);
         try {
-          const res = await fetchMySchedules(d);
-          try { console.log('Employees: fetchMySchedules result', { count: Array.isArray(res) ? res.length : 0 }); } catch {}
+          await fetchMySchedules(d);
         } catch (e) {
-          try { console.log('Employees: fetchMySchedules error', e?.message); } catch {}
+          // Error handled in context
         }
       }
     })();
@@ -243,7 +241,6 @@ const Employees = () => {
               <div style={{ color: '#FF6B6B', padding: '0.5rem 0' }}>{mySchedulesError}</div>
             ) : Array.isArray(mySchedules) && mySchedules.length > 0 ? (
               (() => {
-                try { console.log('Employees: render mySchedules', { count: mySchedules.length }); } catch {}
                 const groups = new Map();
                 for (const s of mySchedules) {
                   const k = String(s.date || '').substring(0,10);
