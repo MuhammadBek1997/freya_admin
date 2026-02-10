@@ -63,7 +63,7 @@ const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, commen
             }
           }}
         />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
           {profList.length > 0 ? profList.map((prof, idx) => (
             <div key={idx} className="employCard-masterJob" style={{backgroundColor: getColor(prof)}}>
               <p>{prof}</p>
