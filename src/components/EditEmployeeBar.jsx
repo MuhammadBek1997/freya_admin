@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { UseGlobalContext } from '../Context';
 
 const EditEmployeeBar = ({ employee, onClose }) => {
@@ -6,6 +6,8 @@ const EditEmployeeBar = ({ employee, onClose }) => {
   const professionOptions = professions || [];
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [profDropdownOpen, setProfDropdownOpen] = useState(false);
+  const profDropdownRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -41,6 +43,17 @@ const EditEmployeeBar = ({ employee, onClose }) => {
       });
     }
   }, [employee]);
+
+  // Dropdown tashqarisiga bosganda yopish
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (profDropdownRef.current && !profDropdownRef.current.contains(e.target)) {
+        setProfDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -138,32 +151,56 @@ const EditEmployeeBar = ({ employee, onClose }) => {
           />
 
           <label>{t('employee.positionLabel') || 'Профессия'}</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px', marginBottom: '8px' }}>
-            {professionOptions.map((opt) => (
-              <label key={opt.value} style={{
-                display: 'flex', alignItems: 'center', gap: '4px',
-                padding: '6px 12px', borderRadius: '8px', cursor: loading ? 'not-allowed' : 'pointer',
-                border: formData.profession.includes(opt.value) ? '2px solid #6C5CE7' : '1px solid #ddd',
-                backgroundColor: formData.profession.includes(opt.value) ? '#6C5CE710' : 'transparent',
-                fontSize: '14px', userSelect: 'none'
+          <div ref={profDropdownRef} style={{ position: 'relative', marginBottom: '8px' }}>
+            <div
+              onClick={() => !loading && setProfDropdownOpen(!profDropdownOpen)}
+              style={{
+                padding: '10px 12px', borderRadius: '8px', cursor: loading ? 'not-allowed' : 'pointer',
+                border: '1px solid #ddd', backgroundColor: '#fff', fontSize: '14px',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: '20px'
+              }}
+            >
+              <span style={{ color: formData.profession.length ? '#333' : '#999' }}>
+                {formData.profession.length > 0
+                  ? formData.profession.map(p => {
+                      const opt = professionOptions.find(o => o.value === p);
+                      return opt ? opt.label : p;
+                    }).join(', ')
+                  : (t('employee.chooseProfession') || 'Kasb tanlang')}
+              </span>
+              <span style={{ fontSize: '10px', color: '#999' }}>{profDropdownOpen ? '\u25B2' : '\u25BC'}</span>
+            </div>
+            {profDropdownOpen && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+                backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: '200px', overflowY: 'auto'
               }}>
-                <input
-                  type="checkbox"
-                  checked={formData.profession.includes(opt.value)}
-                  disabled={loading}
-                  onChange={(e) => {
-                    const val = opt.value;
-                    if (e.target.checked) {
-                      handleChange('profession', [...formData.profession, val]);
-                    } else {
-                      handleChange('profession', formData.profession.filter(p => p !== val));
-                    }
-                  }}
-                  style={{ cursor: loading ? 'not-allowed' : 'pointer' }}
-                />
-                {opt.label}
-              </label>
-            ))}
+                {professionOptions.map((opt) => (
+                  <label key={opt.value} style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '10px 12px', cursor: 'pointer', fontSize: '14px',
+                    backgroundColor: formData.profession.includes(opt.value) ? '#6C5CE710' : 'transparent',
+                    borderBottom: '1px solid #f0f0f0'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.profession.includes(opt.value)}
+                      onChange={(e) => {
+                        const val = opt.value;
+                        if (e.target.checked) {
+                          handleChange('profession', [...formData.profession, val]);
+                        } else {
+                          handleChange('profession', formData.profession.filter(p => p !== val));
+                        }
+                      }}
+                      style={{ cursor: 'pointer', accentColor: '#6C5CE7' }}
+                    />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           <label>{t('employee.usernameLabel') || 'Имя пользователя'}</label>

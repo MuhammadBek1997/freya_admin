@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UseGlobalContext } from '../Context';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
@@ -46,6 +46,18 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [profDropdownOpen, setProfDropdownOpen] = useState(false);
+  const profDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (profDropdownRef.current && !profDropdownRef.current.contains(e.target)) {
+        setProfDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleEscKey = (event) => {
@@ -200,18 +212,61 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
               <div className="form-row">
                 <div className="form-group">
                   <label>{t('employee.positionLabel', { defaultValue: 'Lavozim *' })}</label>
-                  <div className="profession-checkboxes" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
-                    {professionOptions.map((opt) => (
-                      <label key={opt.value} style={{
-                        display: 'flex', alignItems: 'center', gap: '4px',
-                        padding: '6px 12px', borderRadius: '8px', cursor: 'pointer',
-                        border: '1px solid #ddd', fontSize: '14px', userSelect: 'none'
-                      }}>
-                        <Field type="checkbox" name="profession" value={opt.value} style={{ cursor: 'pointer' }} />
-                        {opt.label}
-                      </label>
-                    ))}
-                  </div>
+                  <Field name="profession">
+                    {({ field, form }) => (
+                      <div ref={profDropdownRef} style={{ position: 'relative' }}>
+                        <div
+                          onClick={() => setProfDropdownOpen(!profDropdownOpen)}
+                          className="form-input"
+                          style={{
+                            cursor: 'pointer', display: 'flex', justifyContent: 'space-between',
+                            alignItems: 'center', minHeight: '20px'
+                          }}
+                        >
+                          <span style={{ color: field.value.length ? '#333' : '#999' }}>
+                            {field.value.length > 0
+                              ? field.value.map(p => {
+                                  const opt = professionOptions.find(o => o.value === p);
+                                  return opt ? opt.label : p;
+                                }).join(', ')
+                              : t('employee.chooseProfession', { defaultValue: 'Kasb tanlang' })}
+                          </span>
+                          <span style={{ fontSize: '10px', color: '#999' }}>{profDropdownOpen ? '\u25B2' : '\u25BC'}</span>
+                        </div>
+                        {profDropdownOpen && (
+                          <div style={{
+                            position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+                            backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: '200px', overflowY: 'auto'
+                          }}>
+                            {professionOptions.map((opt) => (
+                              <label key={opt.value} style={{
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                padding: '10px 12px', cursor: 'pointer', fontSize: '14px',
+                                backgroundColor: field.value.includes(opt.value) ? '#6C5CE710' : 'transparent',
+                                borderBottom: '1px solid #f0f0f0'
+                              }}>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value.includes(opt.value)}
+                                  onChange={(e) => {
+                                    const val = opt.value;
+                                    if (e.target.checked) {
+                                      form.setFieldValue('profession', [...field.value, val]);
+                                    } else {
+                                      form.setFieldValue('profession', field.value.filter(p => p !== val));
+                                    }
+                                  }}
+                                  style={{ cursor: 'pointer', accentColor: '#6C5CE7' }}
+                                />
+                                {opt.label}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Field>
                   <div className="error-message" style={{backgroundColor:"white",border:"none"}}><ErrorMessage name="profession" /></div>
                 </div>
 
