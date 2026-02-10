@@ -13,13 +13,16 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
   const validationSchema = Yup.object({
     employee_name: Yup.string()
       .min(2, t('validation.min2', { defaultValue: 'Kamida 2 belgi' }))
-      .max(100, t('validation.max100', { defaultValue: 'Ko‘pi bilan 100 belgi' }))
+      .max(100, t('validation.max100', { defaultValue: 'Ko\'pi bilan 100 belgi' }))
       .required(t('validation.required', { defaultValue: 'Majburiy' })),
     employee_phone: Yup.string().required(t('validation.required', { defaultValue: 'Majburiy' })),
-    employee_email: Yup.string().email(t('validation.emailInvalid', { defaultValue: 'Email noto‘g‘ri' })).required(t('validation.required', { defaultValue: 'Majburiy' })),
+    employee_email: Yup.string().email(t('validation.emailInvalid', { defaultValue: "Email noto'g'ri" })).required(t('validation.required', { defaultValue: 'Majburiy' })),
     username: Yup.string().min(3, t('validation.min3', { defaultValue: 'Kamida 3 belgi' })).required(t('validation.required', { defaultValue: 'Majburiy' })),
     employee_password: Yup.string().min(8, t('validation.min8', { defaultValue: 'Kamida 8 belgi' })).required(t('validation.required', { defaultValue: 'Majburiy' })),
-    profession: Yup.string().oneOf(professionOptions.map(p => p.value), t('validation.invalidProfession', { defaultValue: 'Noto‘g‘ri kasb' })).required(t('validation.required', { defaultValue: 'Majburiy' })),
+    profession: Yup.array()
+      .of(Yup.string().oneOf(professionOptions.map(p => p.value), t('validation.invalidProfession', { defaultValue: 'Noto\'g\'ri kasb' })))
+      .min(1, t('validation.required', { defaultValue: 'Majburiy' }))
+      .required(t('validation.required', { defaultValue: 'Majburiy' })),
     work_start_time: Yup.string()
       .matches(/^([01]\d|2[0-3]):([0-5]\d)$/,
         t('validation.timeFormat', { defaultValue: "Format HH:MM bo'lishi kerak" }))
@@ -34,7 +37,7 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
     employee_name: '',
     employee_phone: '',
     employee_email: '',
-    profession: '',
+    profession: [],
     username: '',
     employee_password: '',
     work_start_time: '',
@@ -196,13 +199,19 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="profession">{t('employee.positionLabel', { defaultValue: 'Lavozim *' })}</label>
-                  <Field as="select" id="profession" name="profession" className="form-input">
-                    <option value="">{t('employee.chooseProfession', { defaultValue: 'Kasb tanlang' })}</option>
+                  <label>{t('employee.positionLabel', { defaultValue: 'Lavozim *' })}</label>
+                  <div className="profession-checkboxes" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
                     {professionOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      <label key={opt.value} style={{
+                        display: 'flex', alignItems: 'center', gap: '4px',
+                        padding: '6px 12px', borderRadius: '8px', cursor: 'pointer',
+                        border: '1px solid #ddd', fontSize: '14px', userSelect: 'none'
+                      }}>
+                        <Field type="checkbox" name="profession" value={opt.value} style={{ cursor: 'pointer' }} />
+                        {opt.label}
+                      </label>
                     ))}
-                  </Field>
+                  </div>
                   <div className="error-message" style={{backgroundColor:"white",border:"none"}}><ErrorMessage name="profession" /></div>
                 </div>
 

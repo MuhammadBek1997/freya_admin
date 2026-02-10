@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { UseGlobalContext } from '../Context';
 
 const EditEmployeeBar = ({ employee, onClose }) => {
-  const { updateEmployee, fetchEmployees, t } = UseGlobalContext();
+  const { updateEmployee, fetchEmployees, t, professions } = UseGlobalContext();
+  const professionOptions = professions || [];
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -11,19 +12,30 @@ const EditEmployeeBar = ({ employee, onClose }) => {
     surname: '',
     phone: '',
     email: '',
-    profession: '',
+    profession: [],
     username: '',
     password: ''
   });
 
   useEffect(() => {
     if (employee) {
+      // profession ni array ga aylantirish
+      let profVal = employee.profession || [];
+      if (typeof profVal === 'string') {
+        try {
+          profVal = JSON.parse(profVal);
+        } catch {
+          profVal = profVal ? [profVal] : [];
+        }
+      }
+      if (!Array.isArray(profVal)) profVal = profVal ? [profVal] : [];
+
       setFormData({
         name: employee.name || '',
         surname: employee.surname || '',
         phone: employee.phone || '',
         email: employee.email || '',
-        profession: employee.profession || '',
+        profession: profVal,
         username: employee.username || '',
         password: ''
       });
@@ -53,7 +65,7 @@ const EditEmployeeBar = ({ employee, onClose }) => {
         surname: formData.surname.trim(),
         phone: formData.phone.trim(),
         email: formData.email.trim(),
-        profession: formData.profession.trim(),
+        profession: formData.profession,
         username: formData.username.trim()
       };
 
@@ -126,13 +138,33 @@ const EditEmployeeBar = ({ employee, onClose }) => {
           />
 
           <label>{t('employee.positionLabel') || 'Профессия'}</label>
-          <input
-            type="text"
-            value={formData.profession}
-            onChange={(e) => handleChange('profession', e.target.value)}
-            disabled={loading}
-            placeholder="Hair, Nails, etc."
-          />
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px', marginBottom: '8px' }}>
+            {professionOptions.map((opt) => (
+              <label key={opt.value} style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                padding: '6px 12px', borderRadius: '8px', cursor: loading ? 'not-allowed' : 'pointer',
+                border: formData.profession.includes(opt.value) ? '2px solid #6C5CE7' : '1px solid #ddd',
+                backgroundColor: formData.profession.includes(opt.value) ? '#6C5CE710' : 'transparent',
+                fontSize: '14px', userSelect: 'none'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={formData.profession.includes(opt.value)}
+                  disabled={loading}
+                  onChange={(e) => {
+                    const val = opt.value;
+                    if (e.target.checked) {
+                      handleChange('profession', [...formData.profession, val]);
+                    } else {
+                      handleChange('profession', formData.profession.filter(p => p !== val));
+                    }
+                  }}
+                  style={{ cursor: loading ? 'not-allowed' : 'pointer' }}
+                />
+                {opt.label}
+              </label>
+            ))}
+          </div>
 
           <label>{t('employee.usernameLabel') || 'Имя пользователя'}</label>
           <input

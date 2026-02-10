@@ -30,22 +30,23 @@ const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, commen
     });
   };
   
-  let employeeColor
-
-  if(profession == "Стилист" || profession == "Stilist" || profession == "Stylist"){
-    employeeColor = "#CA940099"
-  }else if(profession == "Косметолог" || profession == "Kosmetolog" || profession == "Cosmetologist"){
-    employeeColor = "#00CA1E99"
-  }else
-    if(profession == "Визажист" || profession == "Visualist" || profession == "Visualizer"){
-    employeeColor = "#1E00CA99"
-  }else if(profession == "Бровист" || profession == "Eyebrowist" || profession == "Eyebrowist"){
-    employeeColor = "#CA940099"
-  }else if(profession == "Лэшмейкер" || profession == "Lashmaker" || profession == "Lashmaker"){
-    employeeColor = "#CA009899"
-  }else if(profession == "Массажист" || profession == "Massageist" || profession == "Massageist"){
-    employeeColor = "#CA000099"
+  // profession ni array ga aylantirish
+  let profList = profession || [];
+  if (typeof profList === 'string') {
+    try { profList = JSON.parse(profList); } catch { profList = profList ? [profList] : []; }
   }
+  if (!Array.isArray(profList)) profList = profList ? [profList] : [];
+
+  const getColor = (prof) => {
+    const p = (prof || '').toLowerCase();
+    if (p.includes('стилист') || p.includes('stilist') || p.includes('stylist')) return "#CA940099";
+    if (p.includes('косметолог') || p.includes('kosmetolog') || p.includes('cosmetologist')) return "#00CA1E99";
+    if (p.includes('визажист') || p.includes('vizajist') || p.includes('visualist')) return "#1E00CA99";
+    if (p.includes('бровист') || p.includes('brovist') || p.includes('eyebrow')) return "#CA940099";
+    if (p.includes('лэшмейкер') || p.includes('lashmaker')) return "#CA009899";
+    if (p.includes('массажист') || p.includes('massaj') || p.includes('massage')) return "#CA000099";
+    return "#66666699";
+  };
 
   return (
     <div className="employCard">
@@ -62,12 +63,16 @@ const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, commen
             }
           }}
         />
-        <div className="employCard-masterJob" style={{backgroundColor:employeeColor}}>
-          <p>
-            {
-              profession
-            }
-          </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+          {profList.length > 0 ? profList.map((prof, idx) => (
+            <div key={idx} className="employCard-masterJob" style={{backgroundColor: getColor(prof)}}>
+              <p>{prof}</p>
+            </div>
+          )) : (
+            <div className="employCard-masterJob" style={{backgroundColor: "#66666699"}}>
+              <p>-</p>
+            </div>
+          )}
         </div>
         <button className="employCard-menuBtn" onClick={handleToggleMenu}>
           <img src="/images/menuImg.png" alt="" />

@@ -93,7 +93,7 @@ const AboutEmployeeBar = ({ id, employee, onClose, avg_rating, comment_count }) 
         </button>
         <img src={employee?.avatar_url || employee?.avatar || employee?.profile_image || employee?.photo || "/images/masterImage.png"} alt="Employee" className='aboutEmployeeBar-cont-img' />
         <div className='aboutEmployeeBar-masterJob'>
-          <p>{employee.profession}</p>
+          <p>{Array.isArray(employee.profession) ? employee.profession.join(', ') : employee.profession}</p>
         </div>
         <div className="aboutEmployeeBar-cont-info">
           <h3>{employee.name}</h3>

@@ -71,7 +71,8 @@ const Employees = () => {
       const name = (employee.name || employee.employee_name || '').toLowerCase();
       const phone = (employee.phone || employee.employee_phone || '').toLowerCase();
       const email = (employee.email || employee.employee_email || '').toLowerCase();
-      const profession = (employee.profession || '').toLowerCase();
+      const profRaw = employee.profession || [];
+      const profession = (Array.isArray(profRaw) ? profRaw.join(' ') : String(profRaw)).toLowerCase();
       
       return name.includes(query) || 
              phone.includes(query) || 
