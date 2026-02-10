@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { UseGlobalContext } from "../Context.jsx";
 
 
@@ -37,6 +38,16 @@ const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, commen
   }
   if (!Array.isArray(profList)) profList = profList ? [profList] : [];
 
+  const [currentProfIdx, setCurrentProfIdx] = useState(0);
+
+  useEffect(() => {
+    if (profList.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentProfIdx(prev => (prev + 1) % profList.length);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [profList.length]);
+
   const getColor = (prof) => {
     const p = (prof || '').toLowerCase();
     if (p.includes('стилист') || p.includes('stilist') || p.includes('stylist')) return "#CA940099";
@@ -63,12 +74,19 @@ const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, commen
             }
           }}
         />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-          {profList.length > 0 ? profList.map((prof, idx) => (
-            <div key={idx} className="employCard-masterJob" style={{backgroundColor: getColor(prof)}}>
-              <p>{prof}</p>
+        <div style={{ overflow: 'hidden', height: '3vh', display: 'flex', alignItems: 'center' }}>
+          {profList.length > 0 ? (
+            <div
+              key={currentProfIdx}
+              className="employCard-masterJob"
+              style={{
+                backgroundColor: getColor(profList[currentProfIdx]),
+                animation: profList.length > 1 ? 'profFadeIn 0.4s ease' : 'none'
+              }}
+            >
+              <p>{profList[currentProfIdx]}</p>
             </div>
-          )) : (
+          ) : (
             <div className="employCard-masterJob" style={{backgroundColor: "#66666699"}}>
               <p>-</p>
             </div>
