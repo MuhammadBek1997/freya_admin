@@ -1,15 +1,64 @@
 @media screen and (max-width: 650px) {
+    /* ===== SIDEBAR / NAVBAR ===== */
     .sidebar{
         height: 6vh;
     }
+    .sidebar-logo{
+        padding: 0.5vw;
+        gap: 1vw;
+    }
     .sidebar-logo img{
-        width: 3vw;
+        width: 4vw;
     }
     .sidebar-logo h1 {
-        font-size: 1.8vw;
+        font-size: 2.5vw;
+    }
+
+    .sidebar-cont{
+        margin-left: 2%;
+        gap: 0;
+    }
+
+    .sidebar-nav-item{
+        padding: 1.5vw;
+        gap: 1vw;
+    }
+    .sidebar-nav-item img{
+        width: 3.5vw;
+    }
+    .sidebar-nav-item p{
+        font-size: 2.5vw;
+    }
+
+    .sidebar-illustration img{
+        width: 4vw;
     }
 
     .sidebar-whitebox{
         height: 4vh !important;
+    }
+
+    /* ===== SECTION UMUMIY ===== */
+    section{
+        padding-left: 0;
+    }
+
+    /* ===== EMPLOYEE PAGE - cascade fix ===== */
+    .employ-body{
+        grid-template-columns: 1fr;
+        padding-top: 42vw;
+        gap: 4vw;
+    }
+
+    /* ===== SCHEDULE PAGE - cascade fix ===== */
+    .schedule-body{
+        grid-template-columns: 1fr;
+        padding-top: 38vw;
+        gap: 4vw;
+    }
+
+    /* ===== HOME PAGE - cascade fix ===== */
+    .home-body{
+        padding-top: 35vw;
     }
 }

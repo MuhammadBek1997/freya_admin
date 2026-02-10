@@ -675,11 +675,11 @@
 @media screen and (max-width: 650px) {
   .employ-nav {
     height: auto;
-    min-height: 20vh;
+    min-height: auto;
     padding-left: 4vw;
     padding-right: 4vw;
-    padding-top: 2vh;
-    padding-bottom: 2vh;
+    padding-top: 1.5vh;
+    padding-bottom: 1vh;
   }
 
   .employ-nav-top {
@@ -706,21 +706,25 @@
     align-items: stretch;
     gap: 2vw;
     padding-left: 0;
-    padding-top: 2vh;
+    padding-top: 1vh;
+    position: relative;
   }
 
   .employ-nav-search-icon {
-    width: 5vw;
-    margin-right: -8vw;
+    width: 4vw;
+    position: absolute;
+    left: 3vw;
+    top: 2.8vh;
     z-index: 5;
+    margin-right: 0;
   }
 
   .employ-nav-search input {
     width: 100%;
-    height: 6vh;
-    font-size: 3.5vw;
-    padding-left: 10vw;
-    border-radius: 4vw;
+    height: 9vw;
+    font-size: 3vw;
+    padding-left: 9vw;
+    border-radius: 5vw;
   }
 
   /* Action buttons row */
@@ -787,7 +791,7 @@
   /* Employee cards grid - mobile */
   .employ-body {
     padding: 4vw;
-    padding-top: 48vw;
+    padding-top: 42vw;
     grid-template-columns: 1fr;
     gap: 4vw;
   }

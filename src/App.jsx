@@ -68,7 +68,7 @@ function App() {
     return (
       <div style={{ display: 'flex', width: '100%', height: '100vh' }}>
         <Sidebar />
-        <div style={{ flex: 1, overflow: 'auto' }}>
+        <div className="app-content" style={{ flex: 1, overflow: 'auto' }}>
           <Routes>
             <Route path='/' element={<Home />} />
             <Route path='/schedule' element={<Schedule />} />
@@ -84,11 +84,11 @@ function App() {
 
   // PRIVATE SALON ADMIN ROLE - cheklangan admin sahifalari
   if (user?.role === 'private_salon_admin' || user?.role === 'private_admin') {
-   
+
     return (
       <div style={{ display: 'flex', width: '100%', height: '100vh' }}>
         <Sidebar />
-        <div style={{ flex: 1, overflow: 'auto' }}>
+        <div className="app-content" style={{ flex: 1, overflow: 'auto' }}>
           <Routes>
             <Route path='/' element={<Home />} />
             <Route path='/schedule' element={<Schedule />} />
@@ -108,7 +108,7 @@ function App() {
     return (
       <div style={{ display: 'flex', width: '100%', height: '100vh' }}>
         <Sidebar />
-        <div style={{ flex: 1, overflow: 'auto' }}>
+        <div className="app-content" style={{ flex: 1, overflow: 'auto' }}>
           <Routes>
             <Route path='/' element={<Home />} />
             <Route path='/schedule' element={<Schedule />} />

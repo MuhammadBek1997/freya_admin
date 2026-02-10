@@ -583,55 +583,62 @@
   /* Schedule navigation */
   .sched-nav {
     height: auto;
-    min-height: 22vh;
+    min-height: auto;
     padding-left: 4vw;
     padding-right: 4vw;
-    padding-top: 2vh;
-    padding-bottom: 2vh;
+    padding-top: 1.5vh;
+    padding-bottom: 1vh;
   }
 
   .sched-nav-top img {
-    width: 7vw;
-    height: 7vw;
+    width: 5vw;
+    height: 5vw;
   }
 
   .sched-nav-top h2 {
-    font-size: 5vw;
+    font-size: 4.5vw;
   }
 
   .sched-nav-search {
     height: auto;
-    flex-direction: column;
+    flex-direction: row;
+    position: relative;
     gap: 2vw;
     padding-left: 0;
-    padding-top: 1.5vh;
+    padding-top: 1vh;
+    align-items: center;
   }
 
   .sched-nav-search img {
-    width: 5vw;
-    margin-right: -8vw;
+    width: 4vw;
+    position: absolute;
+    left: 3vw;
+    z-index: 3;
+    margin-right: 0;
   }
 
   .sched-nav-search input {
-    width: 100%;
-    height: 6vh;
-    font-size: 3.5vw;
-    padding-left: 10vw;
-    border-radius: 4vw;
+    flex: 1;
+    min-width: 0;
+    height: 9vw;
+    font-size: 3vw;
+    padding-left: 9vw;
+    border-radius: 5vw;
   }
 
   .sched-add-btn {
-    width: 100%;
-    height: 10vw;
-    font-size: 3.5vw;
+    width: auto;
+    height: 9vw;
+    font-size: 3vw;
     border-radius: 5vw;
-    gap: 3vw;
+    gap: 1.5vw;
     margin-left: 0;
-    padding: 0;
+    padding: 0 4vw;
+    white-space: nowrap;
   }
 
   .sched-add-btn img {
-    width: 4vw;
+    width: 3vw;
   }
 
   .sched-dayList {
@@ -873,7 +880,7 @@
   /* Schedule body - cards */
   .schedule-body {
     padding: 4vw;
-    padding-top: 50vw;
+    padding-top: 38vw;
     grid-template-columns: 1fr;
     gap: 4vw;
   }
@@ -882,6 +889,10 @@
     width: 100%;
   }
 
+  
+  .wholeday-text{
+    font-size: small !important;
+  }
   .schedule-list-item-btn {
     width: 10vw;
     height: 10vw;

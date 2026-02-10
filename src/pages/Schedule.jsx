@@ -224,7 +224,7 @@ const Schedule = () => {
             return (
               <div key={item.id} className='schedule-list-item' style={{ position: 'relative' }}>
                 {item?.whole_day ? (
-                  <div style={{ position: 'absolute', top: '8px', left: '10px', background: '#FFF', color: '#9C2BFF', border: '1px solid #9C2BFF', borderRadius: '12px', padding: '3px 9px', fontSize: '0.8vw' }}>
+                  <div className='wholeday-text' style={{ position: 'absolute', top: '-15px', left: '-5px', background: '#FFF', color: '#9C2BFF', border: '1px solid #9C2BFF', borderRadius: '12px', padding: '3px 9px', fontSize: '1vw' }}>
                     {t('schedule.wholeDay')}
                   </div>
                 ) : null}
