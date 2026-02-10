@@ -241,8 +241,8 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
                           }}>
                             {professionOptions.map((opt) => (
                               <label key={opt.value} style={{
-                                display: 'flex', alignItems: 'center', gap: '8px',
-                                padding: '10px 12px', cursor: 'pointer', fontSize: '14px',
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '6px 10px', cursor: 'pointer', fontSize: '13px',
                                 backgroundColor: field.value.includes(opt.value) ? '#6C5CE710' : 'transparent',
                                 borderBottom: '1px solid #f0f0f0'
                               }}>
@@ -257,7 +257,7 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
                                       form.setFieldValue('profession', field.value.filter(p => p !== val));
                                     }
                                   }}
-                                  style={{ cursor: 'pointer', accentColor: '#6C5CE7' }}
+                                  style={{ cursor: 'pointer', accentColor: '#6C5CE7', width: '14px', height: '14px' }}
                                 />
                                 {opt.label}
                               </label>
