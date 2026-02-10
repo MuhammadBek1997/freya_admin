@@ -74,7 +74,7 @@ const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, commen
             }
           }}
         />
-        <div style={{ overflow: 'hidden', height: '3vh', display: 'flex', alignItems: 'center' }}>
+        <div style={{ overflow: 'hidden', height: '3vh', display: 'flex', alignItems: 'center', marginLeft: 'auto' }}>
           {profList.length > 0 ? (
             <div
               key={currentProfIdx}
