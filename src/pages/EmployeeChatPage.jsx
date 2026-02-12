@@ -62,6 +62,7 @@ const EmployeeChatPage = () => {
   const imageInputRef = useRef(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
+  const [chatSidebarOpen, setChatSidebarOpen] = useState(false);
 
   // Schedule state
   const [groupedSchedules, setGroupedSchedules] = useState({});
@@ -687,7 +688,7 @@ const EmployeeChatPage = () => {
 
   return (
     <div>
-      <div className={`chat-container ${isMobileChatOpen ? 'chat-open' : ''} ${(user?.role === 'private_admin' || user?.role === 'private_salon_admin') ? 'admin-layout' : ''}`}>
+      <div className={`chat-container ${isMobileChatOpen ? 'chat-open' : ''} ${['admin', 'salon_admin', 'private_admin', 'private_salon_admin'].includes(user?.role) ? 'admin-layout' : ''}`}>
         {isMobileChatOpen && (
           <button className="back-button" onClick={() => {
             setSelectedUser(null);
@@ -696,7 +697,15 @@ const EmployeeChatPage = () => {
             ←
           </button>
         )}
-        <aside className="chatSidebar">
+        {['admin', 'salon_admin', 'private_admin', 'private_salon_admin'].includes(user?.role) && (
+          <button className="chat-sidebar-toggle" onClick={() => setChatSidebarOpen(!chatSidebarOpen)}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {chatSidebarOpen ? <polyline points="9 18 15 12 9 6"/> : <polyline points="15 18 9 12 15 6"/>}
+            </svg>
+          </button>
+        )}
+        <aside className={`chatSidebar ${chatSidebarOpen ? "sidebar-open" : ""}`}>
+{!["admin", "salon_admin"].includes(user?.role) && (
           <div className="chatSidebar-top">
             <img className="chatSidebarLogo" src="sidebarLogo.svg" alt="Logo" />
 
@@ -727,8 +736,12 @@ const EmployeeChatPage = () => {
               
             </div>
           </div>
+          )}
+
 
           <div className="chat-profile-card">
+            {!["admin", "salon_admin"].includes(user?.role) && (
+              <>
             <span className="chat-profile-info">
               <h2 className="chat-profile-name">{user.name || user.username}</h2>
               <span className="chat-profile-role">{user?.role}</span>
@@ -737,6 +750,9 @@ const EmployeeChatPage = () => {
               <img className="profile-btn-icon" src="btnicon.svg" alt="" />
               <p>{t('myProfile') || 'Мой профиль'} →</p>
             </button>
+              </>
+            )}
+            
             <div className="chat-stats">
               <div className="chat-stat-item">
                 <span className="chat-stats-label">{t('chats') || 'Чаты'}</span>
@@ -751,6 +767,8 @@ const EmployeeChatPage = () => {
               </div>
             </div>
           </div>
+
+          
 
           <div className="chat-list">
             {conversationsLoading ? (
@@ -796,10 +814,17 @@ const EmployeeChatPage = () => {
               </div>
             ) : (
               <>
-                <h3 className="chat-section-title">
-                  {t('conversations') || 'Suhbatlar'} ({conversations.length})
-                </h3>
-                {conversations.map((conversation) => {
+                {(() => {
+                  const unreadConvs = conversations.filter(c => c.unread_count > 0);
+                  const readConvs = conversations.filter(c => !c.unread_count);
+                  return (
+                    <>
+                      {unreadConvs.length > 0 && (
+                        <>
+                          <h3 className="chat-section-title">
+                            {t('unreadMessages') || 'Непрочитанные'} ({unreadConvs.length})
+                          </h3>
+                          {unreadConvs.map((conversation) => {
                   const participant = conversation.participant || {};
                   const userId = participant.id || conversation.other_user_id || conversation.userId;
                   const userName = participant.name || conversation.other_user_name || conversation.userName || 'Unknown User';
@@ -829,12 +854,16 @@ const EmployeeChatPage = () => {
                           <p className="chat-name">{userName}</p>
                         </span>
                         <p className="chat-msg">
-                          {conversation.last_message || t('noMessage') || 'Xabar yo\'q'}
+                          {conversation.last_message || t('noMessage') || "Xabar yo'q"}
                         </p>
                       </div>
                       <div className="chat-header-info">
-                        {conversation.unread_count > 0 && (
+                        {conversation.unread_count > 0 ? (
                           <span className="chat-badge">{conversation.unread_count}</span>
+                        ) : (
+                          <svg className="chat-read-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c853" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
                         )}
                         <span className="chat-time">
                           {conversation.last_message_time ?
@@ -848,6 +877,67 @@ const EmployeeChatPage = () => {
                     </div>
                   );
                 })}
+                        </>
+                      )}
+                      <h3 className="chat-section-title">
+                        {t('readMessages') || 'Прочитанные'} ({readConvs.length})
+                      </h3>
+                      {readConvs.map((conversation) => {
+                  const participant = conversation.participant || {};
+                  const userId = participant.id || conversation.other_user_id || conversation.userId;
+                  const userName = participant.name || conversation.other_user_name || conversation.userName || 'Unknown User';
+                  const userAvatar = participant.avatar_url || conversation.other_user_avatar || conversation.user_avatar_url || conversation.avatar || "ChatAvatar.svg";
+
+                  if (!userId) {
+                    return null;
+                  }
+
+                  return (
+                    <div
+                      key={userId}
+                      className={`chat-item ${selectedUser?.id === userId ? 'selected' : ''}`}
+                      onClick={() => handleSelectConversation(userId, userName, userAvatar)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="chat-avatar-wrapper">
+                        {conversation.unread_count > 0 && <span className="unread-dot"></span>}
+                      </div>
+                      <div className="chat-info">
+                        <span className="chat-info-logo">
+                          <img
+                            className="chat-avatar"
+                            src={userAvatar}
+                            alt={userName}
+                          />
+                          <p className="chat-name">{userName}</p>
+                        </span>
+                        <p className="chat-msg">
+                          {conversation.last_message || t('noMessage') || "Xabar yo'q"}
+                        </p>
+                      </div>
+                      <div className="chat-header-info">
+                        {conversation.unread_count > 0 ? (
+                          <span className="chat-badge">{conversation.unread_count}</span>
+                        ) : (
+                          <svg className="chat-read-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c853" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        )}
+                        <span className="chat-time">
+                          {conversation.last_message_time ?
+                            new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) : ''
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+                    </>
+                  );
+                })()}
               </>
             )}
           </div>

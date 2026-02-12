@@ -69,3 +69,160 @@
     padding-left: 0;
   }
 }
+
+/* Toggle button - hidden by default, shown on tablet */
+.chat-sidebar-toggle {
+  display: none;
+}
+
+/* Tablet (950px) - admin chat inside app-content with main Sidebar */
+@media screen and (max-width: 950px) {
+  .admin-layout .chatSidebar {
+    width: 30vw;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 100;
+  }
+
+  .admin-layout .chatSidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  /* When sidebar is hidden, chat window takes full width */
+  .admin-layout .chat-window,
+  .admin-layout .chat-posts,
+  .admin-layout .chat-comments {
+    padding-right: 0;
+    padding-left: 0;
+    transition: padding-right 0.3s ease;
+  }
+
+  /* When sidebar is open, add padding back */
+  .admin-layout:has(.sidebar-open) .chat-window,
+  .admin-layout:has(.sidebar-open) .chat-posts,
+  .admin-layout:has(.sidebar-open) .chat-comments {
+    padding-right: 30vw;
+  }
+
+  /* Toggle button */
+  .admin-layout .chat-sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3vw;
+    height: 6vw;
+    background: #9C2BFF;
+    color: #fff;
+    border: none;
+    border-radius: 1vw 0 0 1vw;
+    cursor: pointer;
+    z-index: 101;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+    transition: right 0.3s ease;
+  }
+
+  .admin-layout:has(.sidebar-open) .chat-sidebar-toggle {
+    right: 30vw;
+  }
+
+  .admin-layout .chat-profile-card {
+    padding: 1.5vw;
+  }
+
+  .admin-layout .chat-stats {
+    gap: 2vw;
+  }
+
+  .admin-layout .chat-stats-number {
+    font-size: 3vw;
+  }
+
+  .admin-layout .chat-stats-label {
+    font-size: 1.5vw;
+  }
+
+  .admin-layout .chat-section-title {
+    font-size: 1.5vw;
+    margin: 1.5vh 0 1vh;
+  }
+
+  .admin-layout .chat-avatar {
+    width: 5vw;
+    height: 5vw;
+  }
+
+  .admin-layout .chat-name {
+    font-size: 1.5vw;
+  }
+
+  .admin-layout .chat-msg {
+    font-size: 1.3vw;
+  }
+
+  .admin-layout .chat-time {
+    font-size: 1.2vw;
+  }
+
+  .admin-layout .chat-badge {
+    font-size: 1.2vw;
+    padding: 0.3vh 0.8vw;
+    min-width: 2.5vw;
+  }
+
+  .admin-layout .chat-header {
+    padding: 1.5vh 2vw;
+  }
+
+  .admin-layout .chat-header-avatar {
+    width: 4vw;
+    height: 4vw;
+  }
+
+  .admin-layout .chat-header-name {
+    font-size: 2vw;
+  }
+
+  .admin-layout .chat-header-status {
+    font-size: 1.3vw;
+  }
+
+  .admin-layout .message {
+    max-width: 25vw;
+  }
+
+  .admin-layout .message-receive-text,
+  .admin-layout .message-send-text {
+    font-size: 1.4vw;
+  }
+
+  .admin-layout .message-time,
+  .admin-layout .message-time-sent {
+    font-size: 1vw;
+  }
+
+  .admin-layout .chat-date {
+    font-size: 1.2vw;
+  }
+
+  .admin-layout .chat-input-container {
+    padding: 1vh 2vw;
+  }
+
+  .admin-layout .chat-input input {
+    font-size: 1.4vw;
+  }
+
+  .admin-layout .send-button {
+    width: 3.5vw;
+    height: 3.5vw;
+  }
+
+  .admin-layout .message-pdf {
+    width: 3.5vw;
+    height: 3.5vw;
+  }
+}

@@ -309,6 +309,10 @@ body {
   text-align: center;
 }
 
+.chat-read-check {
+  flex-shrink: 0;
+}
+
 .chat-read-icon {
   color: var(--text-light);
   font-size: 0.6vw;

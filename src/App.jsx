@@ -73,6 +73,7 @@ function App() {
             <Route path='/' element={<Home />} />
             <Route path='/schedule' element={<Schedule />} />
             <Route path='/employees' element={<Employees />} />
+            <Route path='/chat' element={<EmployeeChatPage />} />
             <Route path='/profile' element={<Profile />} />
             <Route path='/privacy' element={<Privacy />} />
             <Route path='*' element={<Navigate to='/' replace />} />

@@ -68,8 +68,8 @@ const Sidebar = () => {
           </h2>
         )}
 
-        {/* Chat link - faqat private_admin uchun */}
-        {user?.role === 'private_admin' && (
+        {/* Chat link - barcha admin rollari uchun */}
+        {['admin', 'salon_admin', 'private_admin', 'private_salon_admin', 'superadmin'].includes(user?.role) && (
           <Link
             to={'/chat'}
             className={`sidebar-nav-item ${isPath('/chat') ? 'is-active' : ''}`}
@@ -87,8 +87,8 @@ const Sidebar = () => {
         <Link
           to={'/profile'}
           className={`sidebar-nav-item ${isPath('/profile') ? 'is-active' : ''}`}
-          id={user?.role === 'private_admin' ? '4' : '3'}
-          key={user?.role === 'private_admin' ? 4 : 3}
+          id='4'
+          key={4}
         >
           <img 
             src={!isPath('/profile') ? '/images/settings-dark.png' : '/images/settings-light.png'} 
