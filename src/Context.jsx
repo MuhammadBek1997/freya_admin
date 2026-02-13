@@ -3013,6 +3013,77 @@ export const AppProvider = ({ children }) => {
 	};
 
 
+	// ===== SALON-LEVEL WEBSOCKET (Admin global notification room) =====
+	// Admin chat sahifasida bo'lmasa ham yangi xabarlarni real-time ko'radi
+	const salonWsRef = useRef(null);
+	const salonWsRetryRef = useRef(0);
+	const salonWsTimerRef = useRef(null);
+	const fetchConversationsRef = useRef(null); // forward ref — quyida set qilinadi
+
+	const connectSalonWs = () => {
+		const role = user?.role;
+		if (!['admin', 'salon_admin'].includes(role)) return;
+		const token = getAuthToken();
+		if (!token) return;
+
+		// Agar allaqachon ulanib tursa qayta ulanmaymiz
+		if (salonWsRef.current && salonWsRef.current.readyState === WebSocket.OPEN) return;
+
+		try {
+			const scheme = 'wss';
+			const url = `${scheme}://${WS_HOST}/api/ws/chat?token=${encodeURIComponent(token)}&receiver_type=salon`;
+			const ws = new WebSocket(url);
+			salonWsRef.current = ws;
+
+			ws.onopen = () => {
+				salonWsRetryRef.current = 0;
+				try { console.log('Salon WS connected'); } catch {}
+			};
+
+			ws.onmessage = (evt) => {
+				try {
+					const data = JSON.parse(evt.data);
+					if (data?.event === 'notification' && data?.kind === 'chat_message') {
+						// Yangi xabar keldi — conversations ro'yxatini yangilaymiz
+						fetchConversationsRef.current?.();
+					}
+				} catch {}
+			};
+
+			ws.onerror = () => {
+				try { console.warn('Salon WS error'); } catch {}
+			};
+
+			ws.onclose = () => {
+				// Auto-reconnect (max 5 marta)
+				if (salonWsRetryRef.current < 5) {
+					salonWsRetryRef.current += 1;
+					salonWsTimerRef.current = setTimeout(() => connectSalonWs(), 5000);
+				}
+			};
+		} catch (e) {
+			try { console.warn('Salon WS connect failed', e); } catch {}
+		}
+	};
+
+	const disconnectSalonWs = () => {
+		try {
+			if (salonWsTimerRef.current) clearTimeout(salonWsTimerRef.current);
+			if (salonWsRef.current) salonWsRef.current.close();
+			salonWsRef.current = null;
+		} catch {}
+	};
+
+	// Admin login bo'lganda avtomatik ulanish
+	useEffect(() => {
+		if (['admin', 'salon_admin'].includes(user?.role)) {
+			connectSalonWs();
+		}
+		return () => {
+			disconnectSalonWs();
+		};
+	}, [user?.role, user?.id]);
+
 	// ===== CHAT API FUNCTIONS =====
 	// Fetch conversations for employee/admin (salon)
 	const fetchConversations = async () => {
@@ -3089,6 +3160,8 @@ export const AppProvider = ({ children }) => {
 			setConversationsLoading(false);
 		}
 	};
+	// Salon WS ref ga ulash (forward reference)
+	fetchConversationsRef.current = fetchConversations;
 
 	// Fetch messages for employee/admin - URL tanlash
 	const fetchMessages = async (userId) => {
