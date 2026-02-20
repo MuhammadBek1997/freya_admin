@@ -77,31 +77,45 @@
 
 /* Tablet (950px) - admin chat inside app-content with main Sidebar */
 @media screen and (max-width: 950px) {
+  /* Sidebar: fixed position, right side, hidden off-screen by default */
   .admin-layout .chatSidebar {
-    width: 30vw;
-    transform: translateX(100%);
+    width: 70vw !important;
+    max-width: 320px;
+    height: 100% !important;
+    min-height: 100vh !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: auto !important;
+    right: 0 !important;
+    transform: translateX(100%) !important;
     transition: transform 0.3s ease;
-    z-index: 100;
+    z-index: 200 !important;
   }
 
+  /* Sidebar open state */
   .admin-layout .chatSidebar.sidebar-open {
-    transform: translateX(0);
+    transform: translateX(0) !important;
   }
 
-  /* When sidebar is hidden, chat window takes full width */
+  /* Chat window: full width when sidebar hidden */
   .admin-layout .chat-window,
   .admin-layout .chat-posts,
   .admin-layout .chat-comments {
-    padding-right: 0;
-    padding-left: 0;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
     transition: padding-right 0.3s ease;
   }
 
-  /* When sidebar is open, add padding back */
-  .admin-layout:has(.sidebar-open) .chat-window,
-  .admin-layout:has(.sidebar-open) .chat-posts,
-  .admin-layout:has(.sidebar-open) .chat-comments {
-    padding-right: 30vw;
+  /* Chat window: shrink when sidebar is open (via parent class) */
+  .admin-layout.chat-sidebar-active .chat-window,
+  .admin-layout.chat-sidebar-active .chat-posts,
+  .admin-layout.chat-sidebar-active .chat-comments {
+    padding-right: min(70vw, 320px) !important;
+  }
+
+  .admin-layout.chat-sidebar-active .employee-header {
+    right: min(70vw, 320px) !important;
+    width: auto !important;
   }
 
   /* Toggle button */
@@ -113,20 +127,20 @@
     right: 0;
     top: 50%;
     transform: translateY(-50%);
-    width: 3vw;
-    height: 6vw;
+    width: 28px;
+    height: 52px;
     background: #9C2BFF;
     color: #fff;
     border: none;
-    border-radius: 1vw 0 0 1vw;
+    border-radius: 8px 0 0 8px;
     cursor: pointer;
-    z-index: 101;
-    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+    z-index: 201;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
     transition: right 0.3s ease;
   }
 
-  .admin-layout:has(.sidebar-open) .chat-sidebar-toggle {
-    right: 30vw;
+  .admin-layout.chat-sidebar-active .chat-sidebar-toggle {
+    right: min(70vw, 320px);
   }
 
   .admin-layout .chat-profile-card {
@@ -191,38 +205,93 @@
   }
 
   .admin-layout .message {
-    max-width: 25vw;
+    max-width: 65%;
   }
 
   .admin-layout .message-receive-text,
   .admin-layout .message-send-text {
-    font-size: 1.4vw;
+    font-size: 13px;
   }
 
   .admin-layout .message-time,
   .admin-layout .message-time-sent {
-    font-size: 1vw;
+    font-size: 11px;
   }
 
   .admin-layout .chat-date {
-    font-size: 1.2vw;
+    font-size: 12px;
   }
 
   .admin-layout .chat-input-container {
-    padding: 1vh 2vw;
+    padding: 10px 14px;
   }
 
   .admin-layout .chat-input input {
-    font-size: 1.4vw;
+    font-size: 14px;
   }
 
   .admin-layout .send-button {
-    width: 3.5vw;
-    height: 3.5vw;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
   }
 
   .admin-layout .message-pdf {
-    width: 3.5vw;
-    height: 3.5vw;
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Sidebar font sizes for tablet */
+  .admin-layout .chat-stats-number {
+    font-size: 20px;
+  }
+
+  .admin-layout .chat-stats-label {
+    font-size: 12px;
+  }
+
+  .admin-layout .chat-section-title {
+    font-size: 12px;
+    margin: 10px 0 6px;
+  }
+
+  .admin-layout .chat-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .admin-layout .chat-name {
+    font-size: 13px;
+  }
+
+  .admin-layout .chat-msg {
+    font-size: 12px;
+  }
+
+  .admin-layout .chat-time {
+    font-size: 11px;
+  }
+
+  .admin-layout .chat-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+    min-width: 20px;
+  }
+
+  .admin-layout .chat-header {
+    padding: 10px 14px;
+  }
+
+  .admin-layout .chat-header-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .admin-layout .chat-header-name {
+    font-size: 16px;
+  }
+
+  .admin-layout .chat-header-status {
+    font-size: 12px;
   }
 }

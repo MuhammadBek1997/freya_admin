@@ -2548,7 +2548,7 @@ export const AppProvider = ({ children }) => {
 
 	const connectChatWs = (receiverId, receiverType = 'user') => {
 		const role = user?.role;
-		if (!role || (role !== 'employee' && role !== 'user' && role !== 'private_admin' && role !== 'private_salon_admin' && role !== 'admin')) {
+		if (!role || !['employee', 'user', 'private_admin', 'private_salon_admin', 'admin', 'salon_admin'].includes(role)) {
 			setWsStatus('unsupported');
 			setWsError('WebSocket chat is supported for employees and users only.');
 			return false;
@@ -3087,7 +3087,7 @@ export const AppProvider = ({ children }) => {
 	// ===== CHAT API FUNCTIONS =====
 	// Fetch conversations for employee/admin (salon)
 	const fetchConversations = async () => {
-		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
+		if (!user || !['employee', 'private_admin', 'private_salon_admin', 'admin', 'salon_admin'].includes(user.role)) {
 			return;
 		}
 
@@ -3163,6 +3163,12 @@ export const AppProvider = ({ children }) => {
 	// Salon WS ref ga ulash (forward reference)
 	fetchConversationsRef.current = fetchConversations;
 
+	// Global total unread count (Sidebar badge uchun)
+	const totalUnreadCount = useMemo(
+		() => (Array.isArray(conversations) ? conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0) : 0),
+		[conversations]
+	);
+
 	// Fetch messages for employee/admin - URL tanlash
 	const fetchMessages = async (userId) => {
 		// ✅ userId tekshirish
@@ -3171,7 +3177,7 @@ export const AppProvider = ({ children }) => {
 			return;
 		}
 
-		if (!user || (user.role !== 'employee' && user.role !== 'private_admin' && user.role !== 'private_salon_admin' && user.role !== 'admin')) {
+		if (!user || !['employee', 'private_admin', 'private_salon_admin', 'admin', 'salon_admin'].includes(user.role)) {
 			return;
 		}
 
@@ -5243,7 +5249,7 @@ export const AppProvider = ({ children }) => {
 			currentConversation, setCurrentConversation,
 			messages, setMessages, messagesLoading, messagesError, fetchMessages, sendMessage, getUnreadCount, markMessagesAsRead, markConversationAsRead,
 			// WebSocket chat
-			wsStatus, wsError, connectChatWs, connectChatWsCustom, disconnectChatWs, isWsOpenFor, waitWsOpenFor, sendWsMessage, appendLocalMessage, sendWsCustom, sendWsMarkRead, getWsChatInfo,
+			wsStatus, wsError, connectChatWs, connectChatWsCustom, disconnectChatWs, isWsOpenFor, waitWsOpenFor, sendWsMessage, appendLocalMessage, sendWsCustom, sendWsMarkRead, getWsChatInfo, totalUnreadCount,
 			// Salons state va funksiyalari
 			salons, salonsLoading, salonsError, fetchSalons, updateSalon,
 			// Salon rasmlarini yuklash va o'chirish funksiyalari

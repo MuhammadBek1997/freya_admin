@@ -688,7 +688,7 @@ const EmployeeChatPage = () => {
 
   return (
     <div>
-      <div className={`chat-container ${isMobileChatOpen ? 'chat-open' : ''} ${['admin', 'salon_admin', 'private_admin', 'private_salon_admin'].includes(user?.role) ? 'admin-layout' : ''}`}>
+      <div className={`chat-container ${isMobileChatOpen ? 'chat-open' : ''} ${['admin', 'salon_admin', 'private_admin', 'private_salon_admin'].includes(user?.role) ? 'admin-layout' : ''} ${chatSidebarOpen ? 'chat-sidebar-active' : ''}`}>
         {isMobileChatOpen && (
           <button className="back-button" onClick={() => {
             setSelectedUser(null);
@@ -1089,7 +1089,11 @@ const EmployeeChatPage = () => {
                               <div key={dateKey}>
                                 <div className="chat-date">{formatDate(dateKey)}</div>
                                 {sortedMessages.map((message, index) => {
-                                  const isMyMessage = message.sender_id === user.id || message.sender_type === 'employee';
+                                  const adminRoles = ['admin', 'salon_admin', 'private_admin', 'private_salon_admin'];
+                                  const isMyMessage =
+                                    String(message.sender_id) === String(user?.id) ||
+                                    message.sender_type === 'employee' ||
+                                    (adminRoles.includes(user?.role) && message.sender_type === 'salon');
 
                                   return (
                                     <div

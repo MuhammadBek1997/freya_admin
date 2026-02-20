@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { UseGlobalContext } from '../Context.jsx'
 
 const Sidebar = () => {
-  let { t, user } = UseGlobalContext();
+  let { t, user, totalUnreadCount } = UseGlobalContext();
   const location = useLocation();
 
   const isPath = (path) => location.pathname === path;
@@ -75,11 +75,31 @@ const Sidebar = () => {
             className={`sidebar-nav-item ${isPath('/chat') ? 'is-active' : ''}`}
             id='3'
             key={3}
+            style={{ position: 'relative' }}
           >
             <img src={!isPath('/chat') ? '/images/chat-dark.png' : '/images/chat-light.png'} alt="" />
-            <p>
-              {t('chat')}
-            </p>
+            <p>{t('chat')}</p>
+            {totalUnreadCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '4px',
+                right: '8px',
+                background: '#FF3B30',
+                color: '#fff',
+                borderRadius: '50%',
+                minWidth: '18px',
+                height: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                fontWeight: 700,
+                lineHeight: 1,
+                padding: '0 4px',
+              }}>
+                {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+              </span>
+            )}
           </Link>
         )}
 
