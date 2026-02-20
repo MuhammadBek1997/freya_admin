@@ -3018,6 +3018,8 @@ export const AppProvider = ({ children }) => {
 	const salonWsRef = useRef(null);
 	const salonWsRetryRef = useRef(0);
 	const salonWsTimerRef = useRef(null);
+	const salonWsPingRef = useRef(null); // ping interval uchun
+	const salonPollRef = useRef(null); // polling interval uchun
 	const fetchConversationsRef = useRef(null); // forward ref — quyida set qilinadi
 
 	const connectSalonWs = () => {
@@ -3038,6 +3040,13 @@ export const AppProvider = ({ children }) => {
 			ws.onopen = () => {
 				salonWsRetryRef.current = 0;
 				try { console.log('Salon WS connected'); } catch {}
+				// Heroku 55s idle timeout oldini olish uchun har 20s ping
+				if (salonWsPingRef.current) clearInterval(salonWsPingRef.current);
+				salonWsPingRef.current = setInterval(() => {
+					try {
+						if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'ping' }));
+					} catch {}
+				}, 20000);
 			};
 
 			ws.onmessage = (evt) => {
@@ -3055,6 +3064,8 @@ export const AppProvider = ({ children }) => {
 			};
 
 			ws.onclose = () => {
+				// Ping ni to'xtatish
+				if (salonWsPingRef.current) { clearInterval(salonWsPingRef.current); salonWsPingRef.current = null; }
 				// Auto-reconnect (max 5 marta)
 				if (salonWsRetryRef.current < 5) {
 					salonWsRetryRef.current += 1;
@@ -3068,16 +3079,23 @@ export const AppProvider = ({ children }) => {
 
 	const disconnectSalonWs = () => {
 		try {
+			if (salonWsPingRef.current) { clearInterval(salonWsPingRef.current); salonWsPingRef.current = null; }
 			if (salonWsTimerRef.current) clearTimeout(salonWsTimerRef.current);
+			if (salonPollRef.current) { clearInterval(salonPollRef.current); salonPollRef.current = null; }
 			if (salonWsRef.current) salonWsRef.current.close();
 			salonWsRef.current = null;
 		} catch {}
 	};
 
-	// Admin login bo'lganda avtomatik ulanish
+	// Admin login bo'lganda avtomatik ulanish + polling
 	useEffect(() => {
 		if (['admin', 'salon_admin'].includes(user?.role)) {
 			connectSalonWs();
+			// 15s polling: WS ishlamasa ham conversations yangilanib turadi
+			if (salonPollRef.current) clearInterval(salonPollRef.current);
+			salonPollRef.current = setInterval(() => {
+				try { fetchConversationsRef.current?.(); } catch {}
+			}, 15000);
 		}
 		return () => {
 			disconnectSalonWs();
