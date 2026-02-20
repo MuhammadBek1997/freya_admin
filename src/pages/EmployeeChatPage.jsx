@@ -185,6 +185,18 @@ const EmployeeChatPage = () => {
     }
   }, [user?.employee_id, user?.id, user?.role]);
 
+  // Admin rollari uchun conversations yuklash
+  useEffect(() => {
+    const adminRoles = ['admin', 'salon_admin', 'private_admin', 'private_salon_admin'];
+    if (!user || !adminRoles.includes(user.role)) return;
+    const uid = user?.id;
+    if (!uid) return;
+    if (conversationsUserIdRef.current !== uid) {
+      fetchConversations();
+      conversationsUserIdRef.current = uid;
+    }
+  }, [user?.id, user?.role]);
+
   useEffect(() => {
     const loadUnreadCount = async () => {
       try {
