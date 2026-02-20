@@ -4,23 +4,24 @@
   right: 0;
 }
 
+/* Desktop: left nav sidebar=15vw, right chat sidebar=20vw */
 .admin-layout .chat-window,
 .admin-layout .chat-posts,
 .admin-layout .chat-comments {
-  padding-left: 0;
+  padding-left: 15vw;
   padding-right: 20vw;
 }
 
 .admin-layout .employee-header {
-  left: 0;
+  left: 15vw;
   right: 20vw;
   width: auto;
 }
 
 .admin-layout .comments-body {
-  margin-left: 0;
+  margin-left: 15vw;
   margin-right: 21vw;
-  width: 78vw;
+  width: calc(100vw - 15vw - 21vw);
 }
 
 /* Admin layout responsive overrides */
@@ -29,7 +30,7 @@
   .admin-layout .chat-posts,
   .admin-layout .chat-comments {
     padding-right: 27.3vw;
-    padding-left: 0;
+    padding-left: 15vw;
   }
 }
 
@@ -38,7 +39,7 @@
   .admin-layout .chat-posts,
   .admin-layout .chat-comments {
     padding-right: 25vw;
-    padding-left: 0;
+    padding-left: 15vw;
   }
 }
 
@@ -47,17 +48,17 @@
   .admin-layout .chat-posts,
   .admin-layout .chat-comments {
     padding-right: 30vw;
-    padding-left: 0;
+    padding-left: 15vw;
   }
   .admin-layout .employee-header {
-    left: 0;
+    left: 15vw;
     right: 30vw;
-    width: 70vw;
+    width: auto;
   }
   .admin-layout .comments-body {
-    margin-left: 0;
+    margin-left: 15vw;
     margin-right: 31vw;
-    width: 69vw;
+    width: calc(100vw - 15vw - 31vw);
   }
 }
 
@@ -66,7 +67,7 @@
   .admin-layout .chat-posts,
   .admin-layout .chat-comments {
     padding-right: 35vw;
-    padding-left: 0;
+    padding-left: 15vw;
   }
 }
 
