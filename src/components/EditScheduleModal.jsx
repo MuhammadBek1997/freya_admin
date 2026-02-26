@@ -355,6 +355,7 @@ const EditScheduleModal = (props) => {
                     />
                 </div>
 
+                {/* Full Payment / Deposit — hozircha yashirilgan
                 <div className='schedule-modal-paymentType'>
                     <label htmlFor="">{t('schedule.paymentOptional') || 'Оплата через приложение (необязательно)'}</label>
                     <div className='schedule-modal-paymentType-cont'>
@@ -391,6 +392,7 @@ const EditScheduleModal = (props) => {
                         />
                     </div>
                 </div>
+                */}
 
                 <div className='schedule-modal-btns'>
                     <button onClick={() => typeof setEditModal === 'function' && setEditModal(false)} disabled={loading}>

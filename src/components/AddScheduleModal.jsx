@@ -487,6 +487,7 @@ const AddScheduleModal = () => {
                     />
                 </div>
 
+                {/* Full Payment / Deposit — hozircha yashirilgan
                 <div className='schedule-modal-paymentType'>
                     <label htmlFor="">{t('schedule.paymentOptional')}</label>
                     <div className='schedule-modal-paymentType-cont'>
@@ -523,6 +524,7 @@ const AddScheduleModal = () => {
                         />
                     </div>
                 </div>
+                */}
 
                 <div className='schedule-modal-btns'>
                     <button
