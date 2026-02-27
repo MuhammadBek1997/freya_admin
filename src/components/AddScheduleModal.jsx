@@ -480,10 +480,11 @@ const AddScheduleModal = () => {
                     )}
                     <label htmlFor="">{t('schedule.servicePrice')}</label>
                     <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         placeholder={t('schedule.pricePlaceholder')}
-                        value={formData.price}
-                        onChange={(e) => handleInputChange('price', e.target.value)}
+                        value={formData.price === 0 ? '' : formData.price}
+                        onChange={(e) => handleInputChange('price', e.target.value.replace(/[^0-9]/g, '') || 0)}
                     />
                 </div>
 

@@ -348,10 +348,11 @@ const EditScheduleModal = (props) => {
 
                     <label htmlFor=''>{t('schedule.servicePrice') || 'Цена услуги'}</label>
                     <input
-                        type='number'
+                        type="text"
+                        inputMode="numeric"
                         placeholder={t('schedule.pricePlaceholder') || '0 UZS'}
-                        value={formData.price}
-                        onChange={(e) => handleInputChange('price', e.target.value)}
+                        value={formData.price === 0 ? '' : formData.price}
+                        onChange={(e) => handleInputChange('price', e.target.value.replace(/[^0-9]/g, '') || 0)}
                     />
                 </div>
 

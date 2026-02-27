@@ -1,4 +1,18 @@
 /* Schedule styles */
+
+/* Number input strelkalarini olib tashlash */
+.schedule-modal-form input[type="number"]::-webkit-outer-spin-button,
+.schedule-modal-form input[type="number"]::-webkit-inner-spin-button,
+.schedule-modal-paymentType input[type="number"]::-webkit-outer-spin-button,
+.schedule-modal-paymentType input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.schedule-modal-form input[type="number"],
+.schedule-modal-paymentType input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
 .sched-nav {
   width: 100vw;
   height: 30vh;

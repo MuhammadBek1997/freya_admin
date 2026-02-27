@@ -1172,6 +1172,25 @@ export const AppProvider = ({ children }) => {
 		setEmployees([]);
 	};
 
+	// Global fetch interceptor: 401 bo'lsa avtomatik logout
+	useEffect(() => {
+		const originalFetch = window.fetch.bind(window);
+		window.fetch = async (...args) => {
+			try {
+				const response = await originalFetch(...args);
+				if (response.status === 401) {
+					localStorage.clear();
+					setUser(null);
+					setIsAuthenticated(false);
+				}
+				return response;
+			} catch (err) {
+				throw err;
+			}
+		};
+		return () => { window.fetch = originalFetch; };
+	}, []);
+
 
 
 	// Fetch appointments by salon ID using the new filter endpoint
