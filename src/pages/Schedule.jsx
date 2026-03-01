@@ -186,25 +186,27 @@ const Schedule = () => {
                     gap: '0.15vw',
                     whiteSpace: 'normal',
                     minWidth: '5vw',
-                    padding: '0.6vw 0.8vw',
+                    padding: '0.3vw 0.5vw',
                   }}
                 >
                   <div style={{
-                    display:"flex"
+                    display:"flex",
+                    gap:"5px"
                   }}>
                     <div
                       className='sum-of-orders'
                       style={{
                         backgroundColor: isSelected && isWeekend ? 'white' : isWeekend ? '#FF0000' : isSelected ? 'white' : '#9C2BFF',
-                        color: isSelected && isWeekend ? '#FF0000' : isWeekend ? 'white' : isSelected ? '#9C2BFF' : 'white'
+                        color: isSelected && isWeekend ? '#FF0000' : isWeekend ? 'white' : isSelected ? '#9C2BFF' : 'white',
+                        fontSize:"0.9vw"
                       }}
                     >
                       {itemArr.length}
                     </div>
-                    <span style={{ fontSize: '1vw', fontWeight: 600 }}>{t(dowKey)}</span>
+                    <span style={{ fontSize: '0.9vw', fontWeight: 600 }}>{t(dowKey)}</span>
                   </div>
 
-                  <span style={{ fontSize: '0.8vw', opacity: 0.85 }}>{dateStr}</span>
+                  <span style={{ fontSize: '0.7vw', opacity: 0.85 }}>{dateStr}</span>
                 </button>
               )
             })}
