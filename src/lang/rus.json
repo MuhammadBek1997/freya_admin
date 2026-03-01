@@ -156,6 +156,7 @@
         "wholeDay": "Целый день",
         "repeat": "Повторить",
         "repeatEvery": "Повторить каждые",
+        "repeatCount": "Сколько раз повторить",
         "repeatPlaceholder": "например: 1 неделя",
         "selectDays": "Выберите дни",
         "monday": "Понедельник",

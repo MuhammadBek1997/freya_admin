@@ -154,6 +154,7 @@
     "wholeDay": "Whole day",
     "repeat": "Repeat",
     "repeatEvery": "Repeat Every",
+    "repeatCount": "How many times to repeat",
     "repeatPlaceholder": "e.g.: 1 week",
     "selectDays": "Select days",
     "monday": "Monday",

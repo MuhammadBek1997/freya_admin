@@ -183,9 +183,10 @@ const Schedule = () => {
                       color: isSelected ? 'white' : isWeekend ? '#FF0000' : '#9C2BFF',
                       backgroundColor: isSelected && isWeekend ? '#FF0000' : isSelected ? '#9C2BFF' : 'white',
                       flexDirection: 'column',
-                      gap: '0.2vw',
+                      gap: '0.15vw',
                       whiteSpace: 'normal',
-                      minWidth: '4.5vw',
+                      minWidth: '5vw',
+                      padding: '0.6vw 0.8vw',
                     }}
                   >
                     <div
@@ -197,8 +198,8 @@ const Schedule = () => {
                     >
                       {itemArr.length}
                     </div>
-                    <span>{t(dowKey)}</span>
-                    <span style={{ fontSize: '0.75vw', opacity: 0.85 }}>{dateStr}</span>
+                    <span style={{ fontSize: '1vw', fontWeight: 600 }}>{t(dowKey)}</span>
+                    <span style={{ fontSize: '0.8vw', opacity: 0.85 }}>{dateStr}</span>
                   </button>
               )
             })}
@@ -263,7 +264,7 @@ const Schedule = () => {
                         <img src={master?.avatar_url || master?.avatar || master?.profile_image || master?.photo || "/images/masterImage.png"} className="schedule-master-img" alt="" />
                         <p>{master.name.split(" ")[0]}</p>
                         <div className='masters-time'>
-                          <p>{String(item.start_time || '').substring(0,5)} - {String(item.end_time || '').substring(0,5)}</p>
+                          <p>{item.whole_day ? t('schedule.wholeDay') : `${String(item.start_time || '').substring(0,5)} - ${String(item.end_time || '').substring(0,5)}`}</p>
                         </div>
                         
                       </div>
