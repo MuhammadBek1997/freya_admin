@@ -1338,6 +1338,7 @@ export const AppProvider = ({ children }) => {
 				end_time: dataToSend.end_time,
 				repeat: dataToSend.repeat || false,
 				repeat_value: dataToSend.repeat_value || null,
+				repeat_count: dataToSend.repeat_count > 0 ? dataToSend.repeat_count : 1,
 				employee_list: dataToSend.employee_list || [],
 				price: dataToSend.price,
 				full_pay: dataToSend.full_pay || 0,
