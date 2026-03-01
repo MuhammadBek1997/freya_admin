@@ -1,8 +1,15 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { UseGlobalContext } from "../Context"
 import SelectEmployeeModal from "./SelectEmployeeModal"
 
-const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+
+const getWeekdayFromDate = (dateStr) => {
+    if (!dateStr) return ''
+    const [year, month, day] = dateStr.split('-').map(Number)
+    const d = new Date(year, month - 1, day)
+    return DAY_NAMES[d.getDay()]
+}
 
 const AddScheduleModal = () => {
 
@@ -22,18 +29,6 @@ const AddScheduleModal = () => {
     } = UseGlobalContext()
 
     const [selectEmploy, setSelectEmploy] = useState(false)
-    const [daysDropdownOpen, setDaysDropdownOpen] = useState(false)
-    const daysDropdownRef = useRef(null)
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (daysDropdownRef.current && !daysDropdownRef.current.contains(e.target)) {
-                setDaysDropdownOpen(false)
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
 
     const [formData, setFormData] = useState({
         name: '',
@@ -370,54 +365,18 @@ const AddScheduleModal = () => {
 
                     {formData.repeat && (
                         <>
-                            <label>{t('schedule.repeatEvery')}</label>
-                            <div ref={daysDropdownRef} style={{ position: 'relative' }}>
-                                <div
-                                    onClick={() => setDaysDropdownOpen(!daysDropdownOpen)}
-                                    className="form-inputs"
-                                    style={{
-                                        cursor: 'pointer', display: 'flex', justifyContent: 'space-between',
-                                        alignItems: 'center', paddingRight: '1vw'
-                                    }}
-                                >
-                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        {formData.repeat_value
-                                            ? formData.repeat_value.split(',').map(d => t(`schedule.${d.trim()}`)).join(', ')
-                                            : t('schedule.selectDays')}
-                                    </span>
-                                    <span style={{ fontSize: '10px', color: '#999' }}>{daysDropdownOpen ? '\u25B2' : '\u25BC'}</span>
+                            {formData.date && (
+                                <div style={{
+                                    padding: '6px 12px',
+                                    backgroundColor: '#f3eaff',
+                                    borderRadius: '8px',
+                                    color: '#9C2BFF',
+                                    fontSize: '0.8vw',
+                                    marginBottom: '4px'
+                                }}>
+                                    {t('schedule.repeatEvery')}: <b>{t(`schedule.${getWeekdayFromDate(formData.date)}`)}</b>
                                 </div>
-                                {daysDropdownOpen && (
-                                    <div style={{
-                                        position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
-                                        backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px',
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: '200px', overflowY: 'auto'
-                                    }}>
-                                        {WEEKDAYS.map(day => {
-                                            const selected = formData.repeat_value ? formData.repeat_value.split(',').map(d => d.trim()).includes(day) : false
-                                            return (
-                                                <label key={day} style={{
-                                                    display: 'flex', alignItems: 'center', padding: '8px 12px',
-                                                    cursor: 'pointer', gap: '8px', borderBottom: '1px solid #f0f0f0'
-                                                }}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selected}
-                                                        onChange={() => {
-                                                            const current = formData.repeat_value ? formData.repeat_value.split(',').map(d => d.trim()).filter(Boolean) : []
-                                                            const updated = selected
-                                                                ? current.filter(d => d !== day)
-                                                                : [...current, day]
-                                                            handleInputChange('repeat_value', updated.join(','))
-                                                        }}
-                                                    />
-                                                    {t(`schedule.${day}`)}
-                                                </label>
-                                            )
-                                        })}
-                                    </div>
-                                )}
-                            </div>
+                            )}
                             <label>{t('schedule.repeatCount') || 'Necha marta takrorlansin'}</label>
                             <input
                                 type="text"
