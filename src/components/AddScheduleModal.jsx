@@ -41,9 +41,10 @@ const AddScheduleModal = () => {
         date: '',
         start_time: '',
         end_time: '',
-        service_duration: 60, // ✅ Shu qatorni QO'SHISH
+        service_duration: 60,
         repeat: false,
         repeat_value: '',
+        repeat_count: 1,
         whole_day: false,
         employee_list: [],
         price: 0,
@@ -161,9 +162,10 @@ const AddScheduleModal = () => {
                 date: String(formData.date),
                 start_time: String(formData.whole_day ? '00:00' : formData.start_time),
                 end_time: String(formData.whole_day ? '23:59' : formData.end_time),
-                service_duration: Number(formData.service_duration), // ✅ Shu qatorni QO'SHISH
+                service_duration: Number(formData.service_duration),
                 repeat: Boolean(formData.repeat),
                 repeat_value: String(formData.repeat_value || ''),
+                repeat_count: Number(formData.repeat_count) || 1,
                 whole_day: Boolean(formData.whole_day),
                 employee_list: selectedEmployees,
                 price: Number(formData.price) || 0,
@@ -231,8 +233,10 @@ const AddScheduleModal = () => {
                 date: '',
                 start_time: '',
                 end_time: '',
+                service_duration: 60,
                 repeat: false,
                 repeat_value: '',
+                repeat_count: 1,
                 whole_day: false,
                 employee_list: [],
                 price: 0,
@@ -414,6 +418,15 @@ const AddScheduleModal = () => {
                                     </div>
                                 )}
                             </div>
+                            <label>{t('schedule.repeatCount') || 'Necha marta takrorlansin'}</label>
+                            <input
+                                type="number"
+                                className="form-inputs"
+                                min={1}
+                                max={100}
+                                value={formData.repeat_count}
+                                onChange={(e) => handleInputChange('repeat_count', Math.max(1, parseInt(e.target.value) || 1))}
+                            />
                         </>
                     )}
                 </div>

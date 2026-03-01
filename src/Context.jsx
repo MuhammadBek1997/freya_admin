@@ -3256,7 +3256,12 @@ export const AppProvider = ({ children }) => {
                     message_text: m?.message_text || m?.message || '',
                 }));
 				try { console.log('📥 REST API loaded:', normalized.length, 'messages'); } catch {}
-				if (isWsOpenFor(userId)) {
+				// Race condition fix: WS history REST fetch boshlangandan keyin kelishi mumkin
+				// Shu sababli response kelganda wsHistoryHandledRef ni QAYTA tekshiramiz
+				if (isWsOpenFor(userId) && wsHistoryHandledRef.current) {
+					try { console.log('✅ WS history already received while REST was fetching, skipping'); } catch {}
+					// WS history priority — REST natijasini e'tiborsiz qoldiramiz
+				} else if (isWsOpenFor(userId)) {
 					try { console.log('🔄 Merging with existing WS messages'); } catch {}
 					setMessages(prev => {
 						const combined = [...(Array.isArray(prev) ? prev : []), ...normalized];

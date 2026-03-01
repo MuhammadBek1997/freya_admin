@@ -30,11 +30,15 @@ const Schedule = () => {
   const weekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
   const dayListItems = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
     const list = Array.isArray(schedules) ? [...schedules] : []
     const groupsMap = new Map()
     for (const s of list) {
       if (!s?.date) continue
       const key = String(s.date)
+      // O'tib ketgan kunlarni filterlash
+      if (new Date(key) < today) continue
       const arr = groupsMap.get(key) || []
       arr.push(s)
       groupsMap.set(key, arr)
@@ -161,8 +165,14 @@ const Schedule = () => {
             {dayListItems.map((itemArr) => {
               const firstItem = itemArr[0]
               const groupKey = String(firstItem.date)
-              const dowIndex = new Date(firstItem.date).getDay()
+              const dateObj = new Date(firstItem.date)
+              const dowIndex = dateObj.getDay()
               const dowKey = weekdays[dowIndex]
+              const isWeekend = dowKey === weekdays[6] || dowKey === weekdays[0]
+              const isSelected = selectDay.length > 0 && selectDay[0].id === firstItem.id
+              const dayNum = dateObj.getDate()
+              const monthNum = dateObj.getMonth() + 1
+              const dateStr = `${dayNum < 10 ? '0' + dayNum : dayNum}.${monthNum < 10 ? '0' + monthNum : monthNum}`
 
               return (
                 <button
@@ -170,42 +180,25 @@ const Schedule = () => {
                     onClick={() => handleSelectDay(itemArr)}
                     key={groupKey}
                     style={{
-                      color: selectDay.length > 0 && selectDay[0].id === firstItem.id && (dowKey === weekdays[6] || dowKey === weekdays[0])
-                        ? 'white'
-                        : selectDay.length > 0 && selectDay[0].id === firstItem.id
-                          ? 'white'
-                          : (dowKey === weekdays[6] || dowKey === weekdays[0])
-                            ? '#FF0000'
-                            : '#9C2BFF',
-                      backgroundColor: selectDay.length > 0 && selectDay[0].id === firstItem.id && (dowKey === weekdays[6] || dowKey === weekdays[0])
-                        ? '#FF0000'
-                        : selectDay.length > 0 && selectDay[0].id === firstItem.id
-                          ? '#9C2BFF'
-                          : 'white'
+                      color: isSelected ? 'white' : isWeekend ? '#FF0000' : '#9C2BFF',
+                      backgroundColor: isSelected && isWeekend ? '#FF0000' : isSelected ? '#9C2BFF' : 'white',
+                      flexDirection: 'column',
+                      gap: '0.2vw',
+                      whiteSpace: 'normal',
+                      minWidth: '4.5vw',
                     }}
                   >
                     <div
                       className='sum-of-orders'
                       style={{
-                        backgroundColor: selectDay.length > 0 && selectDay[0].id === firstItem.id && (dowKey === weekdays[6] || dowKey === weekdays[0])
-                          ? 'white'
-                          : (dowKey === weekdays[6] || dowKey === weekdays[0])
-                            ? '#FF0000'
-                            : selectDay.length > 0 && selectDay[0].id === firstItem.id ?
-                              "white"
-                              : '#9C2BFF',
-                        color: selectDay.length > 0 && selectDay[0].id === firstItem.id && (dowKey === weekdays[6] || dowKey === weekdays[0])
-                          ? '#FF0000'
-                          : (dowKey === weekdays[6] || dowKey === weekdays[0])
-                            ? 'white'
-                            : selectDay.length > 0 && selectDay[0].id === firstItem.id ?
-                              "#9C2BFF"
-                              : 'white'
+                        backgroundColor: isSelected && isWeekend ? 'white' : isWeekend ? '#FF0000' : isSelected ? 'white' : '#9C2BFF',
+                        color: isSelected && isWeekend ? '#FF0000' : isWeekend ? 'white' : isSelected ? '#9C2BFF' : 'white'
                       }}
                     >
                       {itemArr.length}
                     </div>
-                    {t(dowKey)}
+                    <span>{t(dowKey)}</span>
+                    <span style={{ fontSize: '0.75vw', opacity: 0.85 }}>{dateStr}</span>
                   </button>
               )
             })}

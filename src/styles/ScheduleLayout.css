@@ -113,7 +113,7 @@
 
 .sched-dayList-item {
   max-width: 7vw;
-  min-width: 3.5vw;
+  min-width: 4.5vw;
   font-size: 1vw;
   padding: 0.7vw;
   border-radius: 0.7vw;
@@ -123,13 +123,11 @@
   cursor: pointer;
   color: #9C2BFF;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 0.5vw;
+  gap: 0.2vw;
   user-select: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .sum-of-orders {
@@ -673,6 +671,7 @@
     font-size: 3vw;
     padding: 2vw 3vw;
     border-radius: 3vw;
+    gap: 0.5vw;
   }
 
   .sum-of-orders {
