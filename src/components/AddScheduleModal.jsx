@@ -44,7 +44,7 @@ const AddScheduleModal = () => {
         service_duration: 60,
         repeat: false,
         repeat_value: '',
-        repeat_count: 1,
+        repeat_count: 0,
         whole_day: false,
         employee_list: [],
         price: 0,
@@ -236,7 +236,7 @@ const AddScheduleModal = () => {
                 service_duration: 60,
                 repeat: false,
                 repeat_value: '',
-                repeat_count: 1,
+                repeat_count: 0,
                 whole_day: false,
                 employee_list: [],
                 price: 0,
@@ -420,12 +420,11 @@ const AddScheduleModal = () => {
                             </div>
                             <label>{t('schedule.repeatCount') || 'Necha marta takrorlansin'}</label>
                             <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 className="form-inputs"
-                                min={1}
-                                max={100}
-                                value={formData.repeat_count}
-                                onChange={(e) => handleInputChange('repeat_count', Math.max(1, parseInt(e.target.value) || 1))}
+                                value={formData.repeat_count === 0 ? '' : formData.repeat_count}
+                                onChange={(e) => handleInputChange('repeat_count', e.target.value.replace(/[^0-9]/g, '') || 0)}
                             />
                         </>
                     )}
