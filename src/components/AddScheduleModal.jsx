@@ -172,6 +172,9 @@ const AddScheduleModal = () => {
             if (!user?.salon_id) {
                 throw new Error(t('errors.salonIdMissing'))
             }
+            if (formData.repeat && (!formData.repeat_count || Number(formData.repeat_count) < 1)) {
+                throw new Error(t('schedule.repeatCount') + ': 1 dan katta son kiriting')
+            }
 
             const loggedEmployeeId = String(user?.id || user?.employee_id || '');
             const selectedEmployees = (Array.isArray(formData.employee_list) && formData.employee_list.length > 0)
@@ -188,7 +191,7 @@ const AddScheduleModal = () => {
                 service_duration: Number(formData.service_duration),
                 repeat: Boolean(formData.repeat),
                 repeat_value: String(formData.repeat_value || ''),
-                repeat_count: Number(formData.repeat_count) || 1,
+                repeat_count: formData.repeat_count > 0 ? formData.repeat_count : 1,
                 whole_day: Boolean(formData.whole_day),
                 employee_list: selectedEmployees,
                 price: Number(formData.price) || 0,
@@ -451,7 +454,11 @@ const AddScheduleModal = () => {
                                 inputMode="numeric"
                                 className="form-inputs"
                                 value={formData.repeat_count === 0 ? '' : formData.repeat_count}
-                                onChange={(e) => handleInputChange('repeat_count', e.target.value.replace(/[^0-9]/g, '') || 0)}
+                                onChange={(e) => {
+                                    const raw = e.target.value.replace(/[^0-9]/g, '')
+                                    handleInputChange('repeat_count', raw === '' ? 0 : parseInt(raw, 10))
+                                }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault() }}
                             />
                         </>
                     )}
