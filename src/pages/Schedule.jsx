@@ -20,7 +20,7 @@ const Schedule = () => {
     employees,
     employeesBySalon
   } = UseGlobalContext()
-  
+
   let currentDay = {
     day: new Date().getDate(),
     month: new Date().getMonth() + 1,
@@ -57,7 +57,7 @@ const Schedule = () => {
   const [editModal, setEditModal] = useState(false)
   const [bookEmployeeId, setBookEmployeeId] = useState(null)
   const [activeModalScheduleId, setActiveModalScheduleId] = useState(null)
-  
+
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -103,13 +103,13 @@ const Schedule = () => {
   // Filter schedules based on search query
   const filterSchedules = (schedulesList) => {
     if (!searchQuery.trim()) return schedulesList;
-    
+
     const query = searchQuery.toLowerCase().trim();
     return schedulesList.filter(schedule => {
       const name = (schedule.name || '').toLowerCase();
       const title = (schedule.title || '').toLowerCase();
       const price = (schedule.price || '').toString();
-      
+
       // Employee names search
       const employeeNames = (schedule.employee_list || [])
         .map(empId => {
@@ -117,11 +117,11 @@ const Schedule = () => {
           return (emp?.name || '').toLowerCase();
         })
         .join(' ');
-      
-      return name.includes(query) || 
-             title.includes(query) || 
-             price.includes(query) ||
-             employeeNames.includes(query);
+
+      return name.includes(query) ||
+        title.includes(query) ||
+        price.includes(query) ||
+        employeeNames.includes(query);
     });
   };
 
@@ -135,12 +135,12 @@ const Schedule = () => {
           <img src="/images/clientSchedule.png" alt="" />
           <h2>{t('schedHT')}</h2>
         </div>
-        
+
         <div className="sched-nav-search">
           <img src="/images/searchIcon.png" alt="" />
-          <input 
-            type="text" 
-            placeholder={t('homeSrchPlhdr')} 
+          <input
+            type="text"
+            placeholder={t('homeSrchPlhdr')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -149,7 +149,7 @@ const Schedule = () => {
             <p>{t("schedSrchBtn")}</p>
           </button>
         </div>
-        
+
         <div className='sched-dayList'>
           <div
             ref={containerRef}
@@ -176,19 +176,22 @@ const Schedule = () => {
 
               return (
                 <button
-                    className='sched-dayList-item'
-                    onClick={() => handleSelectDay(itemArr)}
-                    key={groupKey}
-                    style={{
-                      color: isSelected ? 'white' : isWeekend ? '#FF0000' : '#9C2BFF',
-                      backgroundColor: isSelected && isWeekend ? '#FF0000' : isSelected ? '#9C2BFF' : 'white',
-                      flexDirection: 'column',
-                      gap: '0.15vw',
-                      whiteSpace: 'normal',
-                      minWidth: '5vw',
-                      padding: '0.6vw 0.8vw',
-                    }}
-                  >
+                  className='sched-dayList-item'
+                  onClick={() => handleSelectDay(itemArr)}
+                  key={groupKey}
+                  style={{
+                    color: isSelected ? 'white' : isWeekend ? '#FF0000' : '#9C2BFF',
+                    backgroundColor: isSelected && isWeekend ? '#FF0000' : isSelected ? '#9C2BFF' : 'white',
+                    flexDirection: 'column',
+                    gap: '0.15vw',
+                    whiteSpace: 'normal',
+                    minWidth: '5vw',
+                    padding: '0.6vw 0.8vw',
+                  }}
+                >
+                  <div style={{
+                    display:"flex"
+                  }}>
                     <div
                       className='sum-of-orders'
                       style={{
@@ -199,8 +202,10 @@ const Schedule = () => {
                       {itemArr.length}
                     </div>
                     <span style={{ fontSize: '1vw', fontWeight: 600 }}>{t(dowKey)}</span>
-                    <span style={{ fontSize: '0.8vw', opacity: 0.85 }}>{dateStr}</span>
-                  </button>
+                  </div>
+
+                  <span style={{ fontSize: '0.8vw', opacity: 0.85 }}>{dateStr}</span>
+                </button>
               )
             })}
           </div>
@@ -211,7 +216,7 @@ const Schedule = () => {
           ) : null}
         </div>
       </nav>
-      
+
       <div className='schedule-body'>
         {filteredSelectedDaySchedules.length > 0 ? (
           filteredSelectedDaySchedules.map((item) => {
@@ -240,18 +245,18 @@ const Schedule = () => {
                       </div>
                     </div>
                   </div>
-                  <button 
-                      className='schedule-list-item-btn'
-                      onClick={()=>handleOpenEditOrReserve(item.id)}>
+                  <button
+                    className='schedule-list-item-btn'
+                    onClick={() => handleOpenEditOrReserve(item.id)}>
                     <img src={(new Date(item.date).getDate() - 7) <= currentDay.day && new Date(item.date).getMonth() + 1 == currentDay.month ? "/images/reserveIcon.png" : "/images/editPen.png"} alt="" />
                   </button>
                   <div className='editChedule'>
                     {editModal && activeModalScheduleId === item.id ? (
                       <>
                         {(new Date(item.date).getDate() - 7) <= currentDay.day
-                        && new Date(item.date).getMonth() + 1 == currentDay.month
-                        ? <BookScheduleModal {...item} employee_list={bookEmployeeId ? [bookEmployeeId] : item.employee_list} setEditModal={handleCloseModal}/>
-                        : <EditScheduleModal {...item} setEditModal={handleCloseModal} />}
+                          && new Date(item.date).getMonth() + 1 == currentDay.month
+                          ? <BookScheduleModal {...item} employee_list={bookEmployeeId ? [bookEmployeeId] : item.employee_list} setEditModal={handleCloseModal} />
+                          : <EditScheduleModal {...item} setEditModal={handleCloseModal} />}
                       </>
                     ) : null}
                   </div>
@@ -264,9 +269,9 @@ const Schedule = () => {
                         <img src={master?.avatar_url || master?.avatar || master?.profile_image || master?.photo || "/images/masterImage.png"} className="schedule-master-img" alt="" />
                         <p>{master.name.split(" ")[0]}</p>
                         <div className='masters-time'>
-                          <p>{item.whole_day ? t('schedule.wholeDay') : `${String(item.start_time || '').substring(0,5)} - ${String(item.end_time || '').substring(0,5)}`}</p>
+                          <p>{item.whole_day ? t('schedule.wholeDay') : `${String(item.start_time || '').substring(0, 5)} - ${String(item.end_time || '').substring(0, 5)}`}</p>
                         </div>
-                        
+
                       </div>
                     )
                   })}

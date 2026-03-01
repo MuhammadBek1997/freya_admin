@@ -1244,7 +1244,10 @@ export const AppProvider = ({ children }) => {
 				throw new Error('Not authenticated - no token found');
 			}
 
-			const getUrl = (schedulesUrl.replace(/^http:\/\//, 'https://').endsWith('/') ? schedulesUrl.replace(/^http:\/\//, 'https://') : `${schedulesUrl.replace(/^http:\/\//, 'https://')}/`);
+			const baseUrl = schedulesUrl.replace(/^http:\/\//, 'https://').replace(/\/$/, '');
+		const params = new URLSearchParams({ limit: '500', page: '1' });
+		if (user?.salon_id) params.set('salon_id', String(user.salon_id));
+		const getUrl = `${baseUrl}/?${params.toString()}`;
 
 			// Timeout controller - 30 seconds
 			const controller = new AbortController();
