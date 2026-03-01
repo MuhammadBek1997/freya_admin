@@ -56,6 +56,8 @@ const EmployeeChatPage = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedPageEmployee, setSelectedPageEmployee] = useState('chat');
   const chatBodyRef = useRef(null);
+  const isAtBottomRef = useRef(true);
+  const prevMessageCountRef = useRef(0);
   const profileRefreshIdRef = useRef(null);
   const conversationsUserIdRef = useRef(null);
   const [newMessage, setNewMessage] = useState('');
@@ -222,11 +224,18 @@ const EmployeeChatPage = () => {
   }, [user?.employee_id, user?.id, user?.role]);
 
   useEffect(() => {
-    if (chatBodyRef.current && messages.length > 0) {
+    if (!chatBodyRef.current || messages.length === 0) return;
+    const prev = prevMessageCountRef.current;
+    const isInitialLoad = prev === 0 && messages.length > 0;
+    const isNewMessage = messages.length === prev + 1;
+    prevMessageCountRef.current = messages.length;
+
+    if (isInitialLoad) {
+      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    } else if (isNewMessage && isAtBottomRef.current) {
       requestAnimationFrame(() => {
         if (chatBodyRef.current) {
-          chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
-          try { console.log('📜 Scrolled to bottom'); } catch {}
+          chatBodyRef.current.scrollTo({ top: chatBodyRef.current.scrollHeight, behavior: 'smooth' });
         }
       });
     }
@@ -388,6 +397,8 @@ const EmployeeChatPage = () => {
 
   const handleSelectConversation = async (userId, userName, userAvatar) => {
     handleChangeEmployeePage('chat');
+    prevMessageCountRef.current = 0;
+    isAtBottomRef.current = true;
     setSelectedUser({ id: userId, name: userName, avatar: userAvatar });
     setIsMobileChatOpen(true);
 
@@ -999,7 +1010,16 @@ const EmployeeChatPage = () => {
                   </div>
                 </div>
 
-                <div className="chat-body" ref={chatBodyRef}>
+                <div
+                  className="chat-body"
+                  ref={chatBodyRef}
+                  onScroll={() => {
+                    if (chatBodyRef.current) {
+                      const { scrollTop, scrollHeight, clientHeight } = chatBodyRef.current;
+                      isAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 80;
+                    }
+                  }}
+                >
                   {messagesError ? (
                     <div style={{
                       padding: '20px',
