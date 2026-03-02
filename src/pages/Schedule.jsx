@@ -213,7 +213,7 @@ const Schedule = () => {
           </div>
           {dayListItems.length > 0 ? (
             <button className='sched-dayList-btn' onClick={() => scrollRight(containerRef)} >
-              <img src="/images/leftArrow.png" alt="" style={{ transform: 'rotate(180deg)' }} />
+              <img src="/images/leftArrow.png" alt="" />
             </button>
           ) : null}
         </div>

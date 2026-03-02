@@ -1585,7 +1585,7 @@ const Profile = () => {
                   }}>
                     {(() => {
                       const staged = pendingLogo?.preview || null;
-                      const currentLogo = !staged && companyImages && companyImages.length > 0 ? companyImages[0] : null;
+                      const currentLogo = !staged ? (salonProfile?.icon || salonProfile?.logo) : null;
                       if (staged) {
                         return <img src={staged} alt="Yangi logo (saqlanmagan)" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       }

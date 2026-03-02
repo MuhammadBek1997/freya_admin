@@ -142,14 +142,17 @@
 .sched-dayList-btn {
   cursor: pointer;
   position: fixed;
-  top: 20vh;
+  top: 23vh;
   right: 1vw;
-  width: 4vw;
-  height: 4vw;
+  width: 3vw;
+  height: 3vw;
   border-radius: 30vw;
   border: none;
   background-color: white;
   box-shadow: 0.1vw 0.1vw 2vw #00000050;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 
