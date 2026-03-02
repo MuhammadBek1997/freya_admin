@@ -121,16 +121,34 @@
     "makeup": "Vizajist",
     "brow": "Qosh ustasi",
     "lash": "Kiprik ustasi",
-    "masseur": "Massajchi"
+    "masseur": "Massajchi",
+    "addTitle": "Kasb qo'shish",
+    "nameLabel": "Kasb nomi *",
+    "namePlaceholder": "Masalan: Sartarosh",
+    "existingTitle": "Mavjud kasblar:"
+  },
+  "common": {
+    "add": "Qo'shish",
+    "cancel": "Bekor qilish",
+    "loading": "Yuklanmoqda...",
+    "delete": "O'chirish"
+  },
+  "confirm": {
+    "deleteProfession": "Bu kasbni o'chirishni tasdiqlaysizmi?"
   },
   "alerts": {
     "employeeAdded": "Xodim muvaffaqiyatli qo'shildi!",
-    "scheduleCreated": "Jadval muvaffaqiyatli yaratildi!"
+    "scheduleCreated": "Jadval muvaffaqiyatli yaratildi!",
+    "professionAdded": "Kasb muvaffaqiyatli qo'shildi!",
+    "professionDeleted": "Kasb o'chirildi!"
   },
   "errors": {
     "employeeCreateFailed": "Xodim yaratishda xato",
     "salonIdMissing": "Salon ID topilmadi. Iltimos, qayta kiring.",
-    "scheduleCreateFailed": "Jadval yaratishda xato"
+    "scheduleCreateFailed": "Jadval yaratishda xato",
+    "professionExists": "Bu kasb allaqachon mavjud",
+    "professionAddFailed": "Kasb qo'shishda xatolik yuz berdi",
+    "professionDeleteFailed": "Kasb o'chirishda xatolik yuz berdi"
   },
   "validation": {
     "required": "Majburiy",

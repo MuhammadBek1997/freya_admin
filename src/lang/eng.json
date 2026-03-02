@@ -121,16 +121,34 @@
     "makeup": "Makeup Artist",
     "brow": "Brow Specialist",
     "lash": "Lash Maker",
-    "masseur": "Masseur"
+    "masseur": "Masseur",
+    "addTitle": "Add Profession",
+    "nameLabel": "Profession Name *",
+    "namePlaceholder": "E.g. Hairdresser",
+    "existingTitle": "Existing professions:"
+  },
+  "common": {
+    "add": "Add",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "delete": "Delete"
+  },
+  "confirm": {
+    "deleteProfession": "Are you sure you want to delete this profession?"
   },
   "alerts": {
     "employeeAdded": "Employee added successfully!",
-    "scheduleCreated": "Schedule created successfully!"
+    "scheduleCreated": "Schedule created successfully!",
+    "professionAdded": "Profession added successfully!",
+    "professionDeleted": "Profession deleted!"
   },
   "errors": {
     "employeeCreateFailed": "Error creating employee",
     "salonIdMissing": "Salon ID not found. Please log in again.",
-    "scheduleCreateFailed": "Error creating schedule"
+    "scheduleCreateFailed": "Error creating schedule",
+    "professionExists": "This profession already exists",
+    "professionAddFailed": "Failed to add profession",
+    "professionDeleteFailed": "Failed to delete profession"
   },
   "validation": {
     "required": "Required",

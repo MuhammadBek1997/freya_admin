@@ -123,16 +123,34 @@
         "makeup": "Визажист",
         "brow": "Бровист",
         "lash": "Лэшмейкер",
-        "masseur": "Массажист"
+        "masseur": "Массажист",
+        "addTitle": "Добавить профессию",
+        "nameLabel": "Название профессии *",
+        "namePlaceholder": "Например: Парикмахер",
+        "existingTitle": "Существующие профессии:"
+    },
+    "common": {
+        "add": "Добавить",
+        "cancel": "Отмена",
+        "loading": "Загрузка...",
+        "delete": "Удалить"
+    },
+    "confirm": {
+        "deleteProfession": "Вы уверены, что хотите удалить эту профессию?"
     },
     "alerts": {
         "employeeAdded": "Сотрудник успешно добавлен!",
-        "scheduleCreated": "Расписание успешно создано!"
+        "scheduleCreated": "Расписание успешно создано!",
+        "professionAdded": "Профессия успешно добавлена!",
+        "professionDeleted": "Профессия удалена!"
     },
     "errors": {
         "employeeCreateFailed": "Ошибка при создании сотрудника",
         "salonIdMissing": "Salon ID не найден. Пожалуйста, войдите заново.",
-        "scheduleCreateFailed": "Ошибка при создании расписания"
+        "scheduleCreateFailed": "Ошибка при создании расписания",
+        "professionExists": "Такая профессия уже существует",
+        "professionAddFailed": "Ошибка при добавлении профессии",
+        "professionDeleteFailed": "Ошибка при удалении профессии"
     },
     "validation": {
         "required": "Обязательно",

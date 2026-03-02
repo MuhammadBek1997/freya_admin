@@ -211,9 +211,9 @@ const Schedule = () => {
               )
             })}
           </div>
-          {dayListItems.length > 18 ? (
+          {dayListItems.length > 0 ? (
             <button className='sched-dayList-btn' onClick={() => scrollRight(containerRef)} >
-              <img src="/images/leftArrow.png" alt="" />
+              <img src="/images/leftArrow.png" alt="" style={{ transform: 'rotate(180deg)' }} />
             </button>
           ) : null}
         </div>
@@ -237,11 +237,11 @@ const Schedule = () => {
                     </div>
                     <p className='order-title'>{item.title}</p>
                     <div className='schedule-order-pricebox'>
-                      <p>Цена</p>
+                      <p>{t('price')}</p>
                       <div>
                         <h3>{item.price / 1000} 000 <span>uzs</span></h3>
                       </div>
-                      <p>Начальный взнос:</p>
+                      <p>{t('depositLabel')}:</p>
                       <div>
                         <h3>{item.deposit != 0 ? item.deposit / 1000 + " 000" : 0} <span>uzs</span></h3>
                       </div>
