@@ -605,7 +605,8 @@ const EmployeeChatPage = () => {
   const handleMobileBack = () => {
     setIsMobileChatOpen(false);
     setSelectedUser(null);
-    try { disconnectChatWs(); } catch {}
+    // WS ni yopmaymiz — faqat UI ni yashiramiz
+    // disconnectChatWs() bu yerda chaqirilmasligi kerak: WS ochiq qolishi kerak
   };
 
   const formatDisplayDate = (dateString) => {

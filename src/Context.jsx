@@ -2345,6 +2345,7 @@ export const AppProvider = ({ children }) => {
 	const wsHistoryHandledRef = useRef(false);
 	const wsLastFetchTsRef = useRef(0);
 	const wsReconnectTimerRef = useRef(null);
+	const wsPingIntervalRef = useRef(null);
 	const wsRetryCountRef = useRef(0);
 	const wsCandidateIdxRef = useRef(0);
 	const wsUrlCandidatesRef = useRef([]);
@@ -2550,6 +2551,10 @@ export const AppProvider = ({ children }) => {
 	};
 
 	const disconnectChatWs = () => {
+		if (wsPingIntervalRef.current) {
+			clearInterval(wsPingIntervalRef.current);
+			wsPingIntervalRef.current = null;
+		}
 		try {
 			if (wsRef.current) {
 				wsRef.current.close();
@@ -2625,6 +2630,17 @@ export const AppProvider = ({ children }) => {
 				setMessagesLoading(false);
 				setCurrentConversation(receiverId);
 				wsRetryCountRef.current = 0;
+				// Heroku 55s timeout dan saqlash uchun har 25 soniyada ping
+				if (wsPingIntervalRef.current) clearInterval(wsPingIntervalRef.current);
+				wsPingIntervalRef.current = setInterval(() => {
+					const s = wsRef.current;
+					if (s && s.readyState === WebSocket.OPEN) {
+						try { s.send(JSON.stringify({ event: 'ping' })); } catch {}
+					} else {
+						clearInterval(wsPingIntervalRef.current);
+						wsPingIntervalRef.current = null;
+					}
+				}, 25000);
 				// Auto mark read on open and request history once
 				try { const s = wsRef.current; s && s.send(JSON.stringify({ event: 'mark_read' })); } catch {}
 				try {
@@ -2868,7 +2884,7 @@ export const AppProvider = ({ children }) => {
 				}
 				// Reconnect ni faqat bir marta chaqirish (code 1006 - abnormal closure)
 				// Agar code 1000 (normal closure) bo'lsa, reconnect qilmaslik
-				if (evt?.code !== 1000 && wsRetryCountRef.current < 3) {
+				if (evt?.code !== 1000 && wsRetryCountRef.current < 10) {
 					scheduleWsReconnect();
 				}
 			};
@@ -2953,8 +2969,8 @@ export const AppProvider = ({ children }) => {
 		const receiver = wsReceiverRef.current;
 		const role = user?.role;
 		if (!receiver?.id || !role || (role !== 'employee' && role !== 'user')) return;
-		if (wsRetryCountRef.current >= 3) {
-			// 3 marta urinishdan keyin to'xtatish
+		if (wsRetryCountRef.current >= 10) {
+			// 10 marta urinishdan keyin to'xtatish
 			try { console.warn('WS reconnect limit reached, stopping'); } catch {}
 			return;
 		}
