@@ -342,14 +342,8 @@ const Profile = () => {
       }
     }
 
-    // 7️⃣ Additionals (maps to note field)
-    const currentNote = salonProfile?.note || salonProfile?.salon_description || '';
-    console.log('Additionals->note comparison:', {
-      current: currentNote,
-      edit: editAdditionals,
-      changed: editAdditionals && editAdditionals !== currentNote
-    });
-
+    // 7️⃣ Additionals (maps to note field - always treat as Uzbek base)
+    const currentNote = salonProfile?.note_uz || salonProfile?.note || salonProfile?.salon_description || '';
     if (editAdditionals && editAdditionals.trim() !== '' && editAdditionals !== currentNote) {
       updateData['note'] = editAdditionals;
     }
@@ -504,8 +498,7 @@ const Profile = () => {
   useEffect(() => {
   if (changeMode && salonProfile) {
     const currentDescription = getSalonData(salonProfile, `description_${language}`);
-    const lang = String(language || '').toLowerCase();
-    const currentAdditionals = salonProfile?.[`note_${lang}`] || salonProfile?.note || salonProfile?.salon_description || '';
+    const currentAdditionals = salonProfile?.note_uz || salonProfile?.note || salonProfile?.salon_description || '';
     const currentComfort = salonProfile?.salon_comfort || [];
     const currentSaleData = salonProfile?.salon_sale || { amount: '', date: '' };
 
