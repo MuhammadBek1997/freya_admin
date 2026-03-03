@@ -504,7 +504,8 @@ const Profile = () => {
   useEffect(() => {
   if (changeMode && salonProfile) {
     const currentDescription = getSalonData(salonProfile, `description_${language}`);
-    const currentAdditionals = salonProfile?.note || salonProfile?.salon_description || '';
+    const lang = String(language || '').toLowerCase();
+    const currentAdditionals = salonProfile?.[`note_${lang}`] || salonProfile?.note || salonProfile?.salon_description || '';
     const currentComfort = salonProfile?.salon_comfort || [];
     const currentSaleData = salonProfile?.salon_sale || { amount: '', date: '' };
 
@@ -1246,44 +1247,48 @@ const Profile = () => {
                 <h3>
                   {t('profileNote')}
                 </h3>
-                <div className={((salonProfile?.note || salonProfile?.salon_description) && (salonProfile?.note || salonProfile?.salon_description).trim() !== '') ? 'info' : 'empty'}>
-                  {changeMode ? (
-                    <textarea
-                      value={editAdditionals ?? ''}
-                      onChange={(e) => setEditAdditionals(e.target.value)}
-                      placeholder={t('profileNotePlaceholder')}
-                      rows={4}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #ddd',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        fontFamily: 'inherit',
-                        resize: 'vertical'
-                      }}
-                    />
-                  ) : (
-                    (!(salonProfile?.note || salonProfile?.salon_description) || (salonProfile?.note || salonProfile?.salon_description).trim() === '')
-                      ?
-                      t('profileEmpty')
-                      :
-                      <ReadMoreReact
-                        text={salonProfile?.note || salonProfile?.salon_description}
-                        min={120}
-                        ideal={350}
-                        max={770}
-                        readMoreText={<span style={{
-                          cursor: "pointer",
-                          color: "#0060CE",
-                          fontSize: "1.1vw",
-                          textDecoration: "underline"
-                        }}>
-                          {t('profileReadMore')}
-                        </span>}
-                      />
-                  )}
-                </div>
+                {(() => {
+                  const noteLang = String(language || '').toLowerCase();
+                  const noteText = salonProfile?.[`note_${noteLang}`] || salonProfile?.note || salonProfile?.salon_description || '';
+                  return (
+                    <div className={(noteText && noteText.trim() !== '') ? 'info' : 'empty'}>
+                      {changeMode ? (
+                        <textarea
+                          value={editAdditionals ?? ''}
+                          onChange={(e) => setEditAdditionals(e.target.value)}
+                          placeholder={t('profileNotePlaceholder')}
+                          rows={4}
+                          style={{
+                            width: '100%',
+                            padding: '10px',
+                            border: '1px solid #ddd',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            fontFamily: 'inherit',
+                            resize: 'vertical'
+                          }}
+                        />
+                      ) : (
+                        (!noteText || noteText.trim() === '')
+                          ? t('profileEmpty')
+                          : <ReadMoreReact
+                              text={noteText}
+                              min={120}
+                              ideal={350}
+                              max={770}
+                              readMoreText={<span style={{
+                                cursor: "pointer",
+                                color: "#0060CE",
+                                fontSize: "1.1vw",
+                                textDecoration: "underline"
+                              }}>
+                                {t('profileReadMore')}
+                              </span>}
+                            />
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div className='company-number'>
                 <h3>
@@ -1798,44 +1803,48 @@ const Profile = () => {
               <h3>
                 {t('profileNote')}
               </h3>
-              <div className={((salonProfile?.note || salonProfile?.salon_description) && (salonProfile?.note || salonProfile?.salon_description).trim() !== '') ? 'info' : 'empty'}>
-                {changeMode ? (
-                  <textarea
-                    value={editAdditionals ?? ''}
-                    onChange={(e) => setEditAdditionals(e.target.value)}
-                    placeholder={t('profileNotePlaceholder')}
-                    rows={4}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #ddd',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontFamily: 'inherit',
-                      resize: 'vertical'
-                    }}
-                  />
-                ) : (
-                  (!(salonProfile?.note || salonProfile?.salon_description) || (salonProfile?.note || salonProfile?.salon_description).trim() === '')
-                    ?
-                    t('profileEmpty')
-                    :
-                    <ReadMoreReact
-                      text={salonProfile?.note || salonProfile?.salon_description}
-                      min={120}
-                      ideal={350}
-                      max={770}
-                      readMoreText={<span style={{
-                        cursor: "pointer",
-                        color: "#0060CE",
-                        fontSize: "1.1vw",
-                        textDecoration: "underline"
-                      }}>
-                        {t('profileReadMore')}
-                      </span>}
-                    />
-                )}
-              </div>
+              {(() => {
+                const noteLang2 = String(language || '').toLowerCase();
+                const noteText2 = salonProfile?.[`note_${noteLang2}`] || salonProfile?.note || salonProfile?.salon_description || '';
+                return (
+                  <div className={(noteText2 && noteText2.trim() !== '') ? 'info' : 'empty'}>
+                    {changeMode ? (
+                      <textarea
+                        value={editAdditionals ?? ''}
+                        onChange={(e) => setEditAdditionals(e.target.value)}
+                        placeholder={t('profileNotePlaceholder')}
+                        rows={4}
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          border: '1px solid #ddd',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          fontFamily: 'inherit',
+                          resize: 'vertical'
+                        }}
+                      />
+                    ) : (
+                      (!noteText2 || noteText2.trim() === '')
+                        ? t('profileEmpty')
+                        : <ReadMoreReact
+                            text={noteText2}
+                            min={120}
+                            ideal={350}
+                            max={770}
+                            readMoreText={<span style={{
+                              cursor: "pointer",
+                              color: "#0060CE",
+                              fontSize: "1.1vw",
+                              textDecoration: "underline"
+                            }}>
+                              {t('profileReadMore')}
+                            </span>}
+                          />
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             <div className='company-sale'>
               <div className='company-sale-amount'>
