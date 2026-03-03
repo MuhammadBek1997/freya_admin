@@ -344,7 +344,8 @@ const Profile = () => {
 
     // 7️⃣ Additionals (maps to note field - always treat as Uzbek base)
     const currentNote = salonProfile?.note_uz || salonProfile?.note || salonProfile?.salon_description || '';
-    if (editAdditionals && editAdditionals.trim() !== '' && editAdditionals !== currentNote) {
+    const noteNeedsTranslation = !salonProfile?.note_ru || !salonProfile?.note_en;
+    if (editAdditionals && editAdditionals.trim() !== '' && (editAdditionals !== currentNote || noteNeedsTranslation)) {
       updateData['note'] = editAdditionals;
     }
 
