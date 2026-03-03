@@ -1,12 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { UseGlobalContext } from '../Context';
+import { translationTranslateAllUrl } from '../apiUrls';
 import '../styles/AddProfessionModal.css';
+
+// Kirill → Lotin transliteratsiya (UZ uchun)
+const transliterate = (text) => {
+  const map = {
+    'А':'A','а':'a','Б':'B','б':'b','В':'V','в':'v','Г':'G','г':'g',
+    'Д':'D','д':'d','Е':'E','е':'e','Ё':'Yo','ё':'yo','Ж':'Zh','ж':'zh',
+    'З':'Z','з':'z','И':'I','и':'i','Й':'y','й':'y','К':'K','к':'k',
+    'Л':'L','л':'l','М':'M','м':'m','Н':'N','н':'n','О':'O','о':'o',
+    'П':'P','п':'p','Р':'R','р':'r','С':'S','с':'s','Т':'T','т':'t',
+    'У':'U','у':'u','Ф':'F','ф':'f','Х':'H','х':'h','Ц':'Ts','ц':'ts',
+    'Ч':'Ch','ч':'ch','Ш':'Sh','ш':'sh','Щ':'Shch','щ':'shch',
+    'Ъ':'','ъ':'','Ы':'i','ы':'i','Ь':'','ь':'','Э':'E','э':'e',
+    'Ю':'Yu','ю':'yu','Я':'Ya','я':'ya',
+  };
+  return text.split('').map(c => map[c] !== undefined ? map[c] : c).join('');
+};
+
+const isCyrillic = (text) => /[а-яА-ЯёЁ]/.test(text);
 
 const AddProfessionModal = ({ onClose, onProfessionAdded }) => {
   const { t, language, professions, addProfession } = UseGlobalContext();
-  const [nameUz, setNameUz] = useState('');
-  const [nameRu, setNameRu] = useState('');
-  const [nameEn, setNameEn] = useState('');
+  const [professionName, setProfessionName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -22,24 +39,53 @@ const AddProfessionModal = ({ onClose, onProfessionAdded }) => {
     e.preventDefault();
     setError('');
 
-    const uz = nameUz.trim();
-    const ru = nameRu.trim();
-    const en = nameEn.trim();
-
-    if (!uz || !ru || !en) {
-      setError(t('validation.required', { defaultValue: 'Barcha maydonlarni to\'ldiring' }));
+    const trimmed = professionName.trim();
+    if (!trimmed) {
+      setError(t('validation.required', { defaultValue: 'Majburiy maydon' }));
       return;
     }
-
-    if (professions && professions.some(p => p.ru?.toLowerCase() === ru.toLowerCase())) {
-      setError(t('errors.professionExists', { defaultValue: 'Bu kasb allaqachon mavjud' }));
+    if (trimmed.length < 2) {
+      setError(t('validation.min2', { defaultValue: 'Kamida 2 belgi' }));
       return;
     }
 
     setLoading(true);
     try {
+      let uz, ru, en;
+
+      if (isCyrillic(trimmed)) {
+        // Kirill: UZ = transliteratsiya, RU = as-is, EN = tarjima
+        uz = transliterate(trimmed);
+        ru = trimmed;
+        // EN ni API orqali olamiz
+        const resp = await fetch(translationTranslateAllUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: trimmed, source_language: 'ru' }),
+        });
+        const data = await resp.json();
+        en = data?.data?.en || trimmed;
+      } else {
+        // Lotin: UZ = as-is, RU va EN = tarjima
+        uz = trimmed;
+        const resp = await fetch(translationTranslateAllUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: trimmed, source_language: 'uz' }),
+        });
+        const data = await resp.json();
+        ru = data?.data?.ru || trimmed;
+        en = data?.data?.en || trimmed;
+      }
+
+      if (professions && professions.some(p => p.ru?.toLowerCase() === ru.toLowerCase())) {
+        setError(t('errors.professionExists', { defaultValue: 'Bu kasb allaqachon mavjud' }));
+        setLoading(false);
+        return;
+      }
+
       await addProfession({ uz, ru, en });
-      setNameUz(''); setNameRu(''); setNameEn('');
+      setProfessionName('');
       if (onProfessionAdded) onProfessionAdded();
       alert(t('alerts.professionAdded', { defaultValue: 'Kasb muvaffaqiyatli qo\'shildi!' }));
       onClose();
@@ -52,7 +98,7 @@ const AddProfessionModal = ({ onClose, onProfessionAdded }) => {
 
   const handleClose = () => {
     setError('');
-    setNameUz(''); setNameRu(''); setNameEn('');
+    setProfessionName('');
     onClose();
   };
 
@@ -86,42 +132,28 @@ const AddProfessionModal = ({ onClose, onProfessionAdded }) => {
 
         <form className="add-profession-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>UZ (lotin) *</label>
+            <label htmlFor="professionName">
+              {t('profession.nameLabel', { defaultValue: 'Kasb nomi (rus tilida) *' })}
+            </label>
             <input
               type="text"
-              value={nameUz}
-              onChange={(e) => setNameUz(e.target.value)}
-              placeholder="Brovist"
+              id="professionName"
+              value={professionName}
+              onChange={(e) => setProfessionName(e.target.value)}
+              placeholder={t('profession.namePlaceholder', { defaultValue: 'Например: Бровист' })}
               className="form-input"
               disabled={loading}
             />
-          </div>
-          <div className="form-group">
-            <label>RU (кириллица) *</label>
-            <input
-              type="text"
-              value={nameRu}
-              onChange={(e) => setNameRu(e.target.value)}
-              placeholder="Бровист"
-              className="form-input"
-              disabled={loading}
-            />
-          </div>
-          <div className="form-group">
-            <label>EN (english) *</label>
-            <input
-              type="text"
-              value={nameEn}
-              onChange={(e) => setNameEn(e.target.value)}
-              placeholder="Brow Specialist"
-              className="form-input"
-              disabled={loading}
-            />
+            <small style={{ color: '#999', fontSize: '12px' }}>
+              {t('profession.hint', { defaultValue: 'Kirillcha yozsangiz — UZ: transliteratsiya, EN: avtotarjima' })}
+            </small>
           </div>
 
           <div className="form-buttons">
             <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? t('common.loading', { defaultValue: 'Yuklanmoqda...' }) : t('common.add', { defaultValue: 'Добавить' })}
+              {loading
+                ? t('common.loading', { defaultValue: 'Tarjima qilinmoqda...' })
+                : t('common.add', { defaultValue: 'Добавить' })}
             </button>
             <button type="button" className="cancel-btn" onClick={handleClose} disabled={loading}>
               {t('common.cancel', { defaultValue: 'Отмена' })}
