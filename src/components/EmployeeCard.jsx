@@ -3,7 +3,16 @@ import { UseGlobalContext } from "../Context.jsx";
 
 
 const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, comment_count, phone, _isMenuOpen, setIsMenuOpen, _bio, _is_verified, _salon, isOpen, handleToggleMenu, isCheckedItem, setIsCheckedItem, handleAddWaitingEmp, work_start_time, work_end_time, avatar_url, avatar, profile_image, photo }) => {
-  const { ts } = UseGlobalContext();
+  const { ts, professions, language } = UseGlobalContext();
+
+  const getProfessionLabel = (profValue) => {
+    const found = professions?.find(p =>
+      p.ru === profValue || p.value === profValue || p.uz === profValue || p.label === profValue
+    );
+    if (!found) return profValue;
+    const lang = String(language || 'uz').toLowerCase();
+    return found[lang] || found.label || found.value;
+  };
 
   const computeWorkedHours = (start, end) => {
     if (!start || !end) return 24;
@@ -84,7 +93,7 @@ const EmployeeCard = ({ id, name, surname, profession, email, avg_rating, commen
                 animation: profList.length > 1 ? 'profFadeIn 0.4s ease' : 'none'
               }}
             >
-              <p>{profList[currentProfIdx]}</p>
+              <p>{getProfessionLabel(profList[currentProfIdx])}</p>
             </div>
           ) : (
             <div className="employCard-masterJob" style={{backgroundColor: "#66666699"}}>

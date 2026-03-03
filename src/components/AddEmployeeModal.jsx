@@ -5,10 +5,12 @@ import * as Yup from 'yup';
 import '../styles/AddEmployeeModal.css';
 
 const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
-  const { t, createEmployee, user, professions } = UseGlobalContext();
+  const { t, language, createEmployee, user, professions } = UseGlobalContext();
 
   // Use professions from Context
   const professionOptions = professions || [];
+  const lang = String(language || 'uz').toLowerCase();
+  const getProfLabel = (opt) => opt[lang] || opt.label || opt.value;
 
   const validationSchema = Yup.object({
     employee_name: Yup.string()
@@ -227,7 +229,7 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
                             {field.value.length > 0
                               ? field.value.map(p => {
                                   const opt = professionOptions.find(o => o.value === p);
-                                  return opt ? opt.label : p;
+                                  return opt ? getProfLabel(opt) : p;
                                 }).join(', ')
                               : t('employee.chooseProfession', { defaultValue: 'Kasb tanlang' })}
                           </span>
@@ -259,7 +261,7 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
                                   }}
                                   style={{ cursor: 'pointer', accentColor: '#6C5CE7', width: '14px', height: '14px' }}
                                 />
-                                {opt.label}
+                                {getProfLabel(opt)}
                               </label>
                             ))}
                           </div>

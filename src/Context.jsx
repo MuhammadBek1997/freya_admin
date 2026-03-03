@@ -245,16 +245,25 @@ export const AppProvider = ({ children }) => {
 
 	// Professions state
 	const defaultProfessions = [
-		{ value: 'Стилист', label: 'Stilist' },
-		{ value: 'Косметолог', label: 'Kosmetolog' },
-		{ value: 'Визажист', label: 'Vizajist' },
-		{ value: 'Бровист', label: 'Brovist' },
-		{ value: 'Лэшмейкер', label: 'Lashmaker' },
-		{ value: 'Массажист', label: 'Massajchi' }
+		{ value: 'Стилист',    label: 'Stilist',    uz: 'Stilist',    ru: 'Стилист',    en: 'Stylist' },
+		{ value: 'Косметолог', label: 'Kosmetolog', uz: 'Kosmetolog', ru: 'Косметолог', en: 'Cosmetologist' },
+		{ value: 'Визажист',   label: 'Vizajist',   uz: 'Vizajist',   ru: 'Визажист',   en: 'Makeup Artist' },
+		{ value: 'Бровист',    label: 'Brovist',    uz: 'Brovist',    ru: 'Бровист',    en: 'Brow Specialist' },
+		{ value: 'Лэшмейкер',  label: 'Lashmaker',  uz: 'Lashmaker',  ru: 'Лэшмейкер',  en: 'Lash Artist' },
+		{ value: 'Массажист',  label: 'Massajchi',  uz: 'Massajchi',  ru: 'Массажист',  en: 'Massage Therapist' },
 	];
 	const [professions, setProfessions] = useState(() => {
 		const stored = localStorage.getItem('professions');
-		return stored ? JSON.parse(stored) : defaultProfessions;
+		if (!stored) return defaultProfessions;
+		const parsed = JSON.parse(stored);
+		// Migrate old format: add uz/ru/en if missing
+		return parsed.map(p => {
+			if (!p.en) {
+				const def = defaultProfessions.find(d => d.value === p.value || d.label === p.label);
+				return def || { ...p, uz: p.label || p.value, ru: p.value, en: p.label || p.value };
+			}
+			return p;
+		});
 	});
 
 	// Chat state
@@ -3725,11 +3734,14 @@ export const AppProvider = ({ children }) => {
 	};
 
 	// Profession management functions
-	const addProfession = async (professionName) => {
+	const addProfession = async ({ uz, ru, en }) => {
 		try {
 			const newProfession = {
-				value: professionName,
-				label: professionName
+				value: ru,   // Russian as canonical identifier (backward compat)
+				label: uz,   // UZ as label (backward compat)
+				uz,
+				ru,
+				en,
 			};
 
 			const updatedProfessions = [...professions, newProfession];
