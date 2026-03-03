@@ -484,6 +484,13 @@ const Profile = () => {
     }
   }, []);
 
+  // Til o'zgarganda salon ma'lumotlarini qayta yuklash
+  useEffect(() => {
+    if (salonProfile?.id) {
+      fetchAdminSalon(salonProfile.id);
+    }
+  }, [language]);
+
   // salonProfile yuklanganda editPayment state'ini database ma'lumotlari bilan to'ldirish
   useEffect(() => {
     if (salonProfile?.paymentSystem) {
