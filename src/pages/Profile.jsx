@@ -343,8 +343,9 @@ const Profile = () => {
     }
 
     // 7️⃣ Additionals (maps to note field - always treat as Uzbek base)
-    const currentNote = salonProfile?.note_uz || salonProfile?.note || salonProfile?.salon_description || '';
-    const noteNeedsTranslation = !salonProfile?.note_ru || !salonProfile?.note_en;
+    const currentNote = salonProfile?.note_uz || salonProfile?.note || '';
+    const hasNoteContent = !!(salonProfile?.note_uz || salonProfile?.note);
+    const noteNeedsTranslation = hasNoteContent && (!salonProfile?.note_ru || !salonProfile?.note_en);
     if (editAdditionals && editAdditionals.trim() !== '' && (editAdditionals !== currentNote || noteNeedsTranslation)) {
       updateData['note'] = editAdditionals;
     }
@@ -499,7 +500,7 @@ const Profile = () => {
   useEffect(() => {
   if (changeMode && salonProfile) {
     const currentDescription = getSalonData(salonProfile, `description_${language}`);
-    const currentAdditionals = salonProfile?.note_uz || salonProfile?.note || salonProfile?.salon_description || '';
+    const currentAdditionals = salonProfile?.note_uz || salonProfile?.note || '';
     const currentComfort = salonProfile?.salon_comfort || [];
     const currentSaleData = salonProfile?.salon_sale || { amount: '', date: '' };
 
@@ -1243,7 +1244,7 @@ const Profile = () => {
                 </h3>
                 {(() => {
                   const noteLang = String(language || '').toLowerCase();
-                  const noteText = salonProfile?.[`note_${noteLang}`] || salonProfile?.note || salonProfile?.salon_description || '';
+                  const noteText = salonProfile?.[`note_${noteLang}`] || salonProfile?.note_uz || salonProfile?.note || '';
                   return (
                     <div className={(noteText && noteText.trim() !== '') ? 'info' : 'empty'}>
                       {changeMode ? (
@@ -1799,7 +1800,7 @@ const Profile = () => {
               </h3>
               {(() => {
                 const noteLang2 = String(language || '').toLowerCase();
-                const noteText2 = salonProfile?.[`note_${noteLang2}`] || salonProfile?.note || salonProfile?.salon_description || '';
+                const noteText2 = salonProfile?.[`note_${noteLang2}`] || salonProfile?.note_uz || salonProfile?.note || '';
                 return (
                   <div className={(noteText2 && noteText2.trim() !== '') ? 'info' : 'empty'}>
                     {changeMode ? (
