@@ -438,11 +438,12 @@ body {
 
 .message-content-sent {
   position: relative;
-  padding: 0.7vh 2.1vw 1.4vh 0.7vw; /* ✅ Pastki padding oshirildi */
+  padding: 0.7vh 2.1vw 1.6vh 0.7vw;
   border-radius: 1.0vw;
   box-shadow: var(--shadow);
   background: var(--button-color, #c3a3d1);
   border-bottom-right-radius: 0;
+  min-width: 60px;
 }
 
 .message.receive .message-content {
@@ -488,12 +489,13 @@ body {
 
 .message-time-sent {
   position: absolute;
-  right: 0.5vw; /* ✅ 0.4vw dan 0.5vw ga */
-  bottom: 0.3vh; /* ✅ 0.1vh dan 0.3vh ga */
+  right: 6px;
+  bottom: 4px;
   font-size: 0.6vw;
   color: #ffffff;
   font-weight: 500;
   opacity: 0.8;
+  white-space: nowrap;
 }
 
 /* CHAT INPUT STYLES */
@@ -860,7 +862,21 @@ body {
 
   .message-receive-text,
   .message-send-text {
-    font-size: 1vw;
+    font-size: 14px;
+  }
+
+  .message-content-sent {
+    padding-bottom: 18px;
+  }
+
+  .message-time-sent {
+    right: 8px;
+    bottom: 4px;
+    font-size: 11px;
+  }
+
+  .message-time {
+    font-size: 11px;
   }
 
   .employee-header {
@@ -1042,17 +1058,26 @@ body {
   }
 
   .message {
-    max-width: 45vw;
+    max-width: 60vw;
+  }
+
+  .message-content-sent {
+    padding-bottom: 20px;
   }
 
   .message-receive-text,
   .message-send-text {
-    font-size: 1.5vw;
+    font-size: 14px;
   }
 
-  .message-time,
+  .message-time {
+    font-size: 11px;
+  }
+
   .message-time-sent {
-    font-size: 1.1vw;
+    font-size: 11px;
+    right: 8px;
+    bottom: 4px;
   }
 
   .chat-input input {

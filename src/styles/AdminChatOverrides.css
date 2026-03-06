@@ -209,14 +209,23 @@
     max-width: 65%;
   }
 
+  .admin-layout .message-content-sent {
+    padding-bottom: 20px;
+  }
+
   .admin-layout .message-receive-text,
   .admin-layout .message-send-text {
     font-size: 13px;
   }
 
-  .admin-layout .message-time,
+  .admin-layout .message-time {
+    font-size: 11px;
+  }
+
   .admin-layout .message-time-sent {
     font-size: 11px;
+    right: 8px;
+    bottom: 4px;
   }
 
   .admin-layout .chat-date {
