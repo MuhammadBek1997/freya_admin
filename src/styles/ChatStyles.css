@@ -382,7 +382,7 @@ body {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: flex-end;
   gap: 0.7vh;
   background: var(--light-bg) url("testbg.png");
   scroll-behavior: smooth;
