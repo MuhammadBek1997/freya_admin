@@ -102,24 +102,19 @@
   .admin-layout .chat-window,
   .admin-layout .chat-posts,
   .admin-layout .chat-comments {
-    padding-right: 28px !important; /* room for toggle button */
+    padding-right: 2px !important; /* room for toggle button */
     padding-left: 0 !important;
-    height: calc(100svh - 8vh) !important;
+    height: calc(100svh - 6vh) !important;
     transition: padding-right 0.3s ease;
     overflow: hidden;
   }
 
-  /* Chat window: shrink when sidebar is open (via parent class) */
+  /* Sidebar overlay — chat-window stays full width, sidebar floats on top */
   .admin-layout.chat-sidebar-active .chat-window,
   .admin-layout.chat-sidebar-active .chat-posts,
   .admin-layout.chat-sidebar-active .chat-comments {
-    padding-right: min(70vw, 320px) !important;
-    height: calc(100svh - 8vh) !important;
-  }
-
-  .admin-layout.chat-sidebar-active .employee-header {
-    right: min(70vw, 320px) !important;
-    width: auto !important;
+    padding-right: 2px !important;
+    height: calc(100svh - 6vh) !important;
   }
 
   /* Toggle button — centered within available area above bottom nav */
