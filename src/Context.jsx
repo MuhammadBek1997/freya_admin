@@ -2913,7 +2913,7 @@ export const AppProvider = ({ children }) => {
 	const scheduleWsReconnect = () => {
 		const receiver = wsReceiverRef.current;
 		const role = user?.role;
-		if (!receiver?.id || !role || (role !== 'employee' && role !== 'user')) return;
+		if (!receiver?.id || !role) return;
 		if (wsRetryCountRef.current >= 10) {
 			// 10 marta urinishdan keyin to'xtatish
 			try { console.warn('WS reconnect limit reached, stopping'); } catch {}
@@ -3037,8 +3037,23 @@ export const AppProvider = ({ children }) => {
 				try {
 					const data = JSON.parse(evt.data);
 					if (data?.event === 'notification' && data?.kind === 'chat_message') {
-						// Yangi xabar keldi — conversations ro'yxatini yangilaymiz
+						// Conversations listni yangilaymiz
 						fetchConversationsRef.current?.();
+						// Agar hozir ochiq suhbat bu xabarni yuborgan foydalanuvchi bilan bo'lsa,
+						// wsRef ishlamayotgan bo'lishi mumkin — xabarlarni REST orqali yangilaymiz
+						const currentReceiver = wsReceiverRef.current?.id;
+						const msgSender = data?.sender_id;
+						const ws = wsRef.current;
+						const wsOpen = ws && ws.readyState === WebSocket.OPEN;
+						if (currentReceiver && msgSender && String(msgSender) === String(currentReceiver)) {
+							if (!wsOpen) {
+								// wsRef tushib qolgan — reconnect va messages yangilash
+								try { connectChatWs(currentReceiver, wsReceiverRef.current?.type || 'user'); } catch {}
+							} else {
+								// wsRef ochiq lekin message kelmayotgan bo'lishi mumkin — history so'raymiz
+								try { ws.send(JSON.stringify({ event: 'history' })); } catch {}
+							}
+						}
 					}
 				} catch {}
 			};
