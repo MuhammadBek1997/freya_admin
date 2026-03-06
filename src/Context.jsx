@@ -40,7 +40,7 @@ import i18n from "./i18n";
 
 
 // API base URL configuration - Python backend URL (Heroku)
-const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://freya-2aff07996d13.herokuapp.com/api";
+const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://freyapp.up.railway.app/api";
 let API_BASE_URL = RAW_API_BASE_URL.replace(/^http:\/\//, 'https://');
 const WS_HOST = (() => {
 	try {
@@ -49,9 +49,9 @@ const WS_HOST = (() => {
 		if (h && h.includes('.')) return h;
 		const loc = typeof window !== 'undefined' ? window.location : null;
 		const lh = loc ? loc.host : '';
-		if (!lh || lh.includes('localhost') || lh.includes('127.0.0.1')) return 'freya-2aff07996d13.herokuapp.com';
+		if (!lh || lh.includes('localhost') || lh.includes('127.0.0.1')) return 'freyapp.up.railway.app';
 		return lh;
-	} catch { return 'freya-2aff07996d13.herokuapp.com'; }
+	} catch { return 'freyapp.up.railway.app'; }
 })();
 
 // Force a specific salon ID when provided (disabled by default)
