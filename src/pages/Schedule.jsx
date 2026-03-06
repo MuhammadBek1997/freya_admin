@@ -74,6 +74,22 @@ const Schedule = () => {
   }, [dayListItems, selectDay.length, setSelectDay]);
 
   const containerRef = useRef(null)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+
+  useEffect(() => {
+    const check = () => {
+      if (containerRef.current) {
+        setCanScrollRight(containerRef.current.scrollWidth > containerRef.current.clientWidth + 4)
+      }
+    }
+    check()
+    window.addEventListener('resize', check)
+    containerRef.current?.addEventListener('scroll', check)
+    return () => {
+      window.removeEventListener('resize', check)
+      containerRef.current?.removeEventListener('scroll', check)
+    }
+  }, [dayListItems])
 
   const handleSelectDay = (element) => {
     localStorage.setItem("schedDay", JSON.stringify(element))
@@ -211,7 +227,7 @@ const Schedule = () => {
               )
             })}
           </div>
-          {dayListItems.length > 0 ? (
+          {canScrollRight ? (
             <button className='sched-dayList-btn' onClick={() => scrollRight(containerRef)} >
               <img src="/images/leftArrow.png" alt="" />
             </button>

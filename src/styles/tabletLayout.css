@@ -323,6 +323,7 @@
     .sched-dayList-cont {
         min-width: 100%;
         gap: 1.5vw;
+        padding-right: 44px;
     }
 
     .sched-dayList-item {
@@ -432,11 +433,18 @@
         font-size: 1.1vw;
     }
 
+    .sched-dayList {
+        position: relative;
+    }
+
     .sched-dayList-btn {
-        top: auto;
-        width: 5vw;
-        height: 5vw;
-        right: 1.5vw;
+        position: absolute;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        width: 40px;
+        height: 40px;
+        z-index: 5;
     }
 
     /* Schedule modals - tablet */
