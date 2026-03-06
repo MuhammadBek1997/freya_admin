@@ -629,19 +629,10 @@ const EmployeeChatPage = () => {
     return d.toLocaleDateString(i18next.language || 'ru-RU', { weekday: 'short' });
   };
 
-  // Backend UTC stringlarini to'g'ri parse qiladi (Z suffikssiz UTC → Z qo'shadi)
-  const toUtcDate = (str) => {
-    if (!str) return new Date(NaN);
-    if (typeof str === 'string' && !str.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(str)) {
-      return new Date(str + 'Z');
-    }
-    return new Date(str);
-  };
-
   const formatTime = (timeString) => {
     if (!timeString) return '';
     try {
-      const date = toUtcDate(timeString);
+      const date = new Date(timeString);
       return date.toLocaleTimeString('uz-UZ', {
         hour: '2-digit',
         minute: '2-digit'
@@ -900,7 +891,7 @@ const EmployeeChatPage = () => {
                         )}
                         <span className="chat-time">
                           {conversation.last_message_time ?
-                            toUtcDate(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
+                            new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
                               hour: '2-digit',
                               minute: '2-digit'
                             }) : ''
@@ -958,7 +949,7 @@ const EmployeeChatPage = () => {
                         )}
                         <span className="chat-time">
                           {conversation.last_message_time ?
-                            toUtcDate(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
+                            new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
                               hour: '2-digit',
                               minute: '2-digit'
                             }) : ''
@@ -1094,7 +1085,7 @@ const EmployeeChatPage = () => {
                           ? messages.filter(m => !uid || String(m.sender_id) === String(uid) || String(m.receiver_id) === String(uid))
                           : [];
                         visibleMessages.forEach(message => {
-                          const messageDate = toUtcDate(message.created_at_local || message.created_at);
+                          const messageDate = new Date(message.created_at_local || message.created_at);
                           const dateKey = messageDate.toDateString();
                           if (!groupedMessages[dateKey]) {
                             groupedMessages[dateKey] = [];
@@ -1124,7 +1115,7 @@ const EmployeeChatPage = () => {
                           .sort(([a], [b]) => new Date(a) - new Date(b))
                           .map(([dateKey, dayMessages]) => {
                             const sortedMessages = dayMessages.sort((a, b) =>
-                              toUtcDate(a.created_at_local || a.created_at) - toUtcDate(b.created_at_local || b.created_at)
+                              new Date(a.created_at_local || a.created_at) - new Date(b.created_at_local || b.created_at)
                             );
 
                             return (
@@ -1156,7 +1147,7 @@ const EmployeeChatPage = () => {
                                           </p>
                                         )}
                                           <span className={isMyMessage ? 'message-time-sent' : 'message-time'}>
-                                          {toUtcDate(message.created_at_local || message.created_at).toLocaleTimeString('uz-UZ', {
+                                          {new Date(message.created_at_local || message.created_at).toLocaleTimeString('uz-UZ', {
                                             hour: '2-digit',
                                             minute: '2-digit'
                                           })}
