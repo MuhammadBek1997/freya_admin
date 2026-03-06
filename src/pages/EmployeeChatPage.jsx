@@ -1143,11 +1143,12 @@ const EmployeeChatPage = () => {
                                       className={`message ${isMyMessage ? 'send' : 'receive'}`}
                                     >
                                       <div className={isMyMessage ? 'message-content-sent' : 'message-content'}>
-                                        {message.message_type === 'image' && message.file_url ? (
+                                        {message.file_url && (message.message_type === 'image' || message.message_type === 'photo' || message.message_type === 'file' || /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$)/i.test(message.file_url)) ? (
                                           <img
                                             src={message.file_url}
                                             alt="image"
-                                            style={{ maxWidth: '180px', borderRadius: '8px' }}
+                                            style={{ maxWidth: '220px', borderRadius: '8px', cursor: 'pointer' }}
+                                            onClick={() => window.open(message.file_url, '_blank')}
                                           />
                                         ) : (
                                           <p className={isMyMessage ? 'message-send-text' : 'message-receive-text'}>
