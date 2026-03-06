@@ -98,13 +98,15 @@
     transform: translateX(0) !important;
   }
 
-  /* Chat window: full width when sidebar hidden */
+  /* Chat window: full width when sidebar hidden, height excludes bottom nav (8vh) */
   .admin-layout .chat-window,
   .admin-layout .chat-posts,
   .admin-layout .chat-comments {
-    padding-right: 0 !important;
+    padding-right: 28px !important; /* room for toggle button */
     padding-left: 0 !important;
+    height: calc(100svh - 8vh) !important;
     transition: padding-right 0.3s ease;
+    overflow: hidden;
   }
 
   /* Chat window: shrink when sidebar is open (via parent class) */
@@ -112,6 +114,7 @@
   .admin-layout.chat-sidebar-active .chat-posts,
   .admin-layout.chat-sidebar-active .chat-comments {
     padding-right: min(70vw, 320px) !important;
+    height: calc(100svh - 8vh) !important;
   }
 
   .admin-layout.chat-sidebar-active .employee-header {
@@ -119,14 +122,14 @@
     width: auto !important;
   }
 
-  /* Toggle button */
+  /* Toggle button — centered within available area above bottom nav */
   .admin-layout .chat-sidebar-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
     position: fixed;
     right: 0;
-    top: 50%;
+    top: calc(50% - 4vh); /* shift up to stay above bottom nav */
     transform: translateY(-50%);
     width: 28px;
     height: 52px;
