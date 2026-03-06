@@ -147,13 +147,12 @@ const Profile = () => {
 
   const handleUseCurrentLocation = async () => {
     if (!navigator.geolocation) {
-      alert(t('geolocationNotSupported') || 'Geolokatsiya qo‘llab-quvvatlanmaydi')
       return
     }
     setGeoMessage('')
     const perm = await checkGeoPermission()
     if (perm === 'denied') {
-      setGeoMessage('Geolokatsiya ruxsat etilmagan. Brauzerda saytga “Location” ruxsatini bering va qurilmada geolokatsiyani yoqing, so‘ng yana urinib ko‘ring.')
+      setGeoMessage(`Geolokatsiya ruxsat etilmagan. Brauzerda saytga "Location" ruxsatini bering va qurilmada geolokatsiyani yoqing, so'ng yana urinib ko'ring.`)
       return
     }
     setGeoLoading(true)
@@ -171,11 +170,11 @@ const Profile = () => {
         let msg = t('geolocationError') || 'Hozirgi lokatsiya olinmadi'
         if (err && typeof err.code === 'number') {
           if (err.code === 1) {
-            msg = 'Ruxsat berilmadi. Brauzer oynasida lokatsiyaga ruxsat bering yoki sayt sozlamalaridan Location’ni yoqing.'
+            msg = "Ruxsat berilmadi. Brauzer oynasida lokatsiyaga ruxsat bering yoki sayt sozlamalaridan Location'ni yoqing."
           } else if (err.code === 2) {
-            msg = 'Lokatsiya topilmadi. Internet/GPS ni yoqib, ochiq joyda urinib ko‘ring.'
+            msg = "Lokatsiya topilmadi. Internet/GPS ni yoqib, ochiq joyda urinib ko'ring."
           } else if (err.code === 3) {
-            msg = 'So‘rov vaqti tugadi. Qayta urinib ko‘ring.'
+            msg = "So'rov vaqti tugadi. Qayta urinib ko'ring."
           }
         }
         setGeoMessage(msg)
@@ -420,7 +419,6 @@ const Profile = () => {
     // Logo yuklash
     if (pendingLogo?.file) {
       if (pendingLogo.file.size > maxBytes) {
-        alert(t('logoTooLarge'));
         setSubmitting(false);
         return;
       }
@@ -451,10 +449,8 @@ const Profile = () => {
     setEditSale({ amount: '', date: '' });
     setEditContacts({ phone1: '', phone2: '', instagram: '' });
 
-    alert(t('salonUpdated') || 'Salon muvaffaqiyatli yangilandi!');
-
   } catch (error) {
-    alert(t('updateError') || `Xatolik: ${error.message}`);
+    console.error(t('updateError') || `Xatolik: ${error.message}`);
   } finally {
     setSubmitting(false);
   }
@@ -657,7 +653,7 @@ const Profile = () => {
     const maxBytes = 4 * 1024 * 1024
     const validImages = files.filter(f => f && f.type && f.type.startsWith('image/') && f.size <= maxBytes)
     if (validImages.length < files.length) {
-      alert(t('onlyImageAndSmallFiles'))
+      // some files skipped (wrong type or too large)
     }
 
     // Fayllarni preview uchun URL yaratish
@@ -681,7 +677,6 @@ const Profile = () => {
     if (index < totalExistingImages) {
       // Mavjud rasmni serverdan o'chirish
       if (!salonProfile) {
-        alert(t('salonDataNotLoaded'));
         return;
       }
 
@@ -695,9 +690,8 @@ const Profile = () => {
         const deletedImages = result?.photos || result?.salon_photos || [];
         setCompanyImages(Array.isArray(deletedImages) ? deletedImages : []);
 
-        alert(t('imageDeleted'));
       } catch (error) {
-        alert(t('imageDeleteError') + error.message);
+        console.error(t('imageDeleteError') + error.message);
       }
     } else {
       // Pending rasmni o'chirish (faqat local state dan)
@@ -801,7 +795,6 @@ const Profile = () => {
         setIsSmsSent(true)
 
         // Muvaffaqiyatli xabar
-        alert(t('smsCodeSent', { phone: data.phone }))
         console.log(t('smsCodeSent', { phone: data.phone }))
 
         // Test uchun verification code'ni console'ga chiqarish
@@ -811,12 +804,10 @@ const Profile = () => {
       } else {
         // Xatolik holatini ko'rsatish
         const errorMessage = data.message || t('smsSendError')
-        alert(errorMessage)
         console.error('SMS yuborishda xatolik:', errorMessage)
       }
     } catch (error) {
       console.error('SMS yuborishda xatolik:', error)
-      alert(t('smsSendError'))
     } finally {
       setSmsLoading(false)
     }
@@ -825,12 +816,10 @@ const Profile = () => {
   // SMS kodni tasdiqlash
   const handleVerifySms = async () => {
     if (!smsCode || smsCode.length !== 6) {
-      alert(t('smsCodeInvalidLength'))
       return
     }
 
     if (!editPayment.card_number || !editPayment.phone_number || !editPayment.card_type) {
-      alert(t('fillAllFields'))
       return
     }
 
@@ -854,8 +843,6 @@ const Profile = () => {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        alert(t('cardAddedSuccessfully'))
-
         // SMS tasdiqlandi deb belgilash
         setIsSmsVerified(true)
 
@@ -1612,7 +1599,6 @@ const Profile = () => {
                     onChange={(e) => {
                       // Admin guard: faqat admin token bilan ruxsat
                       if (!user || (user.role !== 'admin' && user.role !== 'super_admin' && user.role !== 'superadmin')) {
-                        alert(t('onlyAdminsCanUpload'));
                         e.target.value = '';
                         return;
                       }
@@ -1620,14 +1606,12 @@ const Profile = () => {
                       const file = e.target.files && e.target.files[0];
                       if (!file) return;
                       if (!file.type || !file.type.startsWith('image/')) {
-                        alert(t('onlyImageFiles'));
                         e.target.value = '';
                         return;
                       }
                       // Fayl hajmini tekshirish (<= 4MB tavsiya)
                       const maxBytes = 4 * 1024 * 1024;
                       if (file.size > maxBytes) {
-                        alert(t('imageTooLarge'));
                         e.target.value = '';
                         return;
                       }
@@ -1640,7 +1624,6 @@ const Profile = () => {
                         });
                         e.target.value = '';
                       } catch (err) {
-                        alert(t('logoPrepareError'));
                         e.target.value = '';
                       }
                     }}
@@ -1936,7 +1919,7 @@ const Profile = () => {
                 {(editLocation?.lat && editLocation?.lng) || (editAddress?.uz || editAddress?.en || editAddress?.ru) ? (
                   <div style={{ marginTop: '10px' }}>
                     <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.95vw' }}>
-                      {t('addressExtra') || 'Uy manzili (qo‘shimcha) — UZ/EN/RU uchun bir xil'}
+                      {t('addressExtra') || "Uy manzili (qo'shimcha) -- UZ/EN/RU uchun bir xil"}
                     </label>
                     <input
                       type='text'

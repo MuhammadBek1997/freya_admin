@@ -79,7 +79,7 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
     setError('');
     try {
       if (!user || user.role !== 'admin') {
-        throw new Error(t('errors.onlyAdminCanCreate', { defaultValue: 'Faqat admin xodim qo‘shishi mumkin' }));
+        throw new Error(t('errors.onlyAdminCanCreate', { defaultValue: "Faqat admin xodim qo'shishi mumkin" }));
       }
       if (!user?.salon_id) {
         throw new Error(t('errors.salonIdMissing', { defaultValue: 'Salon ID topilmadi. Iltimos, qaytadan login qiling.' }));
@@ -99,7 +99,6 @@ const AddEmployeeModal = ({ onClose, onEmployeeAdded }) => {
       };
 
       await createEmployee(employeeData);
-      alert(t('alerts.employeeAdded', { defaultValue: "Xodim muvaffaqiyatli qo'shildi!" }));
       if (onEmployeeAdded) onEmployeeAdded();
       resetForm();
       onClose();

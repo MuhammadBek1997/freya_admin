@@ -1320,10 +1320,11 @@ body {
   .online-status-wrapper {
     gap: 1.5vw;
   }
-
+  
   .chat-body {
     padding: 3vh 4vw 5vh;
     max-height: calc(100svh - 20vh);
+    justify-content: start;
   }
 
   .chat-date {

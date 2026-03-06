@@ -1,14 +1,65 @@
+import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { UseGlobalContext } from '../Context.jsx'
 
+const LS_KEY = 'freya_navToggleTop';
+
 const Sidebar = () => {
+  const [isNavOpen, setIsNavOpen] = useState(false);
   let { t, user, totalUnreadCount } = UseGlobalContext();
   const location = useLocation();
+  const navToggleRef = useRef(null);
+  const navDragState = useRef({ active: false, moved: false, startY: 0 });
 
   const isPath = (path) => location.pathname === path;
 
+  useEffect(() => {
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved && navToggleRef.current) {
+      navToggleRef.current.style.top = saved;
+      navToggleRef.current.style.transform = 'none';
+    }
+  }, []);
+
+  const handleNavToggleDown = (e) => {
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    navDragState.current = { active: true, moved: false, startY: clientY };
+
+    const onMove = (me) => {
+      if (!navDragState.current.active) return;
+      const y = me.touches ? me.touches[0].clientY : me.clientY;
+      if (Math.abs(y - navDragState.current.startY) > 5) {
+        navDragState.current.moved = true;
+        me.preventDefault();
+      }
+      if (navDragState.current.moved && navToggleRef.current) {
+        const h = navToggleRef.current.offsetHeight;
+        const newTop = Math.max(0, Math.min(window.innerHeight - h, y - h / 2));
+        navToggleRef.current.style.top = newTop + 'px';
+        navToggleRef.current.style.transform = 'none';
+      }
+    };
+
+    const onEnd = () => {
+      if (navDragState.current.moved && navToggleRef.current) {
+        localStorage.setItem(LS_KEY, navToggleRef.current.style.top);
+      }
+      navDragState.current.active = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
+  };
+
   return (
-    <div className='sidebar'>
+    <>
+    <div className={`sidebar ${isNavOpen ? 'sidebar-mobile-open' : ''}`}>
       <div className="sidebar-logo">
         <img src="/images/logoLight.jpg" alt="" />
         <h1>
@@ -16,7 +67,7 @@ const Sidebar = () => {
         </h1>
       </div>
 
-      <div className="sidebar-cont">
+      <div className="sidebar-cont" onClick={() => setIsNavOpen(false)}>
         <Link
           to={'/'}
           className={`sidebar-nav-item ${isPath('/') ? 'is-active' : ''}`}
@@ -124,6 +175,18 @@ const Sidebar = () => {
         <img src="/images/girlDreaming.png" alt="" />
       </div>
     </div>
+    <button
+      ref={navToggleRef}
+      className="nav-sidebar-toggle"
+      onMouseDown={handleNavToggleDown}
+      onTouchStart={handleNavToggleDown}
+      onClick={() => { if (!navDragState.current.moved) setIsNavOpen(!isNavOpen); }}
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {isNavOpen ? <polyline points="15 18 9 12 15 6"/> : <polyline points="9 18 15 12 9 6"/>}
+      </svg>
+    </button>
+    </>
   )
 }
 

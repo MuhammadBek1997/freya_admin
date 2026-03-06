@@ -104,7 +104,8 @@
   .admin-layout .chat-comments {
     padding-right: 2px !important; /* room for toggle button */
     padding-left: 0 !important;
-    height: calc(100svh - 6vh) !important;
+    height: calc(100svh - 9vh) !important;
+    min-height: unset !important;
     transition: padding-right 0.3s ease;
     overflow: hidden;
   }
@@ -114,7 +115,7 @@
   .admin-layout.chat-sidebar-active .chat-posts,
   .admin-layout.chat-sidebar-active .chat-comments {
     padding-right: 2px !important;
-    height: calc(100svh - 6vh) !important;
+    height: calc(100svh - 9vh) !important;
   }
 
   /* Toggle button — centered within available area above bottom nav */
@@ -126,7 +127,7 @@
     right: 0;
     top: calc(50% - 4vh); /* shift up to stay above bottom nav */
     transform: translateY(-50%);
-    width: 28px;
+    width: 18px;
     height: 52px;
     background: #9C2BFF;
     color: #fff;
@@ -301,5 +302,14 @@
 
   .admin-layout .chat-header-status {
     font-size: 12px;
+  }
+}
+
+/* Mobile (≤480px): chat window full height (no bottom nav) */
+@media screen and (max-width: 480px) {
+  .admin-layout .chat-window,
+  .admin-layout .chat-posts,
+  .admin-layout .chat-comments {
+    height: 100svh !important;
   }
 }

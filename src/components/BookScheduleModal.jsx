@@ -273,7 +273,6 @@ const BookScheduleModal = (props) => {
       }
 
       await createBooking(bookingData)
-      alert(t('bookingSuccess') || 'Бронирование успешно создано!')
       if (typeof setEditModal === 'function') setEditModal(false)
     } catch (e) {
       setError(e.message || t('savingError') || 'Saqlashda xatolik yuz berdi')

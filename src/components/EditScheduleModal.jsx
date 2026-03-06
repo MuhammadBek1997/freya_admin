@@ -145,7 +145,6 @@ const EditScheduleModal = (props) => {
 
             await updateSchedule(id, scheduleData);
 
-            alert(t('scheduleUpdated') || 'Jadval muvaffaqiyatli yangilandi!');
             if (typeof setEditModal === 'function') {
                 setEditModal(false);
             }
@@ -356,7 +355,7 @@ const EditScheduleModal = (props) => {
                     />
                 </div>
 
-                {/* Full Payment / Deposit — hozircha yashirilgan
+                {/* Full Payment / Deposit -- hozircha yashirilgan
                 <div className='schedule-modal-paymentType'>
                     <label htmlFor="">{t('schedule.paymentOptional') || 'Оплата через приложение (необязательно)'}</label>
                     <div className='schedule-modal-paymentType-cont'>

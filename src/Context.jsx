@@ -275,7 +275,7 @@ export const AppProvider = ({ children }) => {
 	const [messagesLoading, setMessagesLoading] = useState(false);
 	const [messagesError, setMessagesError] = useState(null);
 
-	// Instagram va orientation ko‘rinishi uchun datani bir xillash
+	// Instagram va orientation ko'rinishi uchun datani bir xillash
 	const normalizeSalonForProfile = (s) => {
 		const source = s || {};
 		const sm = Array.isArray(source.social_media) ? source.social_media : [];
@@ -422,7 +422,7 @@ export const AppProvider = ({ children }) => {
 
 			const resp = await fetch(url, { method: 'GET', headers });
 			if (!resp.ok) {
-				// Backend hali tayyor bo'lmasligi mumkin — xatoni muloyim qaytamiz
+				// Backend hali tayyor bo'lmasligi mumkin -- xatoni muloyim qaytamiz
 				let msg = `HTTP ${resp.status}`;
 				try {
 					const errJson = await resp.json();
@@ -1388,7 +1388,7 @@ export const AppProvider = ({ children }) => {
 						signal: signal
 					});
 				}
-				const admUrl = schedulesUrl.replace(/^http:\/\//, 'https://');
+				const admUrl = schedulesUrl.replace(/^http:\/\//, 'https://').replace(/\/?$/, '/');
 				console.log('🔶 Token (first 20 chars):', tok?.substring(0, 20));
 				console.log('🔶 Headers:', {
 					'Authorization': `Bearer ${tok?.substring(0, 20)}...`,
@@ -3004,7 +3004,7 @@ export const AppProvider = ({ children }) => {
 	const salonWsTimerRef = useRef(null);
 	const salonWsPingRef = useRef(null); // ping interval uchun
 	const salonPollRef = useRef(null); // polling interval uchun
-	const fetchConversationsRef = useRef(null); // forward ref — quyida set qilinadi
+	const fetchConversationsRef = useRef(null); // forward ref -- quyida set qilinadi
 
 	const connectSalonWs = () => {
 		const role = user?.role;
@@ -3040,17 +3040,17 @@ export const AppProvider = ({ children }) => {
 						// Conversations listni yangilaymiz
 						fetchConversationsRef.current?.();
 						// Agar hozir ochiq suhbat bu xabarni yuborgan foydalanuvchi bilan bo'lsa,
-						// wsRef ishlamayotgan bo'lishi mumkin — xabarlarni REST orqali yangilaymiz
+						// wsRef ishlamayotgan bo'lishi mumkin -- xabarlarni REST orqali yangilaymiz
 						const currentReceiver = wsReceiverRef.current?.id;
 						const msgSender = data?.sender_id;
 						const ws = wsRef.current;
 						const wsOpen = ws && ws.readyState === WebSocket.OPEN;
 						if (currentReceiver && msgSender && String(msgSender) === String(currentReceiver)) {
 							if (!wsOpen) {
-								// wsRef tushib qolgan — reconnect va messages yangilash
+								// wsRef tushib qolgan -- reconnect va messages yangilash
 								try { connectChatWs(currentReceiver, wsReceiverRef.current?.type || 'user'); } catch {}
 							} else {
-								// wsRef ochiq lekin message kelmayotgan bo'lishi mumkin — history so'raymiz
+								// wsRef ochiq lekin message kelmayotgan bo'lishi mumkin -- history so'raymiz
 								try { ws.send(JSON.stringify({ event: 'history' })); } catch {}
 							}
 						}
@@ -3235,7 +3235,7 @@ export const AppProvider = ({ children }) => {
 				// Shu sababli response kelganda wsHistoryHandledRef ni QAYTA tekshiramiz
 				if (isWsOpenFor(userId) && wsHistoryHandledRef.current) {
 					try { console.log('✅ WS history already received while REST was fetching, skipping'); } catch {}
-					// WS history priority — REST natijasini e'tiborsiz qoldiramiz
+					// WS history priority -- REST natijasini e'tiborsiz qoldiramiz
 				} else if (isWsOpenFor(userId)) {
 					try { console.log('🔄 Merging with existing WS messages'); } catch {}
 					setMessages(prev => {
@@ -3665,7 +3665,7 @@ export const AppProvider = ({ children }) => {
 
 			const data = await response.json();
 
-			// Ro'yxatni faqat backenddan qayta yuklaymiz — optimistik qo'shish yo'q
+			// Ro'yxatni faqat backenddan qayta yuklaymiz -- optimistik qo'shish yo'q
 			try {
 				await fetchEmployees(salonId);
 			} catch {}
@@ -3769,7 +3769,7 @@ export const AppProvider = ({ children }) => {
 			await updateAppointmentStatus(selectedElement.id, 'confirmed');
 			closeRightSidebar();
 		} catch (error) {
-			alert(error.message);
+			console.error(error.message);
 		}
 	};
 
@@ -3866,7 +3866,7 @@ export const AppProvider = ({ children }) => {
 					if (mySalonResp.status === 404) {
 						setAdminSalonError('Admin uchun salon topilmadi');
 					} else if (mySalonResp.status === 403) {
-						setAdminSalonError('Ruxsat yo‘q: admin salon maʼlumotlariga kirish taqiqlangan');
+						setAdminSalonError("Ruxsat yo'q: admin salon maʼlumotlariga kirish taqiqlangan");
 					}
 				}
 			}
@@ -3969,7 +3969,7 @@ export const AppProvider = ({ children }) => {
 
 			setIsCheckedItem([]);
 		} catch (error) {
-			alert(`Xatolik: ${error.message}`);
+			console.error(`Xatolik: ${error.message}`);
 		}
 	};
 
@@ -3998,7 +3998,7 @@ export const AppProvider = ({ children }) => {
 				throw new Error(msg);
 			}
 
-			// Backend muvaffaqiyatli yangilandi — UI state'ni sinxronlaymiz
+			// Backend muvaffaqiyatli yangilandi -- UI state'ni sinxronlaymiz
 			setEmployees((prev) => prev.map(e => ids.includes(e.id) ? { ...e, is_waiting: false } : e));
 
 			// waitingEmp ro'yxatini yangilash (reloadsiz)
@@ -4090,7 +4090,7 @@ export const AppProvider = ({ children }) => {
 	const fetchBookings = async (salonId) => {
 		const id = salonId || user?.salon_id;
 		if (!isAuthenticated || !user || !['admin','employee'].includes(String(user.role || '').toLowerCase())) {
-			setBookingsError('Faqat admin yoki xodim ko‘ra oladi');
+			setBookingsError("Faqat admin yoki xodim ko'ra oladi");
 			return;
 		}
 		if (!id) {
@@ -4099,7 +4099,7 @@ export const AppProvider = ({ children }) => {
 		}
 		const isValidUUID = (v) => typeof v === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v);
 		if (!isValidUUID(String(id))) {
-			setBookingsError('Noto‘g‘ri salon ID');
+			setBookingsError("Noto'g'ri salon ID");
 			return;
 		}
 

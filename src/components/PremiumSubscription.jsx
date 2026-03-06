@@ -16,8 +16,8 @@ const PremiumSubscription = ({ onClose }) => {
     const fetchSubscriptionStatus = async () => {
         try {
             // Agar backendda alohida subscription status endpoint bo'lmasa,
-            // premium obuna holatini yaratish/payments oqimidan so‘ng yangilanadi.
-            // Bu yerda backendga tegmasdan barqaror GET chaqiruvini o‘tkazib qo‘yamiz.
+            // premium obuna holatini yaratish/payments oqimidan so'ng yangilanadi.
+            // Bu yerda backendga tegmasdan barqaror GET chaqiruvini o'tkazib qo'yamiz.
             setSubscriptionStatus(null);
         } catch (error) {
         }

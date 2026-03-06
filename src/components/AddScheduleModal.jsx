@@ -249,8 +249,6 @@ const AddScheduleModal = () => {
 
             const result = await createSchedule(scheduleData)
 
-            alert(t('alerts.scheduleCreated'))
-
             setAddSched(false)
 
             setFormData({
@@ -534,7 +532,7 @@ const AddScheduleModal = () => {
                     />
                 </div>
 
-                {/* Full Payment / Deposit — hozircha yashirilgan
+                {/* Full Payment / Deposit -- hozircha yashirilgan
                 <div className='schedule-modal-paymentType'>
                     <label htmlFor="">{t('schedule.paymentOptional')}</label>
                     <div className='schedule-modal-paymentType-cont'>

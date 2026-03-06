@@ -34,7 +34,7 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
         // Backendga tegmasdan: nisbiy `/api` ga suyanmaslik.
         // Hozircha limits UI majburiy emas, post yaratishdan keyin yangilanadi.
         try {
-            // Aloqa tekshiruvi uchun eng qisqa so‘rov (limit=1) — bu yerda faqat bog‘lanish barqarorligini tekshiramiz.
+            // Aloqa tekshiruvi uchun eng qisqa so'rov (limit=1) -- bu yerda faqat bog'lanish barqarorligini tekshiramiz.
             await axios.get(`${employeesUrl}/${employeeId}/posts`, {
                 params: { limit: 1 },
                 headers: {
@@ -66,11 +66,9 @@ const EmployeePostForm = ({ employeeId, onClose, onPostAdded }) => {
             const isValidSize = f.size <= maxBytes;
             
             if (!isImage && !isVideo) {
-                alert(`${f.name} rasm yoki video emas`);
                 return false;
             }
             if (!isValidSize) {
-                alert(`${f.name} hajmi katta (maks 4MB)`);
                 return false;
             }
             return true;

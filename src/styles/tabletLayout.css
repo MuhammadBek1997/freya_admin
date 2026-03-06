@@ -29,13 +29,26 @@
     
     .sidebar-cont {
         display: flex;
-        margin-left: 10%;
+        margin-left: 4%;
+        flex: 1;
+        justify-content: space-around;
     }
     .sidebar-nav-item{
-        margin: 0 ;
+        margin: 0;
+        padding: 0.4vh 2vw;
+        gap: 0.4vh;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .sidebar-nav-item img{
+        width: 22px;
+        height: 22px;
+    }
+    .sidebar-nav-item p{
+        font-size: 11px;
     }
     .sidebar-nav-item.is-active{
-        margin: 0 ;
+        margin: 0;
         border-radius: 0;
         border-bottom-left-radius: 1.5vw;
         border-bottom-right-radius: 1.5vw;
@@ -155,10 +168,11 @@
     }
 
     .home-body {
-        padding-top: 22vh;
+        padding-top: 25vh;
         gap: 1.5vw;
         padding-left: 2vw;
         padding-right: 2vw;
+        padding-bottom: 2vh;
     }
 
     .appoint-card {
@@ -324,11 +338,12 @@
     }
 
     .schedule-body {
-        padding-top: 22vh;
+        padding-top: 25vh;
         grid-template-columns: repeat(2, 1fr);
         gap: 2vw;
         padding-left: 2vw;
         padding-right: 2vw;
+        padding-bottom: 2vh;
     }
 
     /* Schedule card content - tablet */
@@ -616,7 +631,8 @@
     }
 
     .employ-body {
-        padding-top: 22vh;
+        padding-top: 25vh;
+        padding-bottom: 2vh;
     }
 
     .profile-nav {
@@ -1034,6 +1050,124 @@
         width: 24px;
         height: 24px;
     }
+}
+
+/* Nav toggle button: hidden by default, visible on mobile only */
+.nav-sidebar-toggle {
+  display: none;
+}
+
+/* Mobile (≤480px): bottom nav → left sliding drawer */
+@media screen and (max-width: 480px) {
+  /* Remove bottom padding since nav is no longer at bottom */
+  .app-content {
+    padding-bottom: 0 !important;
+  }
+
+  /* Sidebar becomes a left drawer */
+  .sidebar {
+    width: 70vw !important;
+    max-width: 280px !important;
+    height: 100vh !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: auto !important;
+    border-radius: 0 16px 16px 0 !important;
+    border-top-left-radius: 0 !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 200 !important;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .sidebar.sidebar-mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Logo visible in drawer */
+  .sidebar-logo {
+    padding: 2.5vh 4vw !important;
+    display: flex !important;
+    width: 100% !important;
+  }
+
+  .sidebar-logo img {
+    width: 10vw !important;
+    min-width: 32px;
+  }
+
+  .sidebar-logo h1 {
+    font-size: 4.5vw !important;
+  }
+
+  /* Nav items: vertical list */
+  .sidebar-cont {
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    gap: 0 !important;
+    padding: 1vh 0 !important;
+  }
+
+  .sidebar-nav-item {
+    flex-direction: row !important;
+    width: 100% !important;
+    padding: 1.8vh 5vw !important;
+    gap: 3.5vw !important;
+    border-radius: 0 !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+  }
+
+  .sidebar-nav-item.is-active {
+    border-radius: 0 20px 20px 0 !important;
+    margin-right: 12px !important;
+  }
+
+  .sidebar-nav-item img {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .sidebar-nav-item p {
+    font-size: 14px !important;
+  }
+
+  /* Hide illustration on mobile */
+  .sidebar-illustration {
+    display: none !important;
+  }
+
+  /* Nav toggle button */
+  .nav-sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 52px;
+    background: #9C2BFF;
+    color: #fff;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    z-index: 201;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+    transition: left 0.3s ease;
+  }
+
+  /* When sidebar is open, button moves to right edge */
+  .sidebar.sidebar-mobile-open + .nav-sidebar-toggle {
+    left: min(70vw, 280px);
+  }
 }
 
 @media screen and (max-width: 600px) {

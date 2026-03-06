@@ -29,13 +29,11 @@ const handleAvatarUpload = async (event) => {
 
     // Fayl validatsiyasi
     if (!file.type?.startsWith('image/')) {
-      alert('Faqat rasm fayllarini yuklash mumkin');
       return;
     }
 
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('Rasm hajmi 5MB dan oshmasligi kerak');
       return;
     }
 
@@ -51,7 +49,6 @@ const handleAvatarUpload = async (event) => {
 
     } catch (error) {
       setAvatarError(error.message);
-      alert(error.message);
     } finally {
       setAvatarUploading(false);
       if (fileInputRef.current) {

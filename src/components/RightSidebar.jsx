@@ -70,20 +70,19 @@ const RightSidebar = () => {
             }
             closeRightSidebar();
         } catch (error) {
-            alert(error.message);
+            console.error(error.message);
         }
     };
 
     const handleArrived = async () => {
         try {
             if (String(selectedElement.type) === 'booking') {
-                alert(t('bookingArrivedNotSupported') || 'Booking uchun “Пришла” qo‘llanilmaydi');
                 return;
             }
             await updateAppointmentStatus(selectedElement.id, 'accepted');
             closeRightSidebar();
         } catch (error) {
-            alert(error.message);
+            console.error(error.message);
         }
     };
 

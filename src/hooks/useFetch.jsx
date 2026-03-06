@@ -6,7 +6,7 @@ const useFetch = (url) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!url) return; // url bo‘lmasa so‘rov yubormaslik
+    if (!url) return; // url bo'lmasa so'rov yubormaslik
     
     const fetchData = async () => {
       setLoading(true);

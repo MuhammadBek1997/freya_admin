@@ -65,6 +65,8 @@ const EmployeeChatPage = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const [chatSidebarOpen, setChatSidebarOpen] = useState(false);
+  const chatToggleRef = useRef(null);
+  const chatDragState = useRef({ active: false, moved: false, startY: 0 });
 
   // Schedule state
   const [groupedSchedules, setGroupedSchedules] = useState({});
@@ -507,14 +509,12 @@ const EmployeeChatPage = () => {
         } catch (restError) {
           // REST ham ishlamasa, xabarni o'chirish
           setMessages(prev => prev.filter(m => m.id !== tempId));
-          alert(t('messageSendError') || 'Xabar yuborishda xatolik yuz berdi!');
         }
       }
 
     } catch (error) {
       // Xatolik bo'lsa optimistic xabarni o'chirish
       setMessages(prev => prev.filter(m => m.id !== tempId));
-      alert(t('messageSendError') || 'Xabar yuborishda xatolik yuz berdi!');
     }
   };
 
@@ -527,12 +527,10 @@ const EmployeeChatPage = () => {
     if (!file || !selectedUser) return;
     try {
       if (!file.type?.startsWith('image/')) {
-        alert(t('onlyImageFiles') || 'Faqat rasmlarni yuklash mumkin');
         return;
       }
       const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
-        alert(t('imageTooLarge') || 'Rasm juda katta (maks. 4 MB)');
         return;
       }
       const urls = await uploadPhotosToServer([file]);
@@ -573,7 +571,7 @@ const EmployeeChatPage = () => {
       }
       // Backend echo kelganda optimistic xabar almashtiriladi
     } catch (err) {
-      alert(t('messageSendError') || 'Xabar yuborishda xatolik yuz berdi!');
+      console.error(err);
     } finally {
       if (imageInputRef.current) imageInputRef.current.value = '';
     }
@@ -605,7 +603,7 @@ const EmployeeChatPage = () => {
   const handleMobileBack = () => {
     setIsMobileChatOpen(false);
     setSelectedUser(null);
-    // WS ni yopmaymiz — faqat UI ni yashiramiz
+    // WS ni yopmaymiz -- faqat UI ni yashiramiz
     // disconnectChatWs() bu yerda chaqirilmasligi kerak: WS ochiq qolishi kerak
   };
 
@@ -675,13 +673,11 @@ const EmployeeChatPage = () => {
     if (!file) return;
 
     if (!file.type?.startsWith('image/')) {
-      alert('Faqat rasm fayllarini yuklash mumkin');
       return;
     }
 
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('Rasm hajmi 5MB dan oshmasligi kerak');
       return;
     }
 
@@ -693,7 +689,6 @@ const EmployeeChatPage = () => {
       const avatarUrl = await updateEmployeeAvatar(employeeId, file);
     } catch (error) {
       setAvatarError(error.message);
-      alert(error.message);
     } finally {
       setAvatarUploading(false);
       if (fileInputRef.current) {
@@ -708,10 +703,67 @@ const EmployeeChatPage = () => {
     }
   };
 
-  // Admin UI enabled: private_admin/private_salon_admin can use chat now
+  const CHAT_TOGGLE_LS_KEY = 'freya_chatToggleTop';
+
+  useEffect(() => {
+    const saved = localStorage.getItem(CHAT_TOGGLE_LS_KEY);
+    if (saved && chatToggleRef.current) {
+      chatToggleRef.current.style.top = saved;
+      chatToggleRef.current.style.transform = 'none';
+    }
+  }, []);
+
+  const handleChatToggleDown = (e) => {
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    chatDragState.current = { active: true, moved: false, startY: clientY };
+
+    const onMove = (me) => {
+      if (!chatDragState.current.active) return;
+      const y = me.touches ? me.touches[0].clientY : me.clientY;
+      if (Math.abs(y - chatDragState.current.startY) > 5) {
+        chatDragState.current.moved = true;
+        me.preventDefault();
+      }
+      if (chatDragState.current.moved && chatToggleRef.current) {
+        const h = chatToggleRef.current.offsetHeight;
+        const newTop = Math.max(0, Math.min(window.innerHeight - h, y - h / 2));
+        chatToggleRef.current.style.top = newTop + 'px';
+        chatToggleRef.current.style.transform = 'none';
+      }
+    };
+
+    const onEnd = () => {
+      if (chatDragState.current.moved && chatToggleRef.current) {
+        localStorage.setItem(CHAT_TOGGLE_LS_KEY, chatToggleRef.current.style.top);
+      }
+      chatDragState.current.active = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
+  };
+
+  // Remove padding-bottom from .app-content so chat input sticks flush to bottom nav
+  useEffect(() => {
+    const appContent = document.querySelector('.app-content');
+    if (appContent) {
+      appContent.style.paddingBottom = '0';
+    }
+    return () => {
+      if (appContent) {
+        appContent.style.paddingBottom = '';
+      }
+    };
+  }, []);
 
   return (
-    <div>
+    <div id='chatBlock'>
       <div className={`chat-container ${isMobileChatOpen ? 'chat-open' : ''} ${['admin', 'salon_admin', 'private_admin', 'private_salon_admin'].includes(user?.role) ? 'admin-layout' : ''} ${chatSidebarOpen ? 'chat-sidebar-active' : ''}`}>
         {isMobileChatOpen && (
           <button className="back-button" onClick={() => {
@@ -722,7 +774,13 @@ const EmployeeChatPage = () => {
           </button>
         )}
         {['admin', 'salon_admin', 'private_admin', 'private_salon_admin'].includes(user?.role) && (
-          <button className="chat-sidebar-toggle" onClick={() => setChatSidebarOpen(!chatSidebarOpen)}>
+          <button
+            ref={chatToggleRef}
+            className="chat-sidebar-toggle"
+            onMouseDown={handleChatToggleDown}
+            onTouchStart={handleChatToggleDown}
+            onClick={() => { if (!chatDragState.current.moved) setChatSidebarOpen(!chatSidebarOpen); }}
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               {chatSidebarOpen ? <polyline points="9 18 15 12 9 6"/> : <polyline points="15 18 9 12 15 6"/>}
             </svg>

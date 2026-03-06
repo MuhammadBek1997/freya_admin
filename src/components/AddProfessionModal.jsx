@@ -87,7 +87,6 @@ const AddProfessionModal = ({ onClose, onProfessionAdded }) => {
       await addProfession({ uz, ru, en });
       setProfessionName('');
       if (onProfessionAdded) onProfessionAdded();
-      alert(t('alerts.professionAdded', { defaultValue: 'Kasb muvaffaqiyatli qo\'shildi!' }));
       onClose();
     } catch (err) {
       setError(err.message || t('errors.professionAddFailed', { defaultValue: 'Kasb qo\'shishda xatolik' }));
@@ -109,7 +108,6 @@ const AddProfessionModal = ({ onClose, onProfessionAdded }) => {
       const updatedProfessions = professions.filter(p => p.value !== professionValue);
       localStorage.setItem('professions', JSON.stringify(updatedProfessions));
       if (onProfessionAdded) onProfessionAdded();
-      alert(t('alerts.professionDeleted', { defaultValue: 'Kasb o\'chirildi!' }));
     } catch (err) {
       setError(err.message || t('errors.professionDeleteFailed', { defaultValue: 'Kasb o\'chirishda xatolik' }));
     } finally {
@@ -145,7 +143,7 @@ const AddProfessionModal = ({ onClose, onProfessionAdded }) => {
               disabled={loading}
             />
             <small style={{ color: '#999', fontSize: '12px' }}>
-              {t('profession.hint', { defaultValue: 'Kirillcha yozsangiz — UZ: transliteratsiya, EN: avtotarjima' })}
+              {t('profession.hint', { defaultValue: 'Kirillcha yozsangiz -- UZ: transliteratsiya, EN: avtotarjima' })}
             </small>
           </div>
 

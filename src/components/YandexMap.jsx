@@ -102,7 +102,7 @@ const YandexMap = ({ lat, long, lng, editable = false, onSelect }) => {
             .catch((error) => {
             });
 
-        // Tozalash: komponent o‘chirilganda xarita va markerlarni yo‘q qilish
+        // Tozalash: komponent o'chirilganda xarita va markerlarni yo'q qilish
         return () => {
             if (placemarkInstance.current) {
                 mapInstance.current?.geoObjects.remove(placemarkInstance.current);

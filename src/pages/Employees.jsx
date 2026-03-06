@@ -266,7 +266,7 @@ const Employees = () => {
                               <div key={s.id || `${dateKey}-${start}-${end}-${title}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F8F8FA', borderRadius: '10px', padding: '8px 12px' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                   <span style={{ fontWeight: 600 }}>{title}</span>
-                                  <span style={{ color: '#7A7A89', fontSize: '12px' }}>{start}–{end}</span>
+                                  <span style={{ color: '#7A7A89', fontSize: '12px' }}>{start}-{end}</span>
                                 </div>
                                 <div style={{ color: '#9C2BFF', fontWeight: 600 }}>{s.price ? Number(s.price).toLocaleString() : ''}</div>
                               </div>
