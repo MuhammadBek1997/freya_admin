@@ -39,7 +39,7 @@ import i18n from "./i18n";
 	} from "./apiUrls"
 
 
-// API base URL configuration - Python backend URL (Heroku)
+// API base URL configuration - Python backend URL (Railway)
 const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://freyapp.up.railway.app/api";
 let API_BASE_URL = RAW_API_BASE_URL.replace(/^http:\/\//, 'https://');
 const WS_HOST = (() => {
@@ -2356,8 +2356,6 @@ export const AppProvider = ({ children }) => {
 	const wsReconnectTimerRef = useRef(null);
 	const wsPingIntervalRef = useRef(null);
 	const wsRetryCountRef = useRef(0);
-	const wsCandidateIdxRef = useRef(0);
-	const wsUrlCandidatesRef = useRef([]);
 
 	const buildWsUrl = (receiverId, receiverType) => {
 		const scheme = 'wss';
@@ -2517,25 +2515,6 @@ export const AppProvider = ({ children }) => {
 		}
 	};
 
-	const buildWsUrlCandidates = (receiverId, receiverType) => {
-		const scheme = 'wss';
-		const originHost = WS_HOST;
-		const token = getAuthToken() || '';
-		const receiverIdEncoded = encodeURIComponent(receiverId || '');
-		const receiverTypeEncoded = encodeURIComponent(receiverType || 'user');
-		const baseUrl = `${scheme}://${originHost}/api/ws/chat`;
-		const queryParams = new URLSearchParams({
-			token: token,
-			receiver_id: receiverIdEncoded,
-			receiver_type: receiverTypeEncoded
-		});
-		const candidates = [
-			`${baseUrl}?${queryParams.toString()}`,
-			`${scheme}://${originHost}/ws/chat?${queryParams.toString()}`
-		];
-		return candidates;
-	};
-
 	const buildWsUrlCustom = (params = {}) => {
 		const scheme = 'wss';
 		const originHost = WS_HOST;
@@ -2625,9 +2604,7 @@ export const AppProvider = ({ children }) => {
 		wsReceiverRef.current = { id: receiverId, type: receiverType };
 		wsHistoryRequestedRef.current = false;
 		wsHistoryHandledRef.current = false;
-		wsUrlCandidatesRef.current = buildWsUrlCandidates(receiverId, receiverType);
-		wsCandidateIdxRef.current = 0;
-		const url = wsUrlCandidatesRef.current[wsCandidateIdxRef.current];
+		const url = buildWsUrl(receiverId, receiverType);
 		try { console.log('WS connecting', { url, receiverId, receiverType, role }); } catch {}
 		try {
 			const ws = new WebSocket(url);
@@ -2639,7 +2616,7 @@ export const AppProvider = ({ children }) => {
 				setMessagesLoading(false);
 				setCurrentConversation(receiverId);
 				wsRetryCountRef.current = 0;
-				// Heroku 55s timeout dan saqlash uchun har 25 soniyada ping
+				// Ulanishni saqlab turish uchun har 25 soniyada ping
 				if (wsPingIntervalRef.current) clearInterval(wsPingIntervalRef.current);
 				wsPingIntervalRef.current = setInterval(() => {
 					const s = wsRef.current;
@@ -2830,25 +2807,6 @@ export const AppProvider = ({ children }) => {
 					setWsStatus('error');
 					setMessagesLoading(false);
 					setWsError('WebSocket connection failed');
-					// Try next URL candidate if not yet connected
-					const nextIdx = wsCandidateIdxRef.current + 1;
-					const candidates = wsUrlCandidatesRef.current || [];
-					if (nextIdx < candidates.length) {
-						wsCandidateIdxRef.current = nextIdx;
-						try {
-							const nextUrl = candidates[nextIdx];
-							if (wsRetryCountRef.current === 0) {
-							}
-							const nws = new WebSocket(nextUrl);
-							wsRef.current = nws;
-							// rebind handlers
-							nws.onopen = ws.onopen;
-							nws.onmessage = ws.onmessage;
-							nws.onerror = ws.onerror;
-							nws.onclose = ws.onclose;
-							return;
-						} catch {}
-					}
 					// Reconnect ni faqat bir marta chaqirish
 					if (wsRetryCountRef.current === 0) {
 						scheduleWsReconnect();
@@ -2869,28 +2827,6 @@ export const AppProvider = ({ children }) => {
 				}
 				setWsStatus('closed');
 				setMessagesLoading(false);
-				// If closed before connect, try alternate URL once
-				const sClose = wsRef.current;
-				const connected = sClose && sClose.readyState === WebSocket.OPEN;
-				if (!connected) {
-					const nextIdx = wsCandidateIdxRef.current + 1;
-					const candidates = wsUrlCandidatesRef.current || [];
-					if (nextIdx < candidates.length) {
-						wsCandidateIdxRef.current = nextIdx;
-						try {
-							const nextUrl = candidates[nextIdx];
-							if (wsRetryCountRef.current === 0) {
-							}
-							const nws = new WebSocket(nextUrl);
-							wsRef.current = nws;
-							nws.onopen = ws.onopen;
-							nws.onmessage = ws.onmessage;
-							nws.onerror = ws.onerror;
-							nws.onclose = ws.onclose;
-							return;
-						} catch {}
-					}
-				}
 				// Reconnect ni faqat bir marta chaqirish (code 1006 - abnormal closure)
 				// Agar code 1000 (normal closure) bo'lsa, reconnect qilmaslik
 				if (evt?.code !== 1000 && wsRetryCountRef.current < 10) {
@@ -3088,7 +3024,7 @@ export const AppProvider = ({ children }) => {
 			ws.onopen = () => {
 				salonWsRetryRef.current = 0;
 				try { console.log('Salon WS connected'); } catch {}
-				// Heroku 55s idle timeout oldini olish uchun har 20s ping
+				// Ulanishni saqlab turish uchun har 20s ping
 				if (salonWsPingRef.current) clearInterval(salonWsPingRef.current);
 				salonWsPingRef.current = setInterval(() => {
 					try {
