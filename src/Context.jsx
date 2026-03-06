@@ -3071,15 +3071,10 @@ export const AppProvider = ({ children }) => {
 		} catch {}
 	};
 
-	// Admin login bo'lganda avtomatik ulanish + polling
+	// Admin login bo'lganda avtomatik ulanish (Railway da WS ishlaydi, polling kerak emas)
 	useEffect(() => {
 		if (['admin', 'salon_admin'].includes(user?.role)) {
 			connectSalonWs();
-			// 15s polling: WS ishlamasa ham conversations yangilanib turadi
-			if (salonPollRef.current) clearInterval(salonPollRef.current);
-			salonPollRef.current = setInterval(() => {
-				try { fetchConversationsRef.current?.(); } catch {}
-			}, 15000);
 		}
 		return () => {
 			disconnectSalonWs();
