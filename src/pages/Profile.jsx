@@ -17,6 +17,15 @@ const Profile = () => {
     uploadSalonPhotos, deleteSalonPhoto, logout, uploadSalonLogo
   } = UseGlobalContext()
 
+  // Session timeout: if loading hangs > 12s or error occurs, auto-logout
+  useEffect(() => {
+    if (salonProfile) return;
+    const timer = setTimeout(() => {
+      logout();
+    }, 12000);
+    return () => clearTimeout(timer);
+  }, [salonProfile]);
+
   const [changeMode, setChangeMode] = useState(false)
   const [editDescription, setEditDescription] = useState('')
   const [editAdditionals, setEditAdditionals] = useState('')
@@ -920,8 +929,39 @@ const Profile = () => {
     );
   }
 
-  // Data hali tayyor bo'lmasa, loading holatini saqlab turamiz (minimal o'zgarish)
+  // Data hali tayyor bo'lmasa yoki xato bo'lsa
   if (!salonProfile) {
+    if (adminSalonError) {
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          gap: '16px',
+          color: '#666'
+        }}>
+          <p style={{ color: '#FF6B6B', fontSize: '16px', textAlign: 'center', maxWidth: '320px' }}>
+            {t('sessionExpired') || 'Sessiya muddati tugagan. Iltimos, qayta kiring.'}
+          </p>
+          <button
+            onClick={logout}
+            style={{
+              padding: '10px 24px',
+              background: '#9C2BFF',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '15px',
+              cursor: 'pointer'
+            }}
+          >
+            {t('logout') || 'Chiqish'}
+          </button>
+        </div>
+      );
+    }
     return (
       <div style={{
         display: 'flex',

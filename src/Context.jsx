@@ -3852,6 +3852,11 @@ export const AppProvider = ({ children }) => {
 						}
 					}
 				} else {
+					if (mySalonResp.status === 401) {
+						setAdminSalonLoading(false);
+						logout();
+						return null;
+					}
 					let mySalonMsg = `HTTP ${mySalonResp.status}`;
 					try {
 						const errJson = await mySalonResp.json();
@@ -3911,7 +3916,9 @@ export const AppProvider = ({ children }) => {
 					message = 'Salon topilmadi';
 				}
 				if (detailResponse.status === 401) {
-					message = 'Avtorizatsiya xatosi: token yaroqsiz yoki berilmagan.';
+					setAdminSalonLoading(false);
+					logout();
+					return null;
 				}
 				throw new Error(message);
 			}
