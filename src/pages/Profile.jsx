@@ -1007,7 +1007,7 @@ const Profile = () => {
                 {t('profileTitle')}
               </h2>
             </div>
-            <div className='profile-nav-lang' ref={langDropdownRef} style={{ marginRight: "-40vw", width: "20vw", position: 'relative' }}>
+            <div className='profile-nav-lang' ref={langDropdownRef} style={{ marginRight: "-40vw", position: 'relative' }}>
               <button className='lang-dropdown-btn' onClick={() => setLangOpen(v => !v)}>
                 <img src="/images/globusGray.png" alt="" className='globus' />
                 <span>{language.toUpperCase()}</span>

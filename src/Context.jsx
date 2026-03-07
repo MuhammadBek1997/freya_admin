@@ -3743,8 +3743,9 @@ export const AppProvider = ({ children }) => {
 	};
 
 	// Fetch all data when user logs in and has salon_id
+	const adminRoles = ['admin', 'salon_admin', 'superadmin', 'private_admin', 'private_salon_admin'];
 	useEffect(() => {
-		if (isAuthenticated && user && user.salon_id) {
+		if (isAuthenticated && user && user.salon_id && adminRoles.includes(user.role)) {
 			(async () => {
 				// Avval adminning salonini yuklab olaylik
 				try {
