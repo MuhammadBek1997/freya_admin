@@ -1176,6 +1176,300 @@
   .sidebar.sidebar-mobile-open + .nav-sidebar-toggle {
     left: min(70vw, 280px);
   }
+
+  /* ===== PROFILE PAGE - mobile ===== */
+  .profile-nav {
+    padding-left: 4vw;
+    height: auto;
+    min-height: unset;
+    padding-bottom: 2vh;
+  }
+
+  .profile-nav-top {
+    height: auto;
+    padding: 1.5vh 4vw 1.5vh 0;
+  }
+
+  .profile-nav-top h2 {
+    font-size: 18px;
+  }
+
+  .profile-nav-top img {
+    width: 24px;
+  }
+
+  .profile-nav-logo img {
+    width: 20px;
+  }
+
+  /* Override inline marginRight: "-40vw" that breaks mobile layout */
+  .profile-nav-lang {
+    margin-right: 0 !important;
+    width: auto !important;
+  }
+
+  .lang-dropdown-btn {
+    font-size: 13px;
+    padding: 4px 8px;
+  }
+
+  .lang-dropdown-btn .globus {
+    width: 14px;
+  }
+
+  .profile-nav-bottom {
+    height: auto;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1vh;
+    padding-bottom: 1.5vh;
+  }
+
+  .profile-nav-left {
+    gap: 12px;
+  }
+
+  .company-image {
+    width: 56px;
+    height: 56px;
+  }
+
+  .profile-salon-name h2 {
+    font-size: 16px;
+  }
+
+  .profile-salon-name button {
+    width: auto;
+    height: auto;
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    gap: 6px;
+  }
+
+  .profile-salon-name button img {
+    width: 14px;
+  }
+
+  .profile-salon-rating p {
+    font-size: 12px;
+  }
+
+  .profile-salon-sale {
+    height: auto;
+    gap: 8px;
+  }
+
+  .profile-salon-sale img {
+    width: 14px;
+  }
+
+  .profile-salon-sale div {
+    font-size: 12px;
+    padding: 3px 10px;
+  }
+
+  /* Hide right side stats on mobile — not enough space */
+  .profile-nav-right {
+    display: none;
+  }
+
+  .profile-nav-buttons {
+    gap: 8px;
+  }
+
+  .profile-nav-cancel,
+  .profile-nav-save {
+    width: auto;
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .stars {
+    --star-size: 14px;
+  }
+
+  /* Single column body */
+  .profile-body {
+    padding-top: 28vh;
+    flex-direction: column !important;
+    gap: 12px;
+    padding-left: 4vw;
+    padding-right: 4vw;
+    padding-bottom: 3vh;
+  }
+
+  .profile-body-left,
+  .company-data,
+  .company-facilities,
+  .company-comments,
+  .profile-body-right {
+    width: 100% !important;
+  }
+
+  #indicators-carousel,
+  .compNoImg {
+    width: 100%;
+  }
+
+  .company-title-empty,
+  .company-title-full {
+    font-size: 15px;
+    padding: 10px;
+  }
+
+  .company-title img {
+    width: 16px;
+  }
+
+  .company-about,
+  .company-add {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .empty {
+    font-size: 12px;
+  }
+
+  .info {
+    font-size: 13px;
+  }
+
+  .company-number h3,
+  .company-social h3,
+  .company-facilities h3,
+  .company-comments h3 {
+    font-size: 14px;
+  }
+
+  .company-number-card {
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    gap: 6px;
+  }
+
+  .company-social-card {
+    font-size: 14px;
+    padding: 6px;
+    border-radius: 8px;
+  }
+
+  .company-social-card img {
+    width: 28px;
+  }
+
+  .company-social-card img:last-child {
+    width: 14px;
+  }
+
+  .facilities-list {
+    grid-template-columns: repeat(2, auto);
+    gap: 10px;
+  }
+
+  .facilities-list-item {
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .comment-card {
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px auto;
+  }
+
+  .comment-author h3 {
+    font-size: 14px;
+  }
+
+  .comment-author img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .comment-card p {
+    font-size: 13px;
+  }
+
+  .comment-date {
+    font-size: 11px;
+  }
+
+  /* Payment section */
+  .payment-system h3 {
+    font-size: 14px;
+  }
+
+  .payment-system-summ-top h4,
+  .payment-system-card-top h4 {
+    font-size: 12px;
+  }
+
+  .payment-system-summ-top img,
+  .payment-system-card-top img {
+    width: 14px;
+  }
+
+  .payment-system-summ h1 {
+    font-size: 24px;
+  }
+
+  .payment-system-summ p {
+    font-size: 13px;
+  }
+
+  .payment-system-card-bottom p,
+  .payment-system-card-bottom h3 {
+    min-width: auto;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  /* Location */
+  .company-location-top h3 {
+    font-size: 14px;
+  }
+
+  .company-location-bottom p {
+    font-size: 13px;
+  }
+
+  /* Clients */
+  .company-clients h3 {
+    font-size: 14px;
+  }
+
+  .company-clients-card {
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  .top-client-image {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Images slider */
+  .profile-images h3 {
+    font-size: 14px;
+  }
+
+  .profile-add-imageBtn img {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .profile-add-imageBtn {
+    font-size: 13px;
+  }
+
+  .profile-image-counter {
+    font-size: 13px;
+  }
 }
 
 @media screen and (max-width: 600px) {

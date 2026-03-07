@@ -215,6 +215,17 @@ const EmployeeChatPage = () => {
     }
   }, [user, conversations]);
 
+  // Auto-select first conversation on load
+  useEffect(() => {
+    if (conversationsLoading || selectedUser || !conversations?.length) return;
+    const first = conversations[0];
+    const participant = first?.participant || {};
+    const userId = participant.id || first?.other_user_id || first?.userId;
+    const userName = participant.name || first?.other_user_name || first?.userName || 'Unknown';
+    const userAvatar = participant.avatar_url || first?.other_user_avatar || first?.user_avatar_url || first?.avatar || 'ChatAvatar.svg';
+    if (userId) handleSelectConversation(userId, userName, userAvatar);
+  }, [conversations, conversationsLoading]);
+
   useEffect(() => {
     return () => {
       try { disconnectChatWs(); } catch {}

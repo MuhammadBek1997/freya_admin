@@ -26,6 +26,22 @@ const Profile = () => {
     return () => clearTimeout(timer);
   }, [salonProfile]);
 
+  const [langOpen, setLangOpen] = useState(false)
+  const langDropdownRef = useRef(null)
+  useEffect(() => {
+    const handler = (e) => {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(e.target)) {
+        setLangOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
+  }, [])
+
   const [changeMode, setChangeMode] = useState(false)
   const [editDescription, setEditDescription] = useState('')
   const [editAdditionals, setEditAdditionals] = useState('')
@@ -991,14 +1007,27 @@ const Profile = () => {
                 {t('profileTitle')}
               </h2>
             </div>
-            <div className='profile-nav-lang' style={{ marginRight: "-40vw", width: "20vw", gap: "0.3vw" }}>
-              <img src="/images/globusGray.png" alt="" className='globus' />
-              <select value={language} onChange={handleChange}>
-                <option value="ru">RU</option>
-                <option value="uz">UZ</option>
-                <option value="en">EN</option>
-              </select>
-              <img src="/images/Arrow.png" alt="Arrow" className='arrow' />
+            <div className='profile-nav-lang' ref={langDropdownRef} style={{ marginRight: "-40vw", width: "20vw", position: 'relative' }}>
+              <button className='lang-dropdown-btn' onClick={() => setLangOpen(v => !v)}>
+                <img src="/images/globusGray.png" alt="" className='globus' />
+                <span>{language.toUpperCase()}</span>
+                <svg width="10" height="10" viewBox="0 0 10 6" fill="none" style={{ marginLeft: '2px', transition: 'transform 0.2s', transform: langOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                  <path d="M1 1L5 5L9 1" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </button>
+              {langOpen && (
+                <div className='lang-dropdown-menu'>
+                  {['ru', 'uz', 'en'].map(lang => (
+                    <button
+                      key={lang}
+                      className={`lang-dropdown-item${language === lang ? ' active' : ''}`}
+                      onClick={() => { handleChange({ target: { value: lang } }); setLangOpen(false) }}
+                    >
+                      {lang.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <button onClick={() => {
               logout()

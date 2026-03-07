@@ -309,7 +309,10 @@
 @media screen and (max-width: 480px) {
   .admin-layout .chat-window,
   .admin-layout .chat-posts,
-  .admin-layout .chat-comments {
+  .admin-layout .chat-comments,
+  .admin-layout.chat-sidebar-active .chat-window,
+  .admin-layout.chat-sidebar-active .chat-posts,
+  .admin-layout.chat-sidebar-active .chat-comments {
     height: 100svh !important;
   }
 }
