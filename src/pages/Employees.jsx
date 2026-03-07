@@ -13,6 +13,7 @@ const Employees = () => {
   const [openCardId, setOpenCardId] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState({ menu: null, cardId: null });
   const [showWait, setShowWait] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [showAddProfessionModal, setShowAddProfessionModal] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -146,7 +147,7 @@ const Employees = () => {
   }
 
   return (
-    <section>
+    <section className={navOpen ? 'nav-expanded' : ''}>
       <nav className="employ-nav">
         <div className="employ-nav-top">
           <div className="employ-nav-logo">
@@ -157,18 +158,23 @@ const Employees = () => {
             <h2>{employeesBySalon.length}</h2>
             <h5>{t('employSmry')}</h5>
           </div>
+          <button className="employ-nav-toggle" onClick={() => setNavOpen(v => !v)}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d={navOpen ? 'M14 12L9 7L4 12' : 'M4 6L9 11L14 6'} stroke="#9C2BFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
         </div>
-        <div className="employ-nav-search">
+        <div className={`employ-nav-search${navOpen ? ' open' : ''}`}>
           {showWait ? (
             <button onClick={() => setShowWait(false)} className='employ-waiting-close'>
               <p><span>←</span> Назад</p>
             </button>
           ) : null}
-          
+
           <img src="/images/searchIcon.png" alt="" className='employ-nav-search-icon' />
-          <input 
-            type="text" 
-            placeholder={t('homeSrchPlhdr')} 
+          <input
+            type="text"
+            placeholder={t('homeSrchPlhdr')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
