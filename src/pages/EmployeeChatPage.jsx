@@ -1072,10 +1072,16 @@ const EmployeeChatPage = () => {
                     </div>
                     <div className="partner-details">
                       <span className="chat-header-name">{selectedUser.name}</span>
-                      <span className="online-status-wrapper">
-                        <span className="online-status"></span>
-                        <span className="chat-header-status">{t('online') || 'онлайн'}</span>
-                      </span>
+                      {(() => {
+                        const conv = conversations?.find(c => String(c.other_user_id || c.user_id || c.id) === String(selectedUser.id));
+                        const lastTime = conv?.last_message_time;
+                        if (!lastTime) return null;
+                        return (
+                          <span className="chat-header-status">
+                            {new Date(lastTime).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

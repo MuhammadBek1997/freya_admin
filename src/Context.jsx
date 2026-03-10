@@ -2734,6 +2734,10 @@ export const AppProvider = ({ children }) => {
                         // REST resync o'chirildi - WS xabarlari yetarli
                         const incoming = String(msg?.receiver_id) === String(mineId);
 							const targetId = incoming ? (msg?.sender_id || msg?.user_id || msg?.senderId) : (msg?.receiver_id);
+							const chatIsOpen = incoming && String(wsReceiverRef.current?.id) === String(targetId);
+							if (chatIsOpen) {
+								try { wsRef.current?.send(JSON.stringify({ event: 'mark_read' })); } catch {}
+							}
 							if (targetId) {
 								setConversations(prev => {
 									const arr = Array.isArray(prev) ? prev : [];
@@ -2744,7 +2748,7 @@ export const AppProvider = ({ children }) => {
 											...c,
 											last_message: norm.message_text || c.last_message,
 											last_message_time: norm.created_at || c.last_message_time,
-											unread_count: incoming ? ((c.unread_count || 0) + 1) : (c.unread_count || 0),
+											unread_count: incoming ? (chatIsOpen ? 0 : (c.unread_count || 0) + 1) : (c.unread_count || 0),
 										};
 										return [...arr.slice(0, idx), updated, ...arr.slice(idx + 1)];
 									} else {
