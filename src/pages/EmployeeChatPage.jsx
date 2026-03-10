@@ -645,7 +645,6 @@ const EmployeeChatPage = () => {
       return date.toLocaleTimeString('uz-UZ', {
         hour: '2-digit',
         minute: '2-digit',
-        timeZone: 'Asia/Tashkent'
       });
     } catch {
       return timeString;
@@ -964,8 +963,7 @@ const EmployeeChatPage = () => {
                             new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
                               hour: '2-digit',
                               minute: '2-digit',
-                              timeZone: 'Asia/Tashkent'
-                            }) : ''
+                                                  }) : ''
                           }
                         </span>
                       </div>
@@ -1023,8 +1021,7 @@ const EmployeeChatPage = () => {
                             new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
                               hour: '2-digit',
                               minute: '2-digit',
-                              timeZone: 'Asia/Tashkent'
-                            }) : ''
+                                                  }) : ''
                           }
                         </span>
                       </div>
@@ -1222,8 +1219,7 @@ const EmployeeChatPage = () => {
                                           {new Date(message.created_at_local || message.created_at).toLocaleTimeString('uz-UZ', {
                                             hour: '2-digit',
                                             minute: '2-digit',
-                                            timeZone: 'Asia/Tashkent'
-                                          })}
+                                                                              })}
                                           </span>
                                       </div>
                                     </div>
