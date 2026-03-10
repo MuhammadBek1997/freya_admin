@@ -644,7 +644,8 @@ const EmployeeChatPage = () => {
       const date = new Date(timeString);
       return date.toLocaleTimeString('uz-UZ', {
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        timeZone: 'Asia/Tashkent'
       });
     } catch {
       return timeString;
@@ -962,7 +963,8 @@ const EmployeeChatPage = () => {
                           {conversation.last_message_time ?
                             new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
                               hour: '2-digit',
-                              minute: '2-digit'
+                              minute: '2-digit',
+                              timeZone: 'Asia/Tashkent'
                             }) : ''
                           }
                         </span>
@@ -1020,7 +1022,8 @@ const EmployeeChatPage = () => {
                           {conversation.last_message_time ?
                             new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
                               hour: '2-digit',
-                              minute: '2-digit'
+                              minute: '2-digit',
+                              timeZone: 'Asia/Tashkent'
                             }) : ''
                           }
                         </span>
@@ -1218,7 +1221,8 @@ const EmployeeChatPage = () => {
                                           <span className={isMyMessage ? 'message-time-sent' : 'message-time'}>
                                           {new Date(message.created_at_local || message.created_at).toLocaleTimeString('uz-UZ', {
                                             hour: '2-digit',
-                                            minute: '2-digit'
+                                            minute: '2-digit',
+                                            timeZone: 'Asia/Tashkent'
                                           })}
                                           </span>
                                       </div>
