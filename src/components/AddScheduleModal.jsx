@@ -481,8 +481,8 @@ const AddScheduleModal = () => {
                             setSelectEmploy={setSelectEmploy}
                             onEmployeeSelect={handleEmployeeSelect}
                             date={formData.date}
-                            start_time={formData.start_time}
-                            end_time={formData.end_time}
+                            start_time=""
+                            end_time=""
                             initialSelected={formData.employee_list}
                         />
                     )}
