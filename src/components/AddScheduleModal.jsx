@@ -26,8 +26,19 @@ const AddScheduleModal = () => {
         checkEmployeeBusyInterval,
         calculateAvailableSlots,
         combinedAppointments,
-        schedules
+        schedules,
+        salonProfile
     } = UseGlobalContext()
+
+    const parseSalonWorkHours = () => {
+        const wh = salonProfile?.work_hours || ''
+        const match = wh.match(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/)
+        if (match) {
+            const pad = s => s.trim().replace(/^(\d):/, '0$1:')
+            return { start: pad(match[1]), end: pad(match[2]) }
+        }
+        return { start: '09:00', end: '20:00' }
+    }
 
     const [selectEmploy, setSelectEmploy] = useState(false)
     const [daysDropdownOpen, setDaysDropdownOpen] = useState(false)
@@ -100,13 +111,14 @@ const AddScheduleModal = () => {
         }
     }, [formData.start_time, formData.service_duration]);
 
-    // whole_day yoqilganda start/end vaqtlarini tozalash
+    // whole_day yoqilganda salon ish vaqtlarini to'ldirish
     useEffect(() => {
         if (formData.whole_day) {
+            const { start, end } = parseSalonWorkHours()
             setFormData(prev => ({
                 ...prev,
-                start_time: '',
-                end_time: ''
+                start_time: start,
+                end_time: end
             }))
         }
     }, [formData.whole_day])
@@ -186,8 +198,8 @@ const AddScheduleModal = () => {
                 name: String(formData.name).trim(),
                 title: String(formData.title).trim(),
                 date: String(formData.date),
-                start_time: String(formData.whole_day ? '00:00' : formData.start_time),
-                end_time: String(formData.whole_day ? '23:59' : formData.end_time),
+                start_time: String(formData.start_time || '00:00'),
+                end_time: String(formData.end_time || '23:59'),
                 service_duration: Number(formData.service_duration),
                 repeat: Boolean(formData.repeat),
                 repeat_value: String(formData.repeat_value || ''),
@@ -354,33 +366,27 @@ const AddScheduleModal = () => {
                         <option value={240}>240 {t('minutes') || 'daqiqa'}</option>
                     </select>
 
-                    {!formData.whole_day && (
-                        <>
-                            <label htmlFor="">{t('schedule.startTime')}</label>
-                            <input
-                                type="time"
-                                className="form-inputs"
-                                value={formData.start_time}
-                                onChange={(e) => handleInputChange('start_time', e.target.value)}
-                                required
-                            />
-                        </>
-                    )}
+                    <label htmlFor="">{t('schedule.startTime')}</label>
+                    <input
+                        type="time"
+                        className="form-inputs"
+                        value={formData.start_time}
+                        onChange={(e) => handleInputChange('start_time', e.target.value)}
+                        disabled={formData.whole_day}
+                        style={formData.whole_day ? { backgroundColor: '#f5f5f5', cursor: 'not-allowed' } : {}}
+                        required
+                    />
 
-                    {!formData.whole_day && (
-                        <>
-                            <label htmlFor="">{t('schedule.endTime')}</label>
-                            <input
-                                type="time"
-                                className="form-inputs"
-                                value={formData.end_time}
-                                onChange={(e) => handleInputChange('end_time', e.target.value)}
-                                disabled
-                                style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
-                                required
-                            />
-                        </>
-                    )}
+                    <label htmlFor="">{t('schedule.endTime')}</label>
+                    <input
+                        type="time"
+                        className="form-inputs"
+                        value={formData.end_time}
+                        onChange={(e) => handleInputChange('end_time', e.target.value)}
+                        disabled
+                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                        required
+                    />
 
                     <label htmlFor="">
                         <input
