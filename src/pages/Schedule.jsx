@@ -22,10 +22,16 @@ const Schedule = () => {
     deleteSchedule
   } = UseGlobalContext()
 
-  const handleDeleteSchedule = async (scheduleId, e) => {
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+
+  const handleDeleteSchedule = (scheduleId, e) => {
     e.stopPropagation()
-    if (!window.confirm(t('deleteConfirm') || 'O\'chirish siz emin miyiz?')) return
-    await deleteSchedule(scheduleId)
+    setDeleteConfirmId(scheduleId)
+  }
+
+  const confirmDelete = async () => {
+    if (deleteConfirmId) await deleteSchedule(deleteConfirmId)
+    setDeleteConfirmId(null)
   }
 
   let currentDay = {
@@ -329,6 +335,41 @@ const Schedule = () => {
       <div className='addChedule'>
         {addSched ? <AddScheduleModal /> : null}
       </div>
+
+      {deleteConfirmId && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+        }} onClick={() => setDeleteConfirmId(null)}>
+          <div style={{
+            background: '#fff', borderRadius: '1vw', padding: '2vw 2.5vw',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5vw',
+            minWidth: '22vw', boxShadow: '0 8px 32px rgba(156,43,255,0.15)'
+          }} onClick={e => e.stopPropagation()}>
+            <img src="/images/company-image-delete.png" alt="" style={{ width: '3vw', opacity: 0.7 }} />
+            <h3 style={{ fontSize: '1.1vw', fontWeight: 600, color: '#2d2d2d', textAlign: 'center' }}>
+              {t('deleteConfirm') || 'Raspisaniyani o\'chirishni tasdiqlaysizmi?'}
+            </h3>
+            <p style={{ fontSize: '0.85vw', color: '#888', textAlign: 'center', marginTop: '-0.5vw' }}>
+              {t('deleteConfirmSub') || 'Bu amalni ortga qaytarib bo\'lmaydi.'}
+            </p>
+            <div style={{ display: 'flex', gap: '1vw', width: '100%' }}>
+              <button onClick={() => setDeleteConfirmId(null)} style={{
+                flex: 1, padding: '0.6vw', borderRadius: '0.6vw', border: '1.5px solid #9C2BFF',
+                background: '#fff', color: '#9C2BFF', fontSize: '0.9vw', cursor: 'pointer', fontWeight: 500
+              }}>
+                {t('no') || 'Bekor qilish'}
+              </button>
+              <button onClick={confirmDelete} style={{
+                flex: 1, padding: '0.6vw', borderRadius: '0.6vw', border: 'none',
+                background: '#ff4d4f', color: '#fff', fontSize: '0.9vw', cursor: 'pointer', fontWeight: 500
+              }}>
+                {t('yes') || 'O\'chirish'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
