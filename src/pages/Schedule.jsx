@@ -266,19 +266,20 @@ const Schedule = () => {
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.5vw', alignItems: 'center' }}>
+                  <div style={{ position: 'absolute', right: '1vw', top: '1vw', display: 'flex', gap: '0.4vw', alignItems: 'center' }}>
                     <button
                       className='schedule-list-item-btn'
+                      style={{ position: 'static' }}
                       onClick={() => handleOpenEditOrReserve(item.id)}>
                       <img src={(new Date(item.date).getDate() - 7) <= currentDay.day && new Date(item.date).getMonth() + 1 == currentDay.month ? "/images/reserveIcon.png" : "/images/editPen.png"} alt="" />
                     </button>
                     <button
                       className='schedule-list-item-btn'
+                      style={{ position: 'static', background: '#fff0f0' }}
                       onClick={(e) => handleDeleteSchedule(item.id, e)}
-                      style={{ background: '#fff0f0', borderRadius: '8px', padding: '0.3vw' }}
                       title={t('delete') || 'O\'chirish'}
                     >
-                      <img src="/images/company-image-delete.png" alt="delete" style={{ width: '1.2vw', height: '1.2vw' }} />
+                      <img src="/images/company-image-delete.png" alt="delete" />
                     </button>
                   </div>
                   <div className='editChedule'>
