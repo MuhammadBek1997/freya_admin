@@ -459,7 +459,7 @@ const AddScheduleModal = () => {
                                     </div>
                                 )}
                             </div>
-                            <label>{t('schedule.repeatCount') || 'Necha marta takrorlansin'}</label>
+                            <label>{t('schedule.repeatCount') || 'Necha marta takrorlansin'} <span style={{ color: '#999', fontSize: '0.75vw' }}>(max 52)</span></label>
                             <input
                                 type="text"
                                 inputMode="numeric"
@@ -467,7 +467,8 @@ const AddScheduleModal = () => {
                                 value={formData.repeat_count === 0 ? '' : formData.repeat_count}
                                 onChange={(e) => {
                                     const raw = e.target.value.replace(/[^0-9]/g, '')
-                                    handleInputChange('repeat_count', raw === '' ? 0 : parseInt(raw, 10))
+                                    const val = raw === '' ? 0 : Math.min(parseInt(raw, 10), 52)
+                                    handleInputChange('repeat_count', val)
                                 }}
                                 onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault() }}
                             />
