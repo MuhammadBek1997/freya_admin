@@ -691,8 +691,24 @@ body {
   gap: 0.5vw;
   overflow-x: auto;
   padding: 1vw;
-  scrollbar-width: thin;
   flex-shrink: 0;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s;
+}
+.schedule-nav:hover {
+  scrollbar-color: #c4a8e8 transparent;
+}
+.schedule-nav::-webkit-scrollbar {
+  height: 4px;
+}
+.schedule-nav::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+.schedule-nav:hover::-webkit-scrollbar-thumb {
+  background: #c4a8e8;
 }
 
 .schedule-nav-item {

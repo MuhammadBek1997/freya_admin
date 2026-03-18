@@ -45,6 +45,9 @@ const EmployeeChatPage = () => {
     schedules,
     mySchedules,
     fetchMySchedules,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
   } = UseGlobalContext();
 
   const handleBack = () => {
@@ -56,6 +59,7 @@ const EmployeeChatPage = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedPageEmployee, setSelectedPageEmployee] = useState('chat');
   const chatBodyRef = useRef(null);
+  const scheduleNavRef = useRef(null);
   const isAtBottomRef = useRef(true);
   const prevMessageCountRef = useRef(0);
   const profileRefreshIdRef = useRef(null);
@@ -1352,7 +1356,15 @@ const EmployeeChatPage = () => {
                 </div>
               ) : (
                 <>
-                  <div className='schedule-nav'>
+                  <div
+                    className='schedule-nav'
+                    ref={scheduleNavRef}
+                    onMouseDown={(e) => handleMouseDown(e, scheduleNavRef)}
+                    onMouseMove={(e) => handleMouseMove(e, scheduleNavRef)}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    style={{ cursor: 'grab' }}
+                  >
                     {getAvailableDates().map((date, index) => (
                       <button
                         key={index}
