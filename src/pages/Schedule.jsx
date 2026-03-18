@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useMemo } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { UseGlobalContext } from '../Context.jsx'
 import AddScheduleModal from '../components/AddScheduleModal';
 import EditScheduleModal from '../components/EditScheduleModal';
@@ -346,12 +347,12 @@ const Schedule = () => {
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5vw',
             minWidth: '22vw', boxShadow: '0 8px 32px rgba(156,43,255,0.15)'
           }} onClick={e => e.stopPropagation()}>
-            <img src="/images/company-image-delete.png" alt="" style={{ width: '3vw', opacity: 0.7 }} />
+            <AlertTriangle size={'3.5vw'} color="#ff4d4f" strokeWidth={1.8} />
             <h3 style={{ fontSize: '1.1vw', fontWeight: 600, color: '#2d2d2d', textAlign: 'center' }}>
-              {t('deleteConfirm') || 'Raspisaniyani o\'chirishni tasdiqlaysizmi?'}
+              Raspisaniyani o'chirishni tasdiqlaysizmi?
             </h3>
             <p style={{ fontSize: '0.85vw', color: '#888', textAlign: 'center', marginTop: '-0.5vw' }}>
-              {t('deleteConfirmSub') || 'Bu amalni ortga qaytarib bo\'lmaydi.'}
+              Bu amalni ortga qaytarib bo'lmaydi.
             </p>
             <div style={{ display: 'flex', gap: '1vw', width: '100%' }}>
               <button onClick={() => setDeleteConfirmId(null)} style={{
