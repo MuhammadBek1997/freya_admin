@@ -18,8 +18,15 @@ const Schedule = () => {
     schedules,
     fetchSchedules,
     employees,
-    employeesBySalon
+    employeesBySalon,
+    deleteSchedule
   } = UseGlobalContext()
+
+  const handleDeleteSchedule = async (scheduleId, e) => {
+    e.stopPropagation()
+    if (!window.confirm(t('deleteConfirm') || 'O\'chirish siz emin miyiz?')) return
+    await deleteSchedule(scheduleId)
+  }
 
   let currentDay = {
     day: new Date().getDate(),
@@ -257,17 +264,23 @@ const Schedule = () => {
                       <div>
                         <h3>{item.price / 1000} 000 <span>uzs</span></h3>
                       </div>
-                      <p>{t('depositLabel')}:</p>
-                      <div>
-                        <h3>{item.deposit != 0 ? item.deposit / 1000 + " 000" : 0} <span>uzs</span></h3>
-                      </div>
                     </div>
                   </div>
-                  <button
-                    className='schedule-list-item-btn'
-                    onClick={() => handleOpenEditOrReserve(item.id)}>
-                    <img src={(new Date(item.date).getDate() - 7) <= currentDay.day && new Date(item.date).getMonth() + 1 == currentDay.month ? "/images/reserveIcon.png" : "/images/editPen.png"} alt="" />
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5vw', alignItems: 'center' }}>
+                    <button
+                      className='schedule-list-item-btn'
+                      onClick={() => handleOpenEditOrReserve(item.id)}>
+                      <img src={(new Date(item.date).getDate() - 7) <= currentDay.day && new Date(item.date).getMonth() + 1 == currentDay.month ? "/images/reserveIcon.png" : "/images/editPen.png"} alt="" />
+                    </button>
+                    <button
+                      className='schedule-list-item-btn'
+                      onClick={(e) => handleDeleteSchedule(item.id, e)}
+                      style={{ background: '#fff0f0', borderRadius: '8px', padding: '0.3vw' }}
+                      title={t('delete') || 'O\'chirish'}
+                    >
+                      <img src="/images/company-image-delete.png" alt="delete" style={{ width: '1.2vw', height: '1.2vw' }} />
+                    </button>
+                  </div>
                   <div className='editChedule'>
                     {editModal && activeModalScheduleId === item.id ? (
                       <>
