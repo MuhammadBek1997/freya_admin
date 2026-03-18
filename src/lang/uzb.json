@@ -212,6 +212,8 @@
   "timeLabel": "Vaqt",
   "customerComments": "Mijoz izohlari",
   "confirmAction": "Amalni tasdiqlang:",
+  "deleteConfirm": "Raspisaniyani o'chirishni tasdiqlaysizmi?",
+  "deleteConfirmSub": "Bu amalni ortga qaytarib bo'lmaydi.",
   "no": "Yo'q",
   "yes": "Ha",
   "selectEmployee": "Xodimni tanlang",

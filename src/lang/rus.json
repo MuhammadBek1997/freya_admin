@@ -214,6 +214,8 @@
     "timeLabel": "Время",
     "customerComments": "Комментарии клиента",
     "confirmAction": "Подтвердите действие:",
+    "deleteConfirm": "Вы уверены, что хотите удалить расписание?",
+    "deleteConfirmSub": "Это действие нельзя отменить.",
     "no": "Нет",
     "yes": "Да",
     "selectEmployee": "Выберите персонал",

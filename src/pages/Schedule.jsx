@@ -349,10 +349,10 @@ const Schedule = () => {
           }} onClick={e => e.stopPropagation()}>
             <AlertTriangle size={'3.5vw'} color="#ff4d4f" strokeWidth={1.8} />
             <h3 style={{ fontSize: '1.1vw', fontWeight: 600, color: '#2d2d2d', textAlign: 'center' }}>
-              Raspisaniyani o'chirishni tasdiqlaysizmi?
+              {t('deleteConfirm')}
             </h3>
             <p style={{ fontSize: '0.85vw', color: '#888', textAlign: 'center', marginTop: '-0.5vw' }}>
-              Bu amalni ortga qaytarib bo'lmaydi.
+              {t('deleteConfirmSub')}
             </p>
             <div style={{ display: 'flex', gap: '1vw', width: '100%' }}>
               <button onClick={() => setDeleteConfirmId(null)} style={{
