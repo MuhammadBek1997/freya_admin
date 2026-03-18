@@ -111,15 +111,22 @@ const AddScheduleModal = () => {
         }
     }, [formData.start_time, formData.service_duration]);
 
-    // whole_day yoqilganda salon ish vaqtlarini to'ldirish
+    // whole_day yoqilganda ish vaqtlarini to'ldirish (employee bo'lsa o'zining, aks holda salon)
     useEffect(() => {
         if (formData.whole_day) {
-            const { start, end } = parseSalonWorkHours()
-            setFormData(prev => ({
-                ...prev,
-                start_time: start,
-                end_time: end
-            }))
+            let start, end
+            if (user?.role === 'employee') {
+                const empId = String(user?.id || user?.employee_id || '')
+                const emp = (employeesBySalon || employees || []).find(e => String(e.id) === empId)
+                start = emp?.work_start_time || user?.work_start_time || null
+                end = emp?.work_end_time || user?.work_end_time || null
+            }
+            if (!start || !end) {
+                const salon = parseSalonWorkHours()
+                start = salon.start
+                end = salon.end
+            }
+            setFormData(prev => ({ ...prev, start_time: start, end_time: end }))
         }
     }, [formData.whole_day])
 
