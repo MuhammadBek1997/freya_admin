@@ -626,15 +626,16 @@ body {
 
 /* Additional styles for employee-specific features */
 .chat-schedule {
-  width: 100vw;
-  height: 100vh;
   position: fixed;
   top: 0;
-  left: 0;
+  left: 20vw;
+  width: 80vw;
+  height: 100vh;
   background: #f4f0f9;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  z-index: 10;
 }
 
 .schedule-cont {
@@ -1172,6 +1173,11 @@ body {
 
   .chat-container.chat-open .chatSidebar {
     transform: translateX(-100vw);
+  }
+
+  .chat-schedule {
+    left: 0;
+    width: 100vw;
   }
 
   .chat-window,
