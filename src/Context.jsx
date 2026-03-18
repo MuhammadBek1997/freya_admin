@@ -1374,6 +1374,8 @@ export const AppProvider = ({ children }) => {
 						price: Number(dataToSend.price || 0),
 						repeat: Boolean(dataToSend.repeat || false),
 						repeat_value: dataToSend.repeat_value ? String(dataToSend.repeat_value) : null,
+						repeat_count: dataToSend.repeat_count > 0 ? Math.min(Number(dataToSend.repeat_count), 52) : 1,
+						whole_day: Boolean(dataToSend.whole_day || false),
 						is_active: true,
 					};
 					const empUrl = mobileEmployeesMeSchedulesUrl.replace(/^http:\/\//, 'https://');
