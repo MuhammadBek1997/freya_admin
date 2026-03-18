@@ -24,8 +24,8 @@ const EmployeeChatPage = () => {
     sendMessage,
     getUnreadCount,
     markConversationAsRead,
-  fetchEmployeePosts,
-  fetchEmployeeComments,
+    fetchEmployeePosts,
+    fetchEmployeeComments,
     t,
     uploadPhotosToServer,
     updateEmployee,
@@ -179,7 +179,7 @@ const EmployeeChatPage = () => {
           if (url && url !== (user?.avatar_url || user?.avatar || user?.profile_image || user?.photo || '')) {
             setUser(prev => ({ ...prev, avatar_url: url, avatar: url, profile_image: url }));
           }
-        } catch (_) {}
+        } catch (_) { }
       })();
     }
 
@@ -228,7 +228,7 @@ const EmployeeChatPage = () => {
 
   useEffect(() => {
     return () => {
-      try { disconnectChatWs(); } catch {}
+      try { disconnectChatWs(); } catch { }
     };
   }, []);
 
@@ -274,8 +274,8 @@ const EmployeeChatPage = () => {
 
   useEffect(() => {
     if (selectedPageEmployee === 'schedule' && user) {
-      const d = new Date().toISOString().substring(0,10);
-      fetchMySchedules(d).catch(()=>{});
+      const d = new Date().toISOString().substring(0, 10);
+      fetchMySchedules(d).catch(() => { });
     }
   }, [selectedPageEmployee, user]);
 
@@ -285,7 +285,7 @@ const EmployeeChatPage = () => {
     }
   }, [mySchedules?.length, selectedPageEmployee, user]);
 
-  
+
 
   const fetchGroupedSchedules = async () => {
     setSchedulesLoading(true);
@@ -341,14 +341,14 @@ const EmployeeChatPage = () => {
         const list = Array.isArray(normalized[date]) ? normalized[date] : [];
         const employeeSchedules = onlyEmployee
           ? list.filter(schedule => {
-              const sEmpId = schedule?.employee_id;
-              const sEmpList = Array.isArray(schedule?.employee_list)
-                ? schedule.employee_list.map(id => String(id))
-                : [];
-              const employeesArr = Array.isArray(schedule?.employees) ? schedule.employees : [];
-              const employeesIds = employeesArr.map(e => String(e?.id ?? e?.employee_id ?? e));
-              return (uid && String(sEmpId) === uid) || (uid && sEmpList.includes(uid)) || (uid && employeesIds.includes(uid));
-            })
+            const sEmpId = schedule?.employee_id;
+            const sEmpList = Array.isArray(schedule?.employee_list)
+              ? schedule.employee_list.map(id => String(id))
+              : [];
+            const employeesArr = Array.isArray(schedule?.employees) ? schedule.employees : [];
+            const employeesIds = employeesArr.map(e => String(e?.id ?? e?.employee_id ?? e));
+            return (uid && String(sEmpId) === uid) || (uid && sEmpList.includes(uid)) || (uid && employeesIds.includes(uid));
+          })
           : list;
         if (employeeSchedules.length > 0) {
           filteredSchedules[date] = employeeSchedules;
@@ -382,7 +382,7 @@ const EmployeeChatPage = () => {
           const exists = filteredSchedules[dateKey].some(it => String(it.id) === String(s.id));
           if (!exists) filteredSchedules[dateKey].push(s);
         }
-      } catch {}
+      } catch { }
 
       setGroupedSchedules(filteredSchedules);
 
@@ -416,17 +416,17 @@ const EmployeeChatPage = () => {
     setIsMobileChatOpen(true);
 
     try {
-      
+
       // 1. WS ulanishni ochish
       const connected = connectChatWs(userId, 'user');
-      
+
       if (connected) {
         // 2. WS ochilguncha kutish
         const wsOpened = await waitWsOpenFor(userId, 'user', 3000);
-        
+
         if (wsOpened) {
           // ❌ fetchMessages ni CHAQIRMASLIK! WS history avtomatik keladi
-          
+
           // 3. Mark as read
           const marked = sendWsMarkRead();
           if (!marked) {
@@ -442,11 +442,11 @@ const EmployeeChatPage = () => {
         await fetchMessages(userId);
         await markConversationAsRead(userId);
       }
-      
+
       // 4. Unread count yangilash
       const count = await getUnreadCount();
       setUnreadCount(count);
-      
+
     } catch (error) {
       // Fallback: REST API
       try {
@@ -548,7 +548,7 @@ const EmployeeChatPage = () => {
       const url = Array.isArray(urls) ? urls[0] : urls;
       if (!url) throw new Error('Yuklangan rasm URLi topilmadi');
       await waitWsOpenFor(selectedUser.id, 'user', 3000);
-      
+
       const tempId = `temp-img-${Date.now()}-${Math.random()}`;
       const optimisticImage = {
         id: tempId,
@@ -563,10 +563,10 @@ const EmployeeChatPage = () => {
         created_at: new Date().toISOString(),
         _isOptimistic: true
       };
-      
+
       // Optimistic UI: darhol ko'rsatish
       setMessages(prev => [...(Array.isArray(prev) ? prev : []), optimisticImage]);
-      
+
       const sendImageWithRetry = async () => {
         const ok1 = sendWsMessage('', 'image', url);
         if (ok1) return true;
@@ -793,59 +793,59 @@ const EmployeeChatPage = () => {
             onClick={() => { if (!chatDragState.current.moved) setChatSidebarOpen(!chatSidebarOpen); }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              {chatSidebarOpen ? <polyline points="9 18 15 12 9 6"/> : <polyline points="15 18 9 12 15 6"/>}
+              {chatSidebarOpen ? <polyline points="9 18 15 12 9 6" /> : <polyline points="15 18 9 12 15 6" />}
             </svg>
           </button>
         )}
         <aside className={`chatSidebar ${chatSidebarOpen ? "sidebar-open" : ""}`}>
-{!["admin", "salon_admin"].includes(user?.role) && (
-          <div className="chatSidebar-top">
-            <img className="chatSidebarLogo" src="sidebarLogo.svg" alt="Logo" />
+          {!["admin", "salon_admin"].includes(user?.role) && (
+            <div className="chatSidebar-top">
+              <img className="chatSidebarLogo" src="sidebarLogo.svg" alt="Logo" />
 
-            <div className="avatar-logout-wrapper">
-              <div className="avatar-wrapper">
-                <img
-                  src={user?.avatar_url || user?.avatar || user?.profile_image || user?.photo || '/images/masterImage.png'}
-                  alt="User"
-                  className="profile-avatar"
-                />
-                <button
-                  className="avatar-edit-btn"
-                  onClick={handleAvatarClick}
-                  disabled={avatarUploading}
-                  title={avatarUploading ? (t('uploading') || 'Yuklanmoqda...') : (t('changePhoto') || 'Rasmni almashtirish')}
-                >
-                  ✎
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  style={{ display: 'none' }}
-                />
+              <div className="avatar-logout-wrapper">
+                <div className="avatar-wrapper">
+                  <img
+                    src={user?.avatar_url || user?.avatar || user?.profile_image || user?.photo || '/images/masterImage.png'}
+                    alt="User"
+                    className="profile-avatar"
+                  />
+                  <button
+                    className="avatar-edit-btn"
+                    onClick={handleAvatarClick}
+                    disabled={avatarUploading}
+                    title={avatarUploading ? (t('uploading') || 'Yuklanmoqda...') : (t('changePhoto') || 'Rasmni almashtirish')}
+                  >
+                    ✎
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+
+
               </div>
-
-              
             </div>
-          </div>
           )}
 
 
           <div className="chat-profile-card">
             {!["admin", "salon_admin"].includes(user?.role) && (
               <>
-            <span className="chat-profile-info">
-              <h2 className="chat-profile-name">{user.name || user.username}</h2>
-              <span className="chat-profile-role">{user?.role}</span>
-            </span>
-            <button className="profile-btn" onClick={handleOpenProfileModal}>
-              <img className="profile-btn-icon" src="btnicon.svg" alt="" />
-              <p>{t('myProfile') || 'Мой профиль'} →</p>
-            </button>
+                <span className="chat-profile-info">
+                  <h2 className="chat-profile-name">{user.name || user.username}</h2>
+                  <span className="chat-profile-role">{user?.role}</span>
+                </span>
+                <button className="profile-btn" onClick={handleOpenProfileModal}>
+                  <img className="profile-btn-icon" src="btnicon.svg" alt="" />
+                  <p>{t('myProfile') || 'Мой профиль'} →</p>
+                </button>
               </>
             )}
-            
+
             <div className="chat-stats">
               <div className="chat-stat-item">
                 <span className="chat-stats-label">{t('chats') || 'Чаты'}</span>
@@ -861,7 +861,7 @@ const EmployeeChatPage = () => {
             </div>
           </div>
 
-          
+
 
           <div className="chat-list">
             {conversationsLoading ? (
@@ -918,116 +918,116 @@ const EmployeeChatPage = () => {
                             {t('unreadMessages') || 'Непрочитанные'} ({unreadConvs.length})
                           </h3>
                           {unreadConvs.map((conversation) => {
-                  const participant = conversation.participant || {};
-                  const userId = participant.id || conversation.other_user_id || conversation.userId;
-                  const userName = participant.name || conversation.other_user_name || conversation.userName || 'Unknown User';
-                  const userAvatar = participant.avatar_url || conversation.other_user_avatar || conversation.user_avatar_url || conversation.avatar || "ChatAvatar.svg";
+                            const participant = conversation.participant || {};
+                            const userId = participant.id || conversation.other_user_id || conversation.userId;
+                            const userName = participant.name || conversation.other_user_name || conversation.userName || 'Unknown User';
+                            const userAvatar = participant.avatar_url || conversation.other_user_avatar || conversation.user_avatar_url || conversation.avatar || "ChatAvatar.svg";
 
-                  if (!userId) {
-                    return null;
-                  }
+                            if (!userId) {
+                              return null;
+                            }
 
-                  return (
-                    <div
-                      key={userId}
-                      className={`chat-item ${selectedUser?.id === userId ? 'selected' : ''}`}
-                      onClick={() => handleSelectConversation(userId, userName, userAvatar)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className="chat-avatar-wrapper">
-                        {conversation.unread_count > 0 && <span className="unread-dot"></span>}
-                      </div>
-                      <div className="chat-info">
-                        <span className="chat-info-logo">
-                          <img
-                            className="chat-avatar"
-                            src={userAvatar}
-                            alt={userName}
-                          />
-                          <p className="chat-name">{userName}</p>
-                        </span>
-                        <p className="chat-msg">
-                          {conversation.last_message || t('noMessage') || "Xabar yo'q"}
-                        </p>
-                      </div>
-                      <div className="chat-header-info">
-                        {conversation.unread_count > 0 ? (
-                          <span className="chat-badge">{conversation.unread_count}</span>
-                        ) : (
-                          <svg className="chat-read-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c853" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12"/>
-                          </svg>
-                        )}
-                        <span className="chat-time">
-                          {conversation.last_message_time ?
-                            new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                                                  }) : ''
-                          }
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+                            return (
+                              <div
+                                key={userId}
+                                className={`chat-item ${selectedUser?.id === userId ? 'selected' : ''}`}
+                                onClick={() => handleSelectConversation(userId, userName, userAvatar)}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                <div className="chat-avatar-wrapper">
+                                  {conversation.unread_count > 0 && <span className="unread-dot"></span>}
+                                </div>
+                                <div className="chat-info">
+                                  <span className="chat-info-logo">
+                                    <img
+                                      className="chat-avatar"
+                                      src={userAvatar}
+                                      alt={userName}
+                                    />
+                                    <p className="chat-name">{userName}</p>
+                                  </span>
+                                  <p className="chat-msg">
+                                    {conversation.last_message || t('noMessage') || "Xabar yo'q"}
+                                  </p>
+                                </div>
+                                <div className="chat-header-info">
+                                  {conversation.unread_count > 0 ? (
+                                    <span className="chat-badge">{conversation.unread_count}</span>
+                                  ) : (
+                                    <svg className="chat-read-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c853" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                  )}
+                                  <span className="chat-time">
+                                    {conversation.last_message_time ?
+                                      new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      }) : ''
+                                    }
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </>
                       )}
                       <h3 className="chat-section-title">
                         {t('readMessages') || 'Прочитанные'} ({readConvs.length})
                       </h3>
                       {readConvs.map((conversation) => {
-                  const participant = conversation.participant || {};
-                  const userId = participant.id || conversation.other_user_id || conversation.userId;
-                  const userName = participant.name || conversation.other_user_name || conversation.userName || 'Unknown User';
-                  const userAvatar = participant.avatar_url || conversation.other_user_avatar || conversation.user_avatar_url || conversation.avatar || "ChatAvatar.svg";
+                        const participant = conversation.participant || {};
+                        const userId = participant.id || conversation.other_user_id || conversation.userId;
+                        const userName = participant.name || conversation.other_user_name || conversation.userName || 'Unknown User';
+                        const userAvatar = participant.avatar_url || conversation.other_user_avatar || conversation.user_avatar_url || conversation.avatar || "ChatAvatar.svg";
 
-                  if (!userId) {
-                    return null;
-                  }
+                        if (!userId) {
+                          return null;
+                        }
 
-                  return (
-                    <div
-                      key={userId}
-                      className={`chat-item ${selectedUser?.id === userId ? 'selected' : ''}`}
-                      onClick={() => handleSelectConversation(userId, userName, userAvatar)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className="chat-avatar-wrapper">
-                        {conversation.unread_count > 0 && <span className="unread-dot"></span>}
-                      </div>
-                      <div className="chat-info">
-                        <span className="chat-info-logo">
-                          <img
-                            className="chat-avatar"
-                            src={userAvatar}
-                            alt={userName}
-                          />
-                          <p className="chat-name">{userName}</p>
-                        </span>
-                        <p className="chat-msg">
-                          {conversation.last_message || t('noMessage') || "Xabar yo'q"}
-                        </p>
-                      </div>
-                      <div className="chat-header-info">
-                        {conversation.unread_count > 0 ? (
-                          <span className="chat-badge">{conversation.unread_count}</span>
-                        ) : (
-                          <svg className="chat-read-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c853" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12"/>
-                          </svg>
-                        )}
-                        <span className="chat-time">
-                          {conversation.last_message_time ?
-                            new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                                                  }) : ''
-                          }
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+                        return (
+                          <div
+                            key={userId}
+                            className={`chat-item ${selectedUser?.id === userId ? 'selected' : ''}`}
+                            onClick={() => handleSelectConversation(userId, userName, userAvatar)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="chat-avatar-wrapper">
+                              {conversation.unread_count > 0 && <span className="unread-dot"></span>}
+                            </div>
+                            <div className="chat-info">
+                              <span className="chat-info-logo">
+                                <img
+                                  className="chat-avatar"
+                                  src={userAvatar}
+                                  alt={userName}
+                                />
+                                <p className="chat-name">{userName}</p>
+                              </span>
+                              <p className="chat-msg">
+                                {conversation.last_message || t('noMessage') || "Xabar yo'q"}
+                              </p>
+                            </div>
+                            <div className="chat-header-info">
+                              {conversation.unread_count > 0 ? (
+                                <span className="chat-badge">{conversation.unread_count}</span>
+                              ) : (
+                                <svg className="chat-read-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c853" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              )}
+                              <span className="chat-time">
+                                {conversation.last_message_time ?
+                                  new Date(conversation.last_message_time).toLocaleTimeString('uz-UZ', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  }) : ''
+                                }
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </>
                   );
                 })()}
@@ -1221,12 +1221,12 @@ const EmployeeChatPage = () => {
                                             {message.message_text || message.message}
                                           </p>
                                         )}
-                                          <span className={isMyMessage ? 'message-time-sent' : 'message-time'}>
+                                        <span className={isMyMessage ? 'message-time-sent' : 'message-time'}>
                                           {new Date(message.created_at_local || message.created_at).toLocaleTimeString('uz-UZ', {
                                             hour: '2-digit',
                                             minute: '2-digit',
-                                                                              })}
-                                          </span>
+                                          })}
+                                        </span>
                                       </div>
                                     </div>
                                   );
@@ -1317,7 +1317,7 @@ const EmployeeChatPage = () => {
                 <div style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems:'center',
+                  alignItems: 'center',
                   gap: '1vw',
                   padding: '2vw'
                 }}>
@@ -1352,13 +1352,7 @@ const EmployeeChatPage = () => {
                 </div>
               ) : (
                 <>
-                  <div className='schedule-nav' style={{
-                    display: 'flex',
-                    gap: '0.5vw',
-                    overflowX: 'auto',
-                    padding: '1vw',
-                    scrollbarWidth: 'thin'
-                  }}>
+                  <div className='schedule-nav'>
                     {getAvailableDates().map((date, index) => (
                       <button
                         key={index}
@@ -1367,39 +1361,34 @@ const EmployeeChatPage = () => {
                         style={{
                           border: selectedDate === date ? '2px solid #9C2BFF' : '1px solid #ddd',
                           backgroundColor: selectedDate === date ? '#f7f0ff' : 'white',
-                          borderRadius: '12px',
+                          borderRadius: '14px',
                           cursor: 'pointer',
                           whiteSpace: 'nowrap',
                           transition: 'all 0.2s',
                           display: 'flex',
-                          flexDirection: 'column-reverse',
+                          flexDirection: 'column',
                           alignItems: 'center',
-                          padding:"1.5vw"
+                          padding: '10px 8px',
+                          minWidth: '52px',
+                          gap: '2px'
                         }}
                       >
-                        <span style={{  color: '#A8A8B3' }}>{formatWeekdayShort(date)}</span>
-                        <span style={{ fontWeight: selectedDate === date ? 'bold' : 'normal' }}>{formatDisplayDate(date)}</span>
+                        <span style={{ fontSize: '15px', fontWeight: selectedDate === date ? '700' : '500', color: selectedDate === date ? '#9C2BFF' : '#1a1a2e' }}>{formatDisplayDate(date)}</span>
+                        <span style={{ fontSize: '11px', color: '#A8A8B3' }}>{formatWeekdayShort(date)}</span>
                       </button>
                     ))}
                   </div>
 
-                  <div className='scheduleEmployee-body' style={{
-                    padding: '1vw',
-                    overflowY: 'auto'
-                  }}>
+                  <div className='scheduleEmployee-body'>
                     {selectedDate && (
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        marginBottom: '1vw'
-                      }}>
+                      <div style={{ marginBottom: '10px' }}>
                         <span style={{
-                          padding: '6px 10px',
-                          backgroundColor: '#FFF',
+                          padding: '5px 12px',
+                          backgroundColor: '#fff',
                           border: '1px solid #eee',
                           borderRadius: '12px',
-                          color: '#333'
+                          color: '#555',
+                          fontSize: '13px'
                         }}>
                           {formatDateWithDay(selectedDate)}
                         </span>
@@ -1407,71 +1396,32 @@ const EmployeeChatPage = () => {
                     )}
 
                     {getSchedulesForDate().length === 0 ? (
-                      <div style={{
-                        textAlign: 'center',
-                        padding: '2vw',
-                        color: '#A8A8B3'
-                      }}>
+                      <div style={{ textAlign: 'center', padding: '20px', color: '#A8A8B3', fontSize: '14px' }}>
                         {t('noScheduleThisDay') || 'Bu kunda jadval yo\'q'}
                       </div>
                     ) : (
                       getSchedulesForDate().map((item, index) => (
-                        <div
-                          className='scheduleEmployee-list-item'
-                          key={index}
-                          style={{
-                            padding: '1.2vw',
-                            marginBottom: '0.8vw',
-                            border: '1px solid #eee',
-                            borderRadius: '8px',
-                            backgroundColor: 'white',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            position:"relative"
-                          }}
+                        <div className='scheduleEmployee-list-item' key={index}
+                          style={{ display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}
                         >
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between'
-                          }}>
-                            <span style={{
-                              fontWeight: 'bold',
-                              color: '#333'
-                            }}>
-                              {item.title || item.name || item.service_name || t('notAvailable') || 'Noma\'lum'}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingRight: '36px' }}>
+                            <span style={{ fontWeight: '700', color: '#1a1a2e', fontSize: '15px' }}>
+                              {item.title || item.name || t('notAvailable') || 'Noma\'lum'}
                             </span>
-                            <span style={{
-                              borderRadius: '12px',
-                              fontWeight: 'bold',
-                              color: '#9C2BFF',
-                              backgroundColor: '#F3E8FF'
-                            }}>
+                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#9C2BFF', background: '#F3E8FF', borderRadius: '8px', padding: '2px 8px', whiteSpace: 'nowrap' }}>
                               {item.start_time && item.end_time ? `${item.start_time} - ${item.end_time}` : (formatTime(item.appointment_time || item.time) || '')}
                             </span>
-                            <button
-                              onClick={() => setBookingState({ open: true, schedule: item, employeeId: (Array.isArray(item.employee_list) && item.employee_list.length === 1) ? item.employee_list[0] : null })}
-                              style={{
-                                border: 'none',
-                                background: 'transparent',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                position:"absolute",
-                                top:"3vw",
-                                right:"3vw"
-                              }}
-                              title={t('appointmentTypeBooking') || 'Band qilish'}
-                            >
-                              <img src="/images/reserveIcon.png" alt="reserve" />
-                            </button>
                           </div>
-
-                          <div style={{  color: '#666' }}>
-                            <div style={{ marginBottom: '0.3vw' }}>
-                              <strong>{t('service') || 'Xizmat'}:</strong> {item.service_name || item.name || t('notAvailable') || 'Noma\'lum'}
-                            </div>
-                          </div>
+                          <span style={{ color: '#666', fontSize: '13px' }}>
+                            {t('service') || 'Xizmat'}: {item.service_name || item.name || t('notAvailable') || 'Noma\'lum'}
+                          </span>
+                          <button
+                            onClick={() => setBookingState({ open: true, schedule: item, employeeId: (Array.isArray(item.employee_list) && item.employee_list.length === 1) ? item.employee_list[0] : null })}
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', position: 'absolute', top: '12px', right: '12px', padding: '4px' }}
+                            title={t('appointmentTypeBooking') || 'Band qilish'}
+                          >
+                            <img src="/images/reserveIcon.png" alt="reserve" style={{ width: '20px', height: '20px' }} />
+                          </button>
                         </div>
                       ))
                     )}
@@ -1557,7 +1507,7 @@ const EmployeeChatPage = () => {
                     const currentFile = files[currentIndex];
                     const isVideo = typeof currentFile === 'string' && /\.(mp4|webm|ogg)$/i.test(currentFile);
                     console.log(employeePosts);
-                    
+
                     return (
                       <div key={post.id} style={{
                         width: "100%",
@@ -1565,7 +1515,7 @@ const EmployeeChatPage = () => {
                         borderRadius: '1vw',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                         overflow: 'hidden',
-                        overflowY:"auto"
+                        overflowY: "auto"
                       }}>
                         <div style={{ position: 'relative', width: "100%", height: "50vh" }}>
                           {files.length > 0 ? (
