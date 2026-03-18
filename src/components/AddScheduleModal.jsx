@@ -74,6 +74,7 @@ const AddScheduleModal = () => {
 
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+    const [fieldErrors, setFieldErrors] = useState({})
 
     useEffect(() => {
         if (user?.salon_id && (!employees || employees.length === 0)) {
@@ -146,10 +147,8 @@ const AddScheduleModal = () => {
     }, [formData.date, formData.repeat])
 
     const handleInputChange = (field, value) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value
-        }))
+        setFormData(prev => ({ ...prev, [field]: value }))
+        if (fieldErrors[field]) setFieldErrors(prev => ({ ...prev, [field]: false }))
     }
 
     const handleEmployeeSelect = (selectedEmployeeIds) => {
@@ -171,22 +170,17 @@ const AddScheduleModal = () => {
     setLoading(true)
 
     try {
-      if (!formData.name?.trim()) {
-        throw new Error(t('validation.required'))
-      }
-            if (!formData.title?.trim()) {
-                throw new Error(t('validation.required'))
-            }
-            if (!formData.date) {
-                throw new Error(t('validation.required'))
-            }
+            const errs = {}
+            if (!formData.name?.trim()) errs.name = true
+            if (!formData.title?.trim()) errs.title = true
+            if (!formData.date) errs.date = true
             if (!formData.whole_day) {
-                if (!formData.start_time) {
-                    throw new Error(t('validation.required'))
-                }
-                if (!formData.end_time) {
-                    throw new Error(t('validation.required'))
-                }
+                if (!formData.start_time) errs.start_time = true
+                if (!formData.end_time) errs.end_time = true
+            }
+            if (Object.keys(errs).length > 0) {
+                setFieldErrors(errs)
+                throw new Error(t('validation.required'))
             }
             if (!user?.salon_id) {
                 throw new Error(t('errors.salonIdMissing'))
@@ -334,6 +328,7 @@ const AddScheduleModal = () => {
                         className="form-inputs"
                         value={formData.name}
                         onChange={(e) => handleInputChange('name', e.target.value)}
+                        style={fieldErrors.name ? { border: '1.5px solid #ff4d4f' } : {}}
                         required
                     />
 
@@ -344,6 +339,7 @@ const AddScheduleModal = () => {
                         className="form-inputs"
                         value={formData.title}
                         onChange={(e) => handleInputChange('title', e.target.value)}
+                        style={fieldErrors.title ? { border: '1.5px solid #ff4d4f' } : {}}
                         required
                     />
 
@@ -353,6 +349,7 @@ const AddScheduleModal = () => {
                         className="form-inputs"
                         value={formData.date}
                         onChange={(e) => handleInputChange('date', e.target.value)}
+                        style={fieldErrors.date ? { border: '1.5px solid #ff4d4f' } : {}}
                         required
                     />
 
@@ -380,7 +377,7 @@ const AddScheduleModal = () => {
                         value={formData.start_time}
                         onChange={(e) => handleInputChange('start_time', e.target.value)}
                         disabled={formData.whole_day}
-                        style={formData.whole_day ? { backgroundColor: '#f5f5f5', cursor: 'not-allowed' } : {}}
+                        style={formData.whole_day ? { backgroundColor: '#f5f5f5', cursor: 'not-allowed' } : fieldErrors.start_time ? { border: '1.5px solid #ff4d4f' } : {}}
                         required
                     />
 
